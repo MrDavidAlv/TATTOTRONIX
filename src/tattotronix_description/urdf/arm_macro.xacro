@@ -131,14 +131,15 @@
     </joint>
 
     <!-- Tool mount: a bracket carrying a continuous-rotation SG90.
-         The mesh is a clamp whose two arms face each other across a 12.0 mm
-         gap, which is the body width of an SG90, so the servo sits between
-         them with its output shaft on the bracket's y axis. What that servo
-         ends up driving is not settled, so nothing here actuates: the tool
-         attaches through a fixed joint and the axis is recorded, not moved. -->
+         Two clamp arms face each other across a 12.0 mm gap, the body width of
+         an SG90, so the servo sits between them with its output shaft on the
+         bracket's y axis. The mesh is symmetric about z = 0, which puts that
+         shaft on the z = 0 plane. What the servo drives is not settled, so
+         nothing here actuates: the tool attaches through a fixed joint and the
+         axis is recorded, not moved. -->
     <xacro:tattotronix_link name="tool_mount_link" mass="0.15"
-        cx="0.0076" cy="-0.01155" cz="-0.0037"
-        sx="0.0492" sy="0.0231" sz="0.0414"/>
+        cx="0.0108" cy="-0.0115" cz="0.0"
+        sx="0.0365" sy="0.0231" sz="0.0330"/>
 
     <!-- tool flange.
          tool0 is the frame every end effector attaches to, and its +z axis is
@@ -146,18 +147,16 @@
 
          It is placed on the servo axis rather than guessed: the bracket's two
          clamp faces lie at y = -6.0 mm and y = -18.0 mm and share a centroid
-         at x = 4.5 mm, z = -3.0 mm, which fixes the shaft line. tool0 sits
-         where that line leaves the outer face of the bracket, y = -23.1 mm,
-         with +z pointing away from the arm. This is why the pen used to look
-         wrong: it was mounted along +x, across the servo shaft instead of
-         along it.
+         near x = 5 mm, and the part is symmetric about z = 0, which fixes the
+         shaft line. tool0 sits where that line leaves the outer face of the
+         bracket, y = -23.1 mm, with +z pointing away from the arm.
 
          Read off the mesh, not off CAD datums. Expect it to move by a
          millimetre or two once the bracket is measured. -->
     <joint name="tool_mount_to_tool0" type="fixed">
       <parent link="tool_mount_link"/>
       <child link="tool0"/>
-      <origin xyz="0.0045 -0.0231 -0.0030" rpy="${pi/2} 0 0"/>
+      <origin xyz="0.005 -0.0231 0" rpy="${pi/2} 0 0"/>
     </joint>
 
     <link name="tool0"/>
