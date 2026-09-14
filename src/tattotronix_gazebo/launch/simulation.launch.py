@@ -74,11 +74,11 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'tool',
-            default_value='none',
+            default_value='tattoo',
             description=(
-                'End effector mounted on tool0: none | tattoo. none is the CAD '
-                'as exported; tattoo adds the placeholder pen, which is sized '
-                'from a catalogue rotary machine rather than measured'
+                'End effector mounted on tool0: tattoo | none. The pen is sized '
+                'from a catalogue rotary machine rather than measured; none '
+                'strips the description back to the exported CAD'
             ),
         ),
         DeclareLaunchArgument(

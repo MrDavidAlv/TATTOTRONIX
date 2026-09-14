@@ -27,8 +27,10 @@
     <joint name="tool0_to_tattoo_pen" type="fixed">
       <parent link="${parent}"/>
       <child link="tattoo_pen_link"/>
-      <!-- The pen points along the flange +x axis, barrel base on the flange. -->
-      <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+      <!-- No rotation. tool0 already defines +z as the tool axis, which is the
+           SG90 output shaft, so the pen inherits the alignment instead of
+           re-deriving it and drifting away from the flange. -->
+      <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
     <link name="tattoo_pen_link">
