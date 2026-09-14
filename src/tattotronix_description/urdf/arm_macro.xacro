@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find tattotronix_description)/urdf/inertial_macros.xacro"/>
+  <xacro:include filename="$(find tattotronix_description)/urdf/materials.xacro"/>
+
+  <!--
+    TATTOTRONIX arm: 5 revolute joints plus a fixed tool flange.
+
+    Kinematics carried over verbatim from the ROS 1 description
+    (src/lesson_urdf/urdf/planar_3dof.xacro on branch main), with the joint
+    origins converted from the CAD centimetre units to metres. The meshes are
+    exported in their own joint frame, so every visual and collision sits at
+    the link origin and only needs the 0.01 scale factor.
+
+    Two things the ROS 1 file got away with and a ROS 2 control stack will not,
+    both fixed here and called out so the change is not mistaken for drift:
+      * every joint declared effort="0", which pins the actuator torque limit
+        at zero and makes the arm unusable under any effort-aware controller;
+      * the tool frame repeated the wrist joint offset and therefore landed
+        outside the tool mount mesh.
+  -->
+
+  <xacro:property name="mesh_scale" value="0.01 0.01 0.01"/>
+  <xacro:property name="mesh_path" value="package://tattotronix_description/meshes"/>
+
+  <!-- Actuator envelope. Shared by every joint until per-axis gearboxes are measured. -->
+  <xacro:property name="joint_effort" value="20.0"/>
+  <xacro:property name="joint_velocity" value="1.5"/>
+  <xacro:property name="joint_damping" value="0.5"/>
+  <xacro:property name="joint_friction" value="0.1"/>
+
+  <xacro:macro name="tattotronix_link" params="name mass cx cy cz sx sy sz">
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="${mesh_path}/visual/${name}.stl" scale="${mesh_scale}"/>
+        </geometry>
+        <material name="tattotronix_graphite"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="${mesh_path}/collision/${name}.dae" scale="${mesh_scale}"/>
+        </geometry>
+      </collision>
+      <xacro:inertial_box mass="${mass}" x="${sx}" y="${sy}" z="${sz}">
+        <origin xyz="${cx} ${cy} ${cz}" rpy="0 0 0"/>
+      </xacro:inertial_box>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="tattotronix_arm" params="parent *origin">
+
+    <!-- base ---------------------------------------------------------------->
+    <joint name="base_mount" type="fixed">
+      <parent link="${parent}"/>
+      <child link="base_link"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+
+    <xacro:tattotronix_link name="base_link" mass="1.5"
+        cx="-0.03125" cy="-0.0013" cz="0.02435"
+        sx="0.1575" sy="0.0950" sz="0.0485"/>
+
+    <!-- joint 1: base yaw ---------------------------------------------------->
+    <joint name="joint_1" type="revolute">
+      <parent link="base_link"/>
+      <child link="shoulder_link"/>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+      <limit lower="-1.57" upper="1.57" effort="${joint_effort}" velocity="${joint_velocity}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <xacro:tattotronix_link name="shoulder_link" mass="0.9"
+        cx="0.00075" cy="0.0" cz="0.03455"
+        sx="0.0945" sy="0.1251" sz="0.0667"/>
+
+    <!-- joint 2: shoulder pitch ---------------------------------------------->
+    <joint name="joint_2" type="revolute">
+      <parent link="shoulder_link"/>
+      <child link="upper_arm_link"/>
+      <origin xyz="0.02866 -0.00364 0.0431385" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-1.57" upper="1.57" effort="${joint_effort}" velocity="${joint_velocity}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <xacro:tattotronix_link name="upper_arm_link" mass="0.6"
+        cx="0.0" cy="-0.00255" cz="0.0567"
+        sx="0.0390" sy="0.0461" sz="0.1522"/>
+
+    <!-- joint 3: elbow pitch ------------------------------------------------->
+    <joint name="joint_3" type="revolute">
+      <parent link="upper_arm_link"/>
+      <child link="forearm_link"/>
+      <origin xyz="0 0.0251 0.1201" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-1.57" upper="1.57" effort="${joint_effort}" velocity="${joint_velocity}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <xacro:tattotronix_link name="forearm_link" mass="0.45"
+        cx="-0.0109" cy="-0.0230" cz="0.0330"
+        sx="0.0670" sy="0.0460" sz="0.0910"/>
+
+    <!-- joint 4: wrist roll -------------------------------------------------->
+    <joint name="joint_4" type="revolute">
+      <parent link="forearm_link"/>
+      <child link="wrist_link"/>
+      <origin xyz="0.0033 -0.02184 0.02885" rpy="0 0 0"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="-1.57" upper="1.57" effort="${joint_effort}" velocity="${joint_velocity}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <xacro:tattotronix_link name="wrist_link" mass="0.35"
+        cx="0.08525" cy="0.00915" cz="-0.00005"
+        sx="0.1705" sy="0.0569" sz="0.0364"/>
+
+    <!-- joint 5: wrist pitch ------------------------------------------------->
+    <joint name="joint_5" type="revolute">
+      <parent link="wrist_link"/>
+      <child link="tool_mount_link"/>
+      <origin xyz="0.153 0.003 -0.002" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-1.57" upper="1.57" effort="${joint_effort}" velocity="${joint_velocity}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <xacro:tattotronix_link name="tool_mount_link" mass="0.15"
+        cx="0.0076" cy="-0.01155" cz="-0.0037"
+        sx="0.0492" sy="0.0231" sz="0.0414"/>
+
+    <!-- tool flange ----------------------------------------------------------
+         tool0 is the industrial flange frame every end effector attaches to.
+         It sits on the far face of the tool mount mesh, centred on the mount
+         in y and z. Derived from the mesh bounding box, not from CAD datums,
+         so treat it as accurate to a couple of millimetres until confirmed. -->
+    <joint name="tool_mount_to_tool0" type="fixed">
+      <parent link="tool_mount_link"/>
+      <child link="tool0"/>
+      <origin xyz="0.0322 -0.01155 0.0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="tool0"/>
+
+  </xacro:macro>
+
+</robot>

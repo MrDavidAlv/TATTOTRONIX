@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    Gazebo Sim (Fortress) specifics: the ros2_control system plugin and the
+    per-link surface properties.
+
+    Friction is deliberately high on the tool links. A tattoo pen that slides
+    across the contact patch is worse than one that sticks, and the contact we
+    care about is a needle held against skin, not a wheel.
+  -->
+
+  <xacro:macro name="tattotronix_gazebo" params="controllers_file">
+
+    <gazebo>
+      <plugin filename="gz_ros2_control-system"
+              name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>${controllers_file}</parameters>
+      </plugin>
+    </gazebo>
+
+    <xacro:macro name="gz_link_surface" params="link mu">
+      <gazebo reference="${link}">
+        <mu1>${mu}</mu1>
+        <mu2>${mu}</mu2>
+        <self_collide>false</self_collide>
+      </gazebo>
+    </xacro:macro>
+
+    <xacro:gz_link_surface link="base_link" mu="1.0"/>
+    <xacro:gz_link_surface link="shoulder_link" mu="0.6"/>
+    <xacro:gz_link_surface link="upper_arm_link" mu="0.6"/>
+    <xacro:gz_link_surface link="forearm_link" mu="0.6"/>
+    <xacro:gz_link_surface link="wrist_link" mu="0.6"/>
+    <xacro:gz_link_surface link="tool_mount_link" mu="0.9"/>
+
+  </xacro:macro>
+
+</robot>

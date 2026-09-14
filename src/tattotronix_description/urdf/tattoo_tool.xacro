@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find tattotronix_description)/urdf/inertial_macros.xacro"/>
+  <xacro:include filename="$(find tattotronix_description)/urdf/materials.xacro"/>
+
+  <!--
+    Rotary tattoo pen mounted on tool0.
+
+    There is no CAD for the pen yet, so it is built from primitives sized to a
+    standard rotary machine: a 105 mm barrel of 25 mm diameter, a 30 mm tapered
+    grip, and the needle protruding past it. The frame that matters downstream
+    is tattoo_tcp, which sits at the needle tip with +z pointing along the
+    needle, into the skin. Every tattoo path is planned for that frame, so when
+    the real pen is measured only the offsets in this file change.
+  -->
+
+  <xacro:macro name="tattoo_tool" params="parent">
+
+    <xacro:property name="barrel_length" value="0.105"/>
+    <xacro:property name="barrel_radius" value="0.0125"/>
+    <xacro:property name="grip_length" value="0.030"/>
+    <xacro:property name="grip_radius" value="0.006"/>
+    <xacro:property name="needle_length" value="0.008"/>
+    <xacro:property name="needle_radius" value="0.0006"/>
+
+    <joint name="tool0_to_tattoo_pen" type="fixed">
+      <parent link="${parent}"/>
+      <child link="tattoo_pen_link"/>
+      <!-- The pen points along the flange +x axis, barrel base on the flange. -->
+      <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+    </joint>
+
+    <link name="tattoo_pen_link">
+      <visual>
+        <origin xyz="0 0 ${barrel_length/2}" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${barrel_radius}" length="${barrel_length}"/>
+        </geometry>
+        <material name="tattotronix_ink"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${barrel_length/2}" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${barrel_radius}" length="${barrel_length}"/>
+        </geometry>
+      </collision>
+      <xacro:inertial_cylinder mass="0.150" radius="${barrel_radius}" length="${barrel_length}">
+        <origin xyz="0 0 ${barrel_length/2}" rpy="0 0 0"/>
+      </xacro:inertial_cylinder>
+    </link>
+
+    <joint name="tattoo_pen_to_grip" type="fixed">
+      <parent link="tattoo_pen_link"/>
+      <child link="tattoo_grip_link"/>
+      <origin xyz="0 0 ${barrel_length}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="tattoo_grip_link">
+      <visual>
+        <origin xyz="0 0 ${grip_length/2}" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${grip_radius}" length="${grip_length}"/>
+        </geometry>
+        <material name="tattotronix_steel"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${grip_length/2}" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${grip_radius}" length="${grip_length}"/>
+        </geometry>
+      </collision>
+      <xacro:inertial_cylinder mass="0.030" radius="${grip_radius}" length="${grip_length}">
+        <origin xyz="0 0 ${grip_length/2}" rpy="0 0 0"/>
+      </xacro:inertial_cylinder>
+    </link>
+
+    <!-- The needle is visual only. Giving it collision geometry would make the
+         contact solver fight a 0.6 mm cylinder every step for no benefit; skin
+         contact is modelled at the TCP, not by the mesh. -->
+    <joint name="tattoo_grip_to_needle" type="fixed">
+      <parent link="tattoo_grip_link"/>
+      <child link="tattoo_needle_link"/>
+      <origin xyz="0 0 ${grip_length}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="tattoo_needle_link">
+      <visual>
+        <origin xyz="0 0 ${needle_length/2}" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${needle_radius}" length="${needle_length}"/>
+        </geometry>
+        <material name="tattotronix_accent"/>
+      </visual>
+      <inertial>
+        <origin xyz="0 0 ${needle_length/2}" rpy="0 0 0"/>
+        <mass value="0.001"/>
+        <inertia ixx="1e-8" ixy="0.0" ixz="0.0" iyy="1e-8" iyz="0.0" izz="1e-8"/>
+      </inertial>
+    </link>
+
+    <!-- Tool centre point: needle tip, +z along the needle. -->
+    <joint name="tattoo_needle_to_tcp" type="fixed">
+      <parent link="tattoo_needle_link"/>
+      <child link="tattoo_tcp"/>
+      <origin xyz="0 0 ${needle_length}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="tattoo_tcp"/>
+
+  </xacro:macro>
+
+</robot>

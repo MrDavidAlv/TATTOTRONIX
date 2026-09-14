@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="tattotronix">
+
+  <!--
+    TATTOTRONIX: 5 DOF manipulator, ROS 2 Humble.
+
+    Built to hold a tattoo pen, but nothing below the tool flange knows that.
+    Swap the tool argument and the same arm carries a different end effector.
+
+    Arguments
+      hardware          gz | mock | none
+                        'none' leaves ros2_control out entirely, which is what
+                        display.launch.py wants: a description RViz can render
+                        with joint_state_publisher_gui and no controller stack.
+      tool              tattoo | none
+      controllers_file  absolute path to the controller manager YAML, read by
+                        the Gazebo plugin. Only consulted when hardware=gz.
+      use_world_link    true bolts base_link to a world link, which is how the
+                        arm is anchored in simulation. Set false when the
+                        description is embedded in a larger cell.
+  -->
+
+  <xacro:arg name="hardware" default="none"/>
+  <xacro:arg name="tool" default="tattoo"/>
+  <xacro:arg name="controllers_file" default=""/>
+  <xacro:arg name="use_world_link" default="true"/>
+
+  <xacro:property name="hardware" value="$(arg hardware)"/>
+  <xacro:property name="tool" value="$(arg tool)"/>
+  <xacro:property name="use_world_link" value="$(arg use_world_link)"/>
+
+  <xacro:include filename="$(find tattotronix_description)/urdf/arm_macro.xacro"/>
+  <xacro:include filename="$(find tattotronix_description)/urdf/tattoo_tool.xacro"/>
+  <xacro:include filename="$(find tattotronix_description)/urdf/tattotronix.ros2_control.xacro"/>
+  <xacro:include filename="$(find tattotronix_description)/urdf/tattotronix.gazebo.xacro"/>
+
+  <!-- Anchor. The ROS 1 description referenced a world link it never declared,
+       so the tree had a dangling parent and only loaded because nothing
+       validated it. -->
+  <xacro:if value="${use_world_link}">
+    <link name="world"/>
+    <xacro:tattotronix_arm parent="world">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:tattotronix_arm>
+  </xacro:if>
+
+  <xacro:unless value="${use_world_link}">
+    <link name="base_footprint"/>
+    <xacro:tattotronix_arm parent="base_footprint">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:tattotronix_arm>
+  </xacro:unless>
+
+  <xacro:if value="${tool == 'tattoo'}">
+    <xacro:tattoo_tool parent="tool0"/>
+  </xacro:if>
+
+  <xacro:unless value="${hardware == 'none'}">
+    <xacro:tattotronix_ros2_control name="tattotronix_system" hardware="${hardware}"/>
+  </xacro:unless>
+
+  <xacro:if value="${hardware == 'gz'}">
+    <xacro:tattotronix_gazebo controllers_file="$(arg controllers_file)"/>
+  </xacro:if>
+
+</robot>
