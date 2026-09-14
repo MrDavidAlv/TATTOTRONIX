@@ -4,7 +4,7 @@
   <name>tattotronix_description</name>
   <version>1.0.0</version>
   <description>URDF/xacro description and meshes for the TATTOTRONIX 5 DOF manipulator</description>
-  <maintainer email="davidalvarezzzzzzzz@gmail.com">Mario David Alvarez Vallejo</maintainer>
+  <maintainer email="ing.marioalvarezvallejo@gmail.com">Mario David Alvarez Vallejo</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

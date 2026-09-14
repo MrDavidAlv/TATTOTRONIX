@@ -1,0 +1,60 @@
+# ros2_control controller manager configuration for the TATTOTRONIX arm.
+#
+# Read by the Gazebo Sim plugin in simulation and by ros2_control_node on
+# hardware, so the controller set is identical in both. Anything that differs
+# between the two belongs in the hardware interface, not here.
+
+controller_manager:
+  ros__parameters:
+    # 200 Hz. A tattoo needle follows a contour at a few millimetres per
+    # second; the control rate is set by how finely the path is sampled, not
+    # by how fast the arm moves. 5 ms leaves headroom for the trajectory
+    # interpolation without loading the simulator.
+    update_rate: 200
+    use_sim_time: true
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+joint_state_broadcaster:
+  ros__parameters:
+    use_sim_time: true
+
+arm_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - joint_1
+      - joint_2
+      - joint_3
+      - joint_4
+      - joint_5
+
+    # Position commands only. The description exposes no velocity or effort
+    # command interface, and claiming one that does not exist makes the
+    # controller fail to activate rather than degrade.
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+
+    # A partial goal would leave the unnamed joints wherever they happen to
+    # be. For an arm holding a needle that is never what the caller meant.
+    allow_partial_joints_goal: false
+    open_loop_control: false
+
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      goal_time: 0.5
+      joint_1: {trajectory: 0.1, goal: 0.02}
+      joint_2: {trajectory: 0.1, goal: 0.02}
+      joint_3: {trajectory: 0.1, goal: 0.02}
+      joint_4: {trajectory: 0.1, goal: 0.02}
+      joint_5: {trajectory: 0.1, goal: 0.02}
