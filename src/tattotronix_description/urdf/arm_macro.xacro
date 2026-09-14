@@ -53,7 +53,7 @@
 
   <xacro:macro name="tattotronix_arm" params="parent *origin">
 
-    <!-- base ---------------------------------------------------------------->
+    <!-- base -->
     <joint name="base_mount" type="fixed">
       <parent link="${parent}"/>
       <child link="base_link"/>
@@ -64,7 +64,7 @@
         cx="-0.03125" cy="-0.0013" cz="0.02435"
         sx="0.1575" sy="0.0950" sz="0.0485"/>
 
-    <!-- joint 1: base yaw ---------------------------------------------------->
+    <!-- joint 1: base yaw -->
     <joint name="joint_1" type="revolute">
       <parent link="base_link"/>
       <child link="shoulder_link"/>
@@ -78,7 +78,7 @@
         cx="0.00075" cy="0.0" cz="0.03455"
         sx="0.0945" sy="0.1251" sz="0.0667"/>
 
-    <!-- joint 2: shoulder pitch ---------------------------------------------->
+    <!-- joint 2: shoulder pitch -->
     <joint name="joint_2" type="revolute">
       <parent link="shoulder_link"/>
       <child link="upper_arm_link"/>
@@ -92,7 +92,7 @@
         cx="0.0" cy="-0.00255" cz="0.0567"
         sx="0.0390" sy="0.0461" sz="0.1522"/>
 
-    <!-- joint 3: elbow pitch ------------------------------------------------->
+    <!-- joint 3: elbow pitch -->
     <joint name="joint_3" type="revolute">
       <parent link="upper_arm_link"/>
       <child link="forearm_link"/>
@@ -106,7 +106,7 @@
         cx="-0.0109" cy="-0.0230" cz="0.0330"
         sx="0.0670" sy="0.0460" sz="0.0910"/>
 
-    <!-- joint 4: wrist roll -------------------------------------------------->
+    <!-- joint 4: wrist roll -->
     <joint name="joint_4" type="revolute">
       <parent link="forearm_link"/>
       <child link="wrist_link"/>
@@ -120,7 +120,7 @@
         cx="0.08525" cy="0.00915" cz="-0.00005"
         sx="0.1705" sy="0.0569" sz="0.0364"/>
 
-    <!-- joint 5: wrist pitch ------------------------------------------------->
+    <!-- joint 5: wrist pitch -->
     <joint name="joint_5" type="revolute">
       <parent link="wrist_link"/>
       <child link="tool_mount_link"/>
@@ -134,7 +134,7 @@
         cx="0.0076" cy="-0.01155" cz="-0.0037"
         sx="0.0492" sy="0.0231" sz="0.0414"/>
 
-    <!-- tool flange ----------------------------------------------------------
+    <!-- tool flange.
          tool0 is the industrial flange frame every end effector attaches to.
          It sits on the far face of the tool mount mesh, centred on the mount
          in y and z. Derived from the mesh bounding box, not from CAD datums,

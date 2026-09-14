@@ -29,10 +29,13 @@
   <xacro:property name="tool" value="$(arg tool)"/>
   <xacro:property name="use_world_link" value="$(arg use_world_link)"/>
 
+  <xacro:include filename="$(find tattotronix_description)/urdf/materials.xacro"/>
   <xacro:include filename="$(find tattotronix_description)/urdf/arm_macro.xacro"/>
   <xacro:include filename="$(find tattotronix_description)/urdf/tattoo_tool.xacro"/>
   <xacro:include filename="$(find tattotronix_description)/urdf/tattotronix.ros2_control.xacro"/>
   <xacro:include filename="$(find tattotronix_description)/urdf/tattotronix.gazebo.xacro"/>
+
+  <xacro:tattotronix_materials/>
 
   <!-- Anchor. The ROS 1 description referenced a world link it never declared,
        so the tree had a dangling parent and only loaded because nothing
