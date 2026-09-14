@@ -127,5 +127,129 @@
       </link>
     </model>
 
+
+    <!--
+      GUI layout. Fortress drops every default plugin as soon as a world
+      declares a <gui> block, so the standard set is listed explicitly. The
+      reason to declare it at all is camera_pose: the default camera sits at
+      the origin looking down the world +x axis, which for a 400 mm arm on a
+      750 mm bench frames the underside of the bench. This puts the arm and
+      the work surface in shot the moment the world opens.
+    -->
+    <gui fullscreen="0">
+
+      <plugin filename="MinimalScene" name="3D View">
+        <ignition-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </ignition-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.45 0.45 0.50</ambient_light>
+        <background_color>0.12 0.13 0.16</background_color>
+        <camera_pose>0.95 -0.85 1.35 0 0.42 2.33</camera_pose>
+      </plugin>
+
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="SelectEntities" name="Select Entities">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="MarkerManager" name="Marker manager">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="WorldControl" name="World control">
+        <ignition-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </ignition-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+        <use_event>true</use_event>
+      </plugin>
+
+      <plugin filename="WorldStats" name="World stats">
+        <ignition-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">110</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </ignition-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+
+      <plugin filename="EntityTree" name="Entity tree"/>
+
+    </gui>
+
   </world>
 </sdf>

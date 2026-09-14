@@ -50,8 +50,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'tool',
-            default_value='tattoo',
-            description='End effector mounted on tool0: tattoo | none',
+            default_value='none',
+            description=(
+                'End effector mounted on tool0: none | tattoo. none is the CAD '
+                'as exported; tattoo adds the placeholder pen, which is sized '
+                'from a catalogue rotary machine rather than measured'
+            ),
         ),
         DeclareLaunchArgument(
             'use_rviz',
