@@ -145,18 +145,19 @@
          tool0 is the frame every end effector attaches to, and its +z axis is
          the tool axis, so a tool mounts with no rotation of its own.
 
-         It is placed on the servo axis rather than guessed: the bracket's two
-         clamp faces lie at y = -6.0 mm and y = -18.0 mm and share a centroid
-         near x = 5 mm, and the part is symmetric about z = 0, which fixes the
-         shaft line. tool0 sits where that line leaves the outer face of the
-         bracket, y = -23.1 mm, with +z pointing away from the arm.
+         Its position is measured off the bracket. The clamp arms end at
+         y = -18.0 mm and the only material beyond them, on the outer face, is
+         a tab spanning x = 26.0 to 29.0 mm and z = -3.6 to 14.6 mm, reaching
+         y = -23.1 mm. tool0 sits at the centre of that tab with +z pointing
+         away from the arm, which is the one place on that face a tool has
+         anything to bolt to.
 
-         Read off the mesh, not off CAD datums. Expect it to move by a
-         millimetre or two once the bracket is measured. -->
+         Read off the mesh, not off CAD datums, and the pen the tab actually
+         carries has not been built yet. Expect this to move once it is. -->
     <joint name="tool_mount_to_tool0" type="fixed">
       <parent link="tool_mount_link"/>
       <child link="tool0"/>
-      <origin xyz="0.005 -0.0231 0" rpy="${pi/2} 0 0"/>
+      <origin xyz="0.0275 -0.0231 0.0055" rpy="${pi/2} 0 0"/>
     </joint>
 
     <link name="tool0"/>
