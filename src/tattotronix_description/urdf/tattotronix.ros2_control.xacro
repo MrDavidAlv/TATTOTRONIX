@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    ros2_control hardware description.
+
+    One <ros2_control> block serves every backend; only the plugin swaps.
+      gz    -> gz_ros2_control/GazeboSimSystem, driven by Gazebo Sim (Fortress)
+      mock  -> mock_components/GenericSystem, for testing controllers and
+               MoveIt with no simulator and no hardware attached
+    The real driver is not written yet. The launch files validate the argument
+    before they call xacro, so an unknown backend is rejected there rather than
+    producing a description that silently controls nothing.
+  -->
+
+  <xacro:macro name="tattotronix_ros2_control" params="name hardware">
+
+    <ros2_control name="${name}" type="system">
+
+      <xacro:if value="${hardware == 'gz'}">
+        <hardware>
+          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </hardware>
+      </xacro:if>
+
+      <xacro:if value="${hardware == 'mock'}">
+        <hardware>
+          <plugin>mock_components/GenericSystem</plugin>
+          <param name="mock_sensor_commands">false</param>
+          <param name="state_following_offset">0.0</param>
+        </hardware>
+      </xacro:if>
+
+      <xacro:macro name="controlled_joint" params="name initial_position">
+        <joint name="${name}">
+          <command_interface name="position">
+            <param name="min">-1.57</param>
+            <param name="max">1.57</param>
+          </command_interface>
+          <state_interface name="position">
+            <param name="initial_value">${initial_position}</param>
+          </state_interface>
+          <state_interface name="velocity"/>
+          <state_interface name="effort"/>
+        </joint>
+      </xacro:macro>
+
+      <xacro:controlled_joint name="joint_1" initial_position="0.0"/>
+      <xacro:controlled_joint name="joint_2" initial_position="0.0"/>
+      <xacro:controlled_joint name="joint_3" initial_position="0.0"/>
+      <xacro:controlled_joint name="joint_4" initial_position="0.0"/>
+      <xacro:controlled_joint name="joint_5" initial_position="0.0"/>
+
+    </ros2_control>
+
+  </xacro:macro>
+
+</robot>

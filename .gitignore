@@ -1,0 +1,45 @@
+# colcon build artifacts
+build/
+install/
+log/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Editors
+*.swp
+*.swo
+*.bak
+*~
+.vscode/
+.idea/
+
+# Virtual environments
+.env
+.venv/
+venv/
+
+# Test and coverage output
+.pytest_cache/
+coverage/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Tool output
+colcon.meta
+*.log
+
+# Internal development notebook, not published
+DEVELOPMENT.md
+docs/dev/

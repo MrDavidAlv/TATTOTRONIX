@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find tattotronix_description)/urdf/materials.xacro"/>
+
+  <!--
+    Tattoo pen: one thin cylinder along the tool axis, and the frame at its tip.
+
+    Deliberately the simplest shape that can carry a TCP. The pen has not been
+    built, so any detail here would be invention dressed up as hardware, and a
+    detailed placeholder is worse than an obvious one: it invites people to
+    measure off it. What this has to get right is the axis and the tip, because
+    those are what tattoo paths are planned against, and both are replaceable
+    by editing two numbers when the real pen is measured.
+
+    The frame to plan in is tattoo_tcp, at the tip, +z pointing along the pen
+    and into the work.
+  -->
+
+  <xacro:macro name="tattoo_tool" params="parent length:=0.045 radius:=0.003">
+
+    <joint name="tool0_to_tattoo_pen" type="fixed">
+      <parent link="${parent}"/>
+      <child link="tattoo_pen_link"/>
+      <!-- No rotation: tool0 already defines +z as the tool axis. -->
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="tattoo_pen_link">
+      <visual>
+        <origin xyz="0 0 ${length/2}" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${radius}" length="${length}"/>
+        </geometry>
+        <material name="tattotronix_ink"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${length/2}" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${radius}" length="${length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 ${length/2}" rpy="0 0 0"/>
+        <mass value="0.020"/>
+        <inertia ixx="${0.020 * (3.0*radius*radius + length*length) / 12.0}" ixy="0.0" ixz="0.0"
+                 iyy="${0.020 * (3.0*radius*radius + length*length) / 12.0}" iyz="0.0"
+                 izz="${0.020 * radius * radius / 2.0}"/>
+      </inertial>
+    </link>
+
+    <joint name="tattoo_pen_to_tcp" type="fixed">
+      <parent link="tattoo_pen_link"/>
+      <child link="tattoo_tcp"/>
+      <origin xyz="0 0 ${length}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="tattoo_tcp"/>
+
+  </xacro:macro>
+
+</robot>
