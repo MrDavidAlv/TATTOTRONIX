@@ -11,8 +11,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
-                            RegisterEventHandler)
+from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
+                            IncludeLaunchDescription, RegisterEventHandler)
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -61,6 +61,7 @@ def generate_launch_description():
     )
 
     world = LaunchConfiguration('world')
+    world_name = LaunchConfiguration('world_name')
     tool = LaunchConfiguration('tool')
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
@@ -90,6 +91,14 @@ def generate_launch_description():
             'headless',
             default_value='false',
             description='Run the Gazebo server without the GUI, for CI and tests',
+        ),
+        DeclareLaunchArgument(
+            'world_name',
+            default_value='studio',
+            description=(
+                'Name of the world inside the SDF. Used to address the Gazebo '
+                'control service; change it together with world'
+            ),
         ),
         DeclareLaunchArgument(
             'spawn_z',
@@ -173,6 +182,25 @@ def generate_launch_description():
         arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock'],
     )
 
+    # Make sure the world is running before anything asks the controller
+    # manager to switch controllers.
+    #
+    # gz_args already carries -r, but the GUI's WorldControl plugin publishes
+    # its own run state at startup and can win that race, leaving the world
+    # paused. A paused world does not tick, a controller manager that does not
+    # tick never completes a switch, and the spawners fail on a five second
+    # timeout that is not theirs to configure. The failure reads as a broken
+    # controller when the simulator is simply standing still.
+    unpause = ExecuteProcess(
+        cmd=['ign', 'service',
+             '-s', ['/world/', world_name, '/control'],
+             '--reqtype', 'ignition.msgs.WorldControl',
+             '--reptype', 'ignition.msgs.Boolean',
+             '--timeout', '5000',
+             '--req', 'pause: false'],
+        output='screen',
+    )
+
     controllers = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_control, 'launch', 'controllers.launch.py')
@@ -182,7 +210,11 @@ def generate_launch_description():
     # The controller manager only exists once the model carrying the plugin is
     # in the world, so the spawners wait for the spawn process to finish.
     controllers_after_spawn = RegisterEventHandler(
-        OnProcessExit(target_action=spawn_robot, on_exit=[controllers])
+        OnProcessExit(target_action=spawn_robot, on_exit=[unpause])
+    )
+
+    controllers_after_unpause = RegisterEventHandler(
+        OnProcessExit(target_action=unpause, on_exit=[controllers])
     )
 
     rviz2 = Node(
@@ -202,5 +234,6 @@ def generate_launch_description():
         clock_bridge,
         spawn_robot,
         controllers_after_spawn,
+        controllers_after_unpause,
         rviz2,
     ])
