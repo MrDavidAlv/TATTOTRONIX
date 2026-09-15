@@ -90,6 +90,16 @@ def solve_path(chain, P):
     return Q, conv, res
 
 
+# How wide the mark is drawn on the panel.
+#
+# The smallest singular value of the task Jacobian along the path turns out to
+# depend only on how far the arm reaches in +x, which is dx + width/2: 120 mm
+# centred and 150 mm offset by 15 give the same 0.0484 because both reach
+# 75 mm. It falls as the drawing moves out, so the mark stays centred, and 150
+# on a 200 mm panel is the largest size that keeps the condition number in the
+# thirties.
+LOGO_WIDTH_MM = 150.0
+
 TUNE_WN = 20.0      # loop bandwidth the cached run is tuned at, rad/s
 
 
@@ -167,7 +177,7 @@ def main():
             "panel_mu": mu, "panel_margin": margin}
 
     print("toolpath...")
-    mask, grid = rp.placeholder_mask()
+    mask, grid = rp.ros_logo_mask(LOGO_WIDTH_MM)
     P_mm, kind = rp.toolpath(mask, grid)
     Pw = path_to_world(P_mm)
     t = time_parameterise(Pw, kind)

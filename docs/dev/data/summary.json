@@ -4,42 +4,42 @@
     -9.44,
     245.58
   ],
-  "path_points": 1960,
-  "path_time_s": 209.74065043309918,
-  "path_marked_mm": 1190.4548824115427,
-  "path_travel_mm": 679.8902018706867,
+  "path_points": 4372,
+  "path_time_s": 469.5771598703112,
+  "path_marked_mm": 2507.3251268308995,
+  "path_travel_mm": 3101.378323908155,
   "ik_converged_pct": 100.0,
-  "ik_worst_residual": 9.997213374697182e-07,
+  "ik_worst_residual": 9.998239593175447e-07,
   "panel_reachable_pct": 98.41897233201581,
-  "mu_path_min": 0.0014678373648739091,
-  "mu_path_max": 0.003093502171398865,
+  "mu_path_min": 0.000621439744824074,
+  "mu_path_max": 0.0036558903078221525,
   "Kp": [
-    33.5922,
-    19.3515,
-    5.6985,
-    0.2538,
-    0.0958
+    33.1002,
+    19.3818,
+    5.7488,
+    0.2532,
+    0.0957
   ],
   "Ki": [
-    223.948,
-    129.0102,
-    37.9897,
-    1.6917,
-    0.6384
+    220.6677,
+    129.2121,
+    38.3253,
+    1.6879,
+    0.6379
   ],
   "Kd": [
-    1.67961,
-    0.96758,
-    0.28492,
-    0.01269,
-    0.00479
+    1.65501,
+    0.96909,
+    0.28744,
+    0.01266,
+    0.00478
   ],
-  "cart_err_marking_settled_mean_um": 164.53771911634172,
-  "cart_err_marking_settled_max_um": 4153.282534828643,
-  "cart_err_marking_mean_um": 312.63495546912327,
-  "cart_err_marking_max_um": 8489.455542765903,
-  "cart_err_travel_mean_um": 3566.2587667783223,
-  "cart_err_travel_max_um": 9361.875844667886,
-  "tau_peak_Nm": 1.4583528795828633,
-  "grav_peak_Nm": 1.5854118654508413
+  "cart_err_marking_settled_mean_um": 131.6775522041277,
+  "cart_err_marking_settled_max_um": 2716.573983010007,
+  "cart_err_marking_mean_um": 265.47975041130184,
+  "cart_err_marking_max_um": 7639.063831504147,
+  "cart_err_travel_mean_um": 3219.0953129998065,
+  "cart_err_travel_max_um": 8402.067630052667,
+  "tau_peak_Nm": 0.9792119612847129,
+  "grav_peak_Nm": 1.9127739606890284
 }

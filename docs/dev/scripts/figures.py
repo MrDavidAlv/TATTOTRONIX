@@ -183,7 +183,10 @@ def fig_panel():
 def fig_toolpath():
     P, kind = D["path_mm"], D["path_kind"]
     mask, xs, ys = D["mask"], D["mask_xs"], D["mask_ys"]
-    fig, axes = plt.subplots(1, 2, figsize=(10.2, 5.0))
+    # The mark is nearly four times wider than it is tall, so the two views
+    # stack. Side by side, `aspect="equal"` pads each one with more empty space
+    # than drawing.
+    fig, axes = plt.subplots(2, 1, figsize=(10.2, 5.4), sharex=True)
 
     axes[0].imshow(mask, origin="upper", extent=[xs[0], xs[-1], ys[-1], ys[0]],
                    cmap="gray_r", alpha=0.16, aspect="equal")
@@ -201,13 +204,16 @@ def fig_toolpath():
     axes[1].set_title("travel, needle clear", fontsize=10, loc="left", pad=8)
 
     for ax in axes:
-        ax.set_aspect("equal"); ax.set_xlabel("u  [mm]"); ax.set_ylabel("v  [mm]")
+        ax.set_aspect("equal"); ax.set_ylabel("v  [mm]")
         grid_on(ax)
+    axes[1].set_xlabel("u  [mm]")
     marked, travel = rp.lengths(P, kind)
+    entries = int(((kind[:-1] == 0) & (kind[1:] == 1)).sum())
     finish(fig, "04_toolpath.png", "Toolpath over the artwork",
-           f"Boundary pass then boustrophedon fill at a {rp.STROKE_PITCH:g} mm stroke pitch. "
-           f"{marked:.0f} mm marked, {travel:.0f} mm travelled. "
-           "The artwork is a stand-in lattice, not the ROS logo.")
+           f"The official ROS logo, rasterised from the SVG. Boundary pass then boustrophedon "
+           f"fill at a {rp.STROKE_PITCH:g} mm stroke pitch: {marked:.0f} mm marked against "
+           f"{travel:.0f} mm travelled, over {entries} separate needle entries. Every scanline "
+           "that meets a counter has to lift and re-enter, which is where the travel goes.")
 
 
 # --- 5. joint trajectories ---------------------------------------------------
@@ -337,7 +343,7 @@ def fig_tracking():
     axes[1].set_ylabel("commanded torque  [N m]"); axes[1].set_xlabel("time  [s]")
     axes[1].legend(ncol=5, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, 1.22))
     grid_on(axes[1], "y")
-    finish(fig, "09_tracking.png", "Following the path with PID and gravity feedforward",
+    finish(fig, "09_tracking.png", "Following the logo with PID and gravity feedforward",
            f"Once settled the tip holds {err[settled].mean():.0f} um against a 300 um line. "
            f"Travel sits at {err[~down].mean():.0f} um because the velocity lag scales with feed, "
            f"and the needle enters the work still {err[down].max():.0f} um out because nothing "
