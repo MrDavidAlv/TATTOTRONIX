@@ -132,6 +132,12 @@ pass, which doubled cycle time and would have stippled every edge.
 <img src="../figures/04_toolpath.png" width="900"/>
 </div>
 
+<div align="center">
+<img src="../figures/drawing.gif" width="900"/>
+<br/>
+<sub>The same path, run. 537 s compressed into 24.</sub>
+</div>
+
 | Parameter | Value | Reason |
 |---|---|---|
 | Stroke pitch | 1.2 mm | Overlap on a ~0.3 mm line |

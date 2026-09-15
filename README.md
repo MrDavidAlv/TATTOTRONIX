@@ -1,7 +1,12 @@
 # TATTOTRONIX 5 DOF Tattoo Manipulator
 
 <div align="center">
-<img src="docs/images/rviz_display.png" width="85%"/>
+<img src="docs/figures/drawing.gif" width="92%"/>
+<br/>
+<sub>The arm drawing the official ROS logo: 150 mm wide, 2507 mm of marked path
+over 98 needle entries, 537 s compressed into 24. Rendered from the solved
+trajectory by <a href="docs/scripts/render_drawing.py">render_drawing.py</a> —
+<a href="docs/figures/drawing.mp4">MP4</a>.</sub>
 </div>
 
 </br>
@@ -108,6 +113,22 @@ away from the robot. The full write-up lives in
 | <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 2.3 mm to 179 µm. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
+### Watching it draw
+
+The whole chain is solved offline and exported to the control package, so the
+arm in simulation follows the same trajectory every number here was measured
+against:
+
+```bash
+ros2 launch tattotronix_gazebo draw_logo.launch.py
+```
+
+The ink appears in RViz on `/logo_trace`. Nothing in Gazebo leaves a mark when a
+tool passes over a surface, so without that marker the arm moves for nine
+minutes and nothing appears. The marker draws the *commanded* path; how closely
+the loop follows it is [measured separately](docs/mathematical-model/control.md),
+on the full non-linear plant.
+
 ### Reproducing
 
 ```bash
@@ -117,6 +138,8 @@ python3 docs/scripts/analysis.py  # ~15 min, writes docs/data/analysis.npz
 python3 docs/scripts/control_study.py    # ~30 min
 python3 docs/scripts/approach_study.py   # ~15 min
 python3 docs/scripts/figures.py   # writes docs/figures/*.png
+python3 docs/scripts/export_trajectory.py   # trajectory for the draw_logo node
+python3 docs/scripts/render_drawing.py      # the animation at the top
 python3 docs/scripts/check_docs.py       # certifies the documents against the data
 ```
 
