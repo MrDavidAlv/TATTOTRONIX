@@ -39,3 +39,7 @@ Thumbs.db
 # Tool output
 colcon.meta
 *.log
+
+# Internal development notebook, not published
+DEVELOPMENT.md
+docs/dev/
