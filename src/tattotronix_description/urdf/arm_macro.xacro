@@ -30,14 +30,14 @@
   <xacro:property name="joint_damping" value="0.5"/>
   <xacro:property name="joint_friction" value="0.1"/>
 
-  <xacro:macro name="tattotronix_link" params="name mass cx cy cz sx sy sz">
+  <xacro:macro name="tattotronix_link" params="name mass cx cy cz sx sy sz material:=tattotronix_shell">
     <link name="${name}">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="${mesh_path}/visual/${name}.stl" scale="${mesh_scale}"/>
         </geometry>
-        <material name="tattotronix_graphite"/>
+        <material name="${material}"/>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -132,12 +132,13 @@
 
     <!-- Tool mount: a bracket carrying a continuous-rotation SG90.
          Two clamp arms face each other across a 12.0 mm gap, the body width of
-         an SG90, so the servo sits between them with its output shaft on the
-         bracket's y axis. The mesh is symmetric about z = 0, which puts that
-         shaft on the z = 0 plane. What the servo drives is not settled, so
+         an SG90, so the servo sits between them. Their common mid plane is
+         y = -12.06 mm, and every turned feature at the far end of the bracket
+         is centred on it. What the servo drives is not settled, so
          nothing here actuates: the tool attaches through a fixed joint and the
          axis is recorded, not moved. -->
     <xacro:tattotronix_link name="tool_mount_link" mass="0.15"
+        material="tattotronix_steel"
         cx="0.0108" cy="-0.0115" cz="0.0"
         sx="0.0365" sy="0.0231" sz="0.0330"/>
 
@@ -145,19 +146,34 @@
          tool0 is the frame every end effector attaches to, and its +z axis is
          the tool axis, so a tool mounts with no rotation of its own.
 
-         Its position is measured off the bracket. The clamp arms end at
-         y = -18.0 mm and the only material beyond them, on the outer face, is
-         a tab spanning x = 26.0 to 29.0 mm and z = -3.6 to 14.6 mm, reaching
-         y = -23.1 mm. tool0 sits at the centre of that tab with +z pointing
-         away from the arm, which is the one place on that face a tool has
-         anything to bolt to.
+         The tool axis is the bracket's own +x, and the line it runs along is
+         the middle of the three holes on the outer face, measured off the
+         mesh:
 
-         Read off the mesh, not off CAD datums, and the pen the tab actually
-         carries has not been built yet. Expect this to move once it is. -->
+           y = -12.064 mm, z = +5.489 mm
+
+         The bracket has two sets of three holes and they are easy to confuse.
+         The set bored along y, radius 1.50 mm at x = 0 and z = -8, 0 and
+         +8 mm, goes through the 3 mm back plate: that is how the bracket bolts
+         down, and it carries nothing. The set that matters is bored along x
+         through the outer face, radius 1.50 mm, on a straight line at 8.00 mm
+         pitch: (-5.203, +9.603), (-12.064, +5.489), (-18.925, +1.375).
+
+         The middle one is the shaft. Behind it the face opens into a stepped
+         boss of radius 2.50, 3.00 and 4.00 mm running back to x = 21.5 mm, all
+         four cylinders concentric to within 5 um, which is a bearing seat and
+         not a bolt hole. It also sits on the clamp mid plane, y = -12.06 mm,
+         and on the midpoint of its two neighbours. Three independent readings
+         of the same line.
+
+         x = 29.0 mm puts the origin on that outer face, so the tool starts
+         where the part ends.
+
+         Read off the mesh, not off CAD datums. -->
     <joint name="tool_mount_to_tool0" type="fixed">
       <parent link="tool_mount_link"/>
       <child link="tool0"/>
-      <origin xyz="0.0275 -0.0231 0.0055" rpy="${pi/2} 0 0"/>
+      <origin xyz="0.029 -0.012064 0.005489" rpy="0 ${pi/2} 0"/>
     </joint>
 
     <link name="tool0"/>
