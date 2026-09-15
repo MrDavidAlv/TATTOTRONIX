@@ -7,8 +7,9 @@ notice.
 
 This checks the headline claims of docs/mathematical-model/ and the README
 against docs/data/*.json, and fails if any of them no longer matches. It also
-checks that every local link and image reference resolves, and that every
-heading anchor a document links to exists.
+checks that every local link and image reference resolves, that every heading
+anchor a document links to exists, and that the paths the scripts compute for
+themselves still land inside the repository.
 
     python3 docs/scripts/check_docs.py
 """
@@ -24,15 +25,20 @@ DATA = ROOT / "docs" / "data"
 DOCS = [ROOT / "README.md"] + sorted((ROOT / "docs" / "mathematical-model").glob("*.md"))
 
 
-def _spellings(x, nd=0, unit=""):
+def _spellings(x, unit="", decimals=(0, 1)):
     """Every way the documents are allowed to write one number.
 
-    Thousands appear both bare and space separated across the documents, and
-    which one reads better depends on the sentence. The check is about the value
-    being current, not about typography, so it accepts either.
+    Thousands appear both bare and space separated, and a value is written to
+    zero or one decimal depending on whether the sentence is about its precision.
+    The check is about the value being current, not about typography, so it
+    accepts any of those spellings and none of the wrong ones.
     """
-    plain = f"{x:,.{nd}f}"
-    return {plain.replace(",", "") + unit, plain.replace(",", " ") + unit}
+    out = set()
+    for nd in decimals:
+        plain = f"{x:,.{nd}f}"
+        out.add(plain.replace(",", "") + unit)
+        out.add(plain.replace(",", " ") + unit)
+    return out
 
 
 def claims():
@@ -45,7 +51,7 @@ def claims():
 
     MM = "docs/mathematical-model/"
     out = [
-        ("path points", _spellings(s["path_points"]), [MM + "toolpath.md", MM + "parameters.md"]),
+        ("path points", _spellings(s["path_points"], decimals=(0,)), [MM + "toolpath.md", MM + "parameters.md"]),
         ("marked length", _spellings(s["path_marked_mm"], unit=" mm"),
          [MM + "toolpath.md", "README.md"]),
         ("travel length", _spellings(s["path_travel_mm"], unit=" mm"),
@@ -54,7 +60,8 @@ def claims():
         ("panel reachable", {f'{s["panel_reachable_pct"]:.1f}%'},
          [MM + "kinematics.md", MM + "parameters.md"]),
         ("settled marking, logo start",
-         {f'{s["cart_err_marking_settled_mean_um"]:.1f} µm'}, [MM + "control.md"]),
+         _spellings(s["cart_err_marking_settled_mean_um"], unit=" µm"),
+         [MM + "control.md"]),
         ("worst marking, logo start",
          _spellings(s["cart_err_marking_max_um"], unit=" µm"), [MM + "control.md"]),
         ("pid+g settled, hard window",
@@ -125,14 +132,44 @@ def check_links():
     return bad
 
 
+def check_paths():
+    """Every path the scripts resolve must still point at something.
+
+    Each script finds the repository by counting directories above itself, so
+    moving the scripts silently redirects those paths one level off. Only the
+    ones that read the URDF notice, and only when they are run, which is how a
+    rename shipped with kinematics.py pointing outside the repository.
+    """
+    here = Path(__file__).resolve().parent
+    sys.path.insert(0, str(here))
+    bad = []
+    try:
+        import kinematics
+        if not kinematics.URDF_XACRO.exists():
+            bad.append(f"kinematics.URDF_XACRO does not exist: {kinematics.URDF_XACRO}")
+    except Exception as e:                                    # pragma: no cover
+        bad.append(f"kinematics.py will not import: {e}")
+    for mod, attr in (("rospath", "ARTWORK"), ("analysis", "OUT"),
+                      ("control_study", "OUT"), ("figures", "FIG")):
+        try:
+            m = __import__(mod)
+            d = getattr(m, attr)
+            if not d.parent.is_dir():
+                bad.append(f"{mod}.{attr} is not inside the repository: {d}")
+        except Exception as e:                                # pragma: no cover
+            bad.append(f"{mod}.py will not import: {e}")
+    return bad
+
+
 def main():
-    nums, links = check_numbers(), check_links()
-    for b in nums + links:
+    nums, links, paths = check_numbers(), check_links(), check_paths()
+    for b in nums + links + paths:
         print("  FAIL", b)
     print(f"  {len(claims())} documented numbers, "
           f"{'all match' if not nums else str(len(nums)) + ' stale'}")
     print(f"  links and anchors: {'all resolve' if not links else str(len(links)) + ' broken'}")
-    return 1 if (nums or links) else 0
+    print(f"  script paths:      {'all resolve' if not paths else str(len(paths)) + ' broken'}")
+    return 1 if (nums or links or paths) else 0
 
 
 if __name__ == "__main__":

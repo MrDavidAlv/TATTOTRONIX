@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[2]
 URDF_XACRO = REPO / "src/tattotronix_description/urdf/tattotronix.urdf.xacro"
 
 # The chain the tool rides on, root first.
