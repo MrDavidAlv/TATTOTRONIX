@@ -2,29 +2,38 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!--
-    Shared RViz colours.
+    Shared colours.
 
     Wrapped in a macro rather than declared at file scope on purpose. Both the
     arm and the tool macros include this file, and xacro does not deduplicate
     includes, so file-scope <material> elements would be emitted twice and the
     URDF parser rejects a duplicate material name. The macro is expanded once,
     by the top-level description.
+
+    The arm is light grey because RViz lights a dark model badly: on the dark
+    background the shading collapses and the whole arm reads as one silhouette
+    with no edges. Grey keeps the links separable. The pen stays dark so it is
+    obvious which part of the model is hardware and which is the placeholder.
   -->
 
   <xacro:macro name="tattotronix_materials">
 
-    <material name="tattotronix_graphite">
-      <color rgba="0.18 0.18 0.20 1.0"/>
+    <!-- Printed structure. -->
+    <material name="tattotronix_shell">
+      <color rgba="0.78 0.79 0.81 1.0"/>
     </material>
 
+    <!-- Brackets and fasteners, a shade down so joints read against links. -->
     <material name="tattotronix_steel">
-      <color rgba="0.70 0.72 0.75 1.0"/>
+      <color rgba="0.55 0.57 0.61 1.0"/>
     </material>
 
+    <!-- Tool body. Deliberately the darkest thing in the scene. -->
     <material name="tattotronix_ink">
-      <color rgba="0.05 0.05 0.07 1.0"/>
+      <color rgba="0.13 0.13 0.16 1.0"/>
     </material>
 
+    <!-- Needle, and anything else that has to be found at a glance. -->
     <material name="tattotronix_accent">
       <color rgba="0.85 0.25 0.20 1.0"/>
     </material>
