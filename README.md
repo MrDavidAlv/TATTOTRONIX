@@ -1,1 +1,371 @@
-# TATTOTRONIX
+# TATTOTRONIX 5 DOF Tattoo Manipulator
+
+<div align="center">
+<img src="docs/images/rviz_display.png" width="85%"/>
+</div>
+
+</br>
+
+<div align="center" width="70%">
+
+[![Python](https://img.shields.io/badge/Python-3.10-yellow?logo=python)](#)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu)](#)
+[![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros)](#)
+[![Ignition Fortress](https://img.shields.io/badge/Gazebo-Fortress-orange)](#)
+[![ros2_control](https://img.shields.io/badge/ros2__control-Humble-00599C)](#)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-MrDavidAlv-181717?logo=github)](https://github.com/MrDavidAlv/TATTOTRONIX)
+
+</div>
+
+---
+
+## Quick Start
+
+```bash
+# 1. ROS 2 Humble on Ubuntu 22.04
+sudo apt update && sudo apt install ros-humble-desktop
+
+# 2. Dependencies
+sudo apt install ros-humble-ros-gz-sim ros-humble-ros-gz-bridge \
+                 ros-humble-gz-ros2-control ros-humble-ros2-control \
+                 ros-humble-ros2-controllers ros-humble-xacro \
+                 ros-humble-joint-state-publisher-gui
+
+# 3. Build
+git clone git@github.com:MrDavidAlv/TATTOTRONIX.git
+cd TATTOTRONIX
+colcon build --symlink-install
+source install/setup.bash
+
+# 4a. Look at the model, drive the joints by hand
+ros2 launch tattotronix_description display.launch.py
+
+# 4b. Or run it in Gazebo under ros2_control
+ros2 launch tattotronix_gazebo simulation.launch.py
+```
+
+---
+
+## Table of Contents
+
+- [Description](#description)
+- [Kinematics](#kinematics)
+- [Package Layout](#package-layout)
+- [Description Arguments](#description-arguments)
+- [Visualization](#visualization)
+- [Simulation](#simulation)
+- [Control](#control)
+- [Migration Notes](#migration-notes)
+- [What Is Real and What Is Placeholder](#what-is-real-and-what-is-placeholder)
+- [Known Issues](#known-issues)
+- [Usage](#usage)
+- [Contact](#contact)
+
+---
+
+## Description
+
+TATTOTRONIX is a 5 degree of freedom desktop manipulator built to hold a tattoo
+pen. Nothing below the tool flange knows that: the arm, its controllers and its
+simulation are a general purpose small manipulator, and the tattoo machine is a
+separate macro bolted to `tool0`. Fitting a different end effector is a launch
+argument, not an edit.
+
+The mechanical design is the project's own CAD, exported as six STL meshes. At
+the zero pose the wrist axis stands 242 mm above the bench and the highest point
+of the arm is 292 mm. The tool flange reaches 214 mm forward, and the pen adds
+another 45 mm, putting the tip at 259 mm.
+
+This branch is the ROS 2 Humble port. The repository started from ROS Industrial
+training material on catkin; what carried over is the CAD and the joint
+geometry, and everything else is new. See [Migration Notes](#migration-notes).
+
+---
+
+## Kinematics
+
+Five revolute axes, all limited to +-1.57 rad, plus a fixed tool flange.
+
+| Joint | Parent | Child | Axis | Origin from parent (m) |
+|-------|--------|-------|------|------------------------|
+| `joint_1` | `base_link` | `shoulder_link` | Z, yaw | `0, 0, 0.05` |
+| `joint_2` | `shoulder_link` | `upper_arm_link` | Y, pitch | `0.02866, -0.00364, 0.0431385` |
+| `joint_3` | `upper_arm_link` | `forearm_link` | Y, pitch | `0, 0.0251, 0.1201` |
+| `joint_4` | `forearm_link` | `wrist_link` | X, roll | `0.0033, -0.02184, 0.02885` |
+| `joint_5` | `wrist_link` | `tool_mount_link` | Y, pitch | `0.153, 0.003, -0.002` |
+| `tool_mount_to_tool0` | `tool_mount_link` | `tool0` | fixed | `0.029, -0.012064, 0.005489`, rpy `0, pi/2, 0` |
+
+The frame tree, from `check_urdf`:
+
+```
+world -> base_link -> shoulder_link -> upper_arm_link -> forearm_link
+      -> wrist_link -> tool_mount_link -> tool0 -> tattoo_pen_link -> tattoo_tcp
+```
+
+`tool0` is the flange every end effector attaches to, and its +z axis is the
+tool axis, so a tool mounts with no rotation of its own. `tattoo_tcp` sits at
+the pen tip and is the frame tattoo paths are planned in.
+
+The joint origins came across unchanged from the ROS 1 description, converted
+from the CAD centimetre units to metres. The meshes are exported in their own
+joint frames, so each visual and collision sits at its link origin and needs
+only the 0.01 scale factor.
+
+### The tool mount
+
+`tool_mount_link` is a printed bracket holding a continuous-rotation SG90. Its
+two clamp arms face each other across a 12.0 mm gap, which is the body width of
+an SG90, and their mid plane at y = -12.06 mm is what every turned feature at
+the far end of the bracket is centred on.
+
+The bracket carries two sets of three holes and they are easy to confuse. The
+set bored along y, radius 1.50 mm at x = 0 and z = -8, 0 and +8 mm, passes
+through the 3 mm back plate and is how the bracket bolts down; it carries
+nothing. The set bored along x through the outer face is the one the tool uses:
+radius 1.50 mm, on a straight line at 8.00 mm pitch, centres at (-5.203,
++9.603), (-12.064, +5.489) and (-18.925, +1.375) in mm.
+
+`tool0` sits on the middle of that line, at x = 29.0 mm where the outer face
+ends, and is rotated so its +z runs along the bracket's +x. Behind that hole the
+face opens into a stepped boss of radius 2.50, 3.00 and 4.00 mm, concentric with
+it to within 5 um, which is a bearing seat and not a bolt hole.
+
+What the servo drives is not decided yet, so the description records the
+geometry and actuates nothing: the tool hangs off a fixed joint.
+
+---
+
+## Package Layout
+
+```
+src/
+  tattotronix_description/   URDF/xacro, meshes, RViz config, display launch
+  tattotronix_control/       ros2_control controller YAML and spawners
+  tattotronix_gazebo/        Gazebo Sim world and the simulation launch
+tools/
+  align_collision_meshes.py  Puts each collision DAE in its visual's frame
+```
+
+| Package | Build type | What it owns |
+|---------|-----------|--------------|
+| `tattotronix_description` | `ament_cmake` | The robot. Geometry, kinematics, ros2_control and Gazebo tags, all behind arguments so one file serves RViz, mock hardware and simulation |
+| `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart |
+| `tattotronix_gazebo` | `ament_python` | The studio world and the launch file that assembles simulator, description, spawn, clock bridge and controllers |
+
+---
+
+## Description Arguments
+
+`tattotronix.urdf.xacro` takes four arguments:
+
+| Argument | Values | Default | Effect |
+|----------|--------|---------|--------|
+| `hardware` | `none`, `mock`, `gz` | `none` | `none` omits ros2_control entirely, which is what RViz wants. `mock` loads `mock_components/GenericSystem` for testing controllers with no simulator. `gz` loads the Gazebo Sim plugin |
+| `tool` | `tattoo`, `none` | `tattoo` | Whether the pen is mounted on `tool0` |
+| `controllers_file` | path | empty | Controller manager YAML, read by the Gazebo plugin. Only consulted when `hardware:=gz` |
+| `use_world_link` | `true`, `false` | `true` | Bolts `base_link` to a `world` link. Set false when the arm is embedded in a larger cell |
+
+```bash
+# the exported CAD with no tool and no control stack
+xacro tattotronix.urdf.xacro hardware:=none tool:=none
+
+# mock hardware, for bringing up controllers with nothing running
+xacro tattotronix.urdf.xacro hardware:=mock
+```
+
+---
+
+## Visualization
+
+```bash
+ros2 launch tattotronix_description display.launch.py
+```
+
+`robot_state_publisher` turns the xacro into TF and `joint_state_publisher_gui`
+supplies the joint angles. No simulator, no controllers. This is the launch file
+to reach for when the question is whether the kinematic tree is right.
+
+<div align="center">
+<img src="docs/images/rviz_display.png" width="90%"/>
+</div>
+
+Arguments: `gui` (`true` for the sliders, `false` for the headless publisher),
+`tool`, `use_rviz`, `use_sim_time`.
+
+---
+
+## Simulation
+
+```bash
+ros2 launch tattotronix_gazebo simulation.launch.py
+```
+
+Gazebo Sim Fortress, the arm spawned on a bench under `ros2_control`, with RViz
+alongside. One file owns the whole simulated robot: simulator, description,
+spawn, clock bridge and controllers.
+
+<div align="center">
+<img src="docs/images/gazebo_simulation.png" width="90%"/>
+</div>
+
+The `studio` world is deliberately bare. A ground plane, a light, a 0.70 x 0.50 m
+bench at the standard 750 mm height, and a 20 x 14 cm panel standing in for the
+work surface, centred at x = 0.21 m. The bench is sized to the arm rather than
+to a room: anything wider is scenery the robot can never touch.
+
+The panel is centred under the tool flange, not under the tip. Now that the tool
+axis runs along the bracket's +x, the zero pose puts the tip at x = 259 mm,
+which is 49 mm forward of the panel centre and 9 mm off its centre line, still
+well inside the 200 x 140 mm panel. Centring the panel on the tip would mean
+moving it to x = 0.259 m.
+
+The panel is rigid. Modelling compliant tissue is a separate piece of work and
+pretending otherwise here would hide it.
+
+Arguments: `world`, `world_name`, `tool`, `use_rviz`, `headless`, `spawn_z`.
+
+---
+
+## Control
+
+```bash
+ros2 control list_controllers
+```
+
+```
+joint_state_broadcaster  joint_state_broadcaster/JointStateBroadcaster          active
+arm_controller           joint_trajectory_controller/JointTrajectoryController  active
+```
+
+`tattotronix_control/config/tattotronix_controllers.yaml` is read by the Gazebo
+plugin in simulation and will be read by `ros2_control_node` on hardware, so the
+controller set cannot drift between the two. Anything that genuinely differs
+belongs in the hardware interface, not in that file.
+
+The controller manager runs at 200 Hz. A tattoo needle follows a contour at a
+few millimetres per second, so the control rate is set by how finely the path is
+sampled rather than by how fast the arm moves.
+
+`arm_controller` claims the position command interface only, because that is the
+only command interface the description exposes; claiming another would leave the
+controller unable to activate. Partial goals are refused, since on an arm
+carrying a needle, leaving unnamed joints wherever they happen to be is never
+what the caller meant.
+
+---
+
+## Migration Notes
+
+The ROS 1 workspace this repository started from was ROS Industrial training
+material: `myworkcell_core`, `myworkcell_support` and `myworkcell_moveit_config`
+are a tutorial cell built around a UR5 that is not part of this project,
+`fake_ar_publisher` is its stand-in perception node, and the vendored
+`joint_state_publisher` packages are ROS 1 forks of packages Humble ships. All
+of it is gone from this branch and still reachable on `main`.
+
+What carried over is the CAD and the joint geometry. Four things had to be
+corrected on the way, because ROS 1 tolerated them and ROS 2 does not:
+
+- **Zero effort limits.** Every joint declared `effort="0"`, which caps actuator
+  torque at zero and makes the arm inert under any effort-aware controller. The
+  axes now carry a 20 Nm, 1.5 rad/s envelope with damping and friction.
+- **An undeclared `world` link.** The base joint parented `base_link` to a link
+  that was never declared. The anchor is now explicit and optional.
+- **No inertia anywhere.** Each link gets a bounding-box approximation.
+- **Collision meshes in the wrong frame.** The CAD was exported twice, STL for
+  the visuals and COLLADA for the collision shapes, and the two runs did not
+  agree on axes. Every DAE declares `Z_UP` while its coordinates are Y-up, so
+  five of six links collided with a shape rotated 90 degrees about X relative to
+  what was drawn; the wrist was rotated about Y, and three carried a translation
+  on top. A URDF never checks that a link's two geometries describe the same
+  object, so nothing reported it.
+
+That last one is worth expanding on, because it was silent and because the fix
+is reproducible. Each DAE has the same triangle count and the same surface area
+as its STL, to 0.01 cm2, so the pair differ by a rigid transform and nothing
+else. `tools/align_collision_meshes.py` recovers that transform and bakes it
+into the DAE:
+
+```bash
+python3 tools/align_collision_meshes.py          # report only
+python3 tools/align_collision_meshes.py --apply  # rewrite the DAE files
+```
+
+It verifies a candidate by placing the DAE triangle centroids on the STL ones
+through a spatial hash at 0.2 mm, and applies only a transform that matches
+every sampled triangle, so a mesh that is not simply misoriented is reported and
+left alone. It is idempotent, and re-runnable when the CAD is exported again.
+
+The tool mount needed more than a reframe. Its visual was an export of the part
+rotated 45.05 degrees about y, which is what made the pen look bolted on askew.
+A second export in the same CAD drop was the identical mesh correctly oriented:
+same 5094 triangles, same 61.99 cm2, bounding boxes matching to 0.01 mm once the
+rotation was undone. That export is now the tool mount.
+
+---
+
+## What Is Real and What Is Placeholder
+
+The distinction matters, because a detailed placeholder invites people to
+measure off it.
+
+**Measured, from the CAD:** the six link meshes, the five joint axes and their
+origins, the +-1.57 rad travel, the tool mount bracket and the 12.0 mm SG90
+clamp gap.
+
+**Placeholder, to be replaced:**
+
+| Item | What it is now | Replace with |
+|------|----------------|--------------|
+| Link inertias | Bounding-box approximations at estimated masses | Real mass properties from CAD |
+| Joint effort and velocity limits | 20 Nm, 1.5 rad/s on every axis | Per-axis gearbox characterisation |
+| The tattoo pen | One 45 mm x 3 mm cylinder on the tool axis | The pen, once it is built |
+| `tool0` offset | x from the far +x face of the bracket mesh, y and z from the middle hole of the outer face and the bearing seat behind it | A CAD datum |
+| Work surface | A rigid panel | A compliant tissue model, which is its own project |
+
+---
+
+## Known Issues
+
+- **The world can start paused.** `gz_args` carries `-r`, but the GUI's
+  `WorldControl` plugin publishes its own run state at startup and can win that
+  race. A paused world does not tick, a controller manager that does not tick
+  never completes a switch, and the spawners fail on a five second timeout that
+  is not theirs to configure. `simulation.launch.py` calls the Gazebo control
+  service between the spawn and the spawners to settle it.
+- **OSS CAD Suite shadows the ROS Python.** If `~/eda/oss-cad-suite/py3bin` is
+  on `PATH` ahead of `/usr/bin`, `python3` resolves to its own 3.11 without
+  PyYAML, and `colcon`, `xacro` and `ros2 launch` fail in confusing ways. Drop
+  those entries from `PATH` in any shell used for ROS work.
+- **MoveIt is not installed** and no motion planning is wired up yet. The arm
+  accepts joint trajectories on `arm_controller` and nothing plans them.
+
+---
+
+## Usage
+
+```bash
+# Model only, joints on sliders
+ros2 launch tattotronix_description display.launch.py
+
+# Model with no tool
+ros2 launch tattotronix_description display.launch.py tool:=none
+
+# Simulation with RViz
+ros2 launch tattotronix_gazebo simulation.launch.py
+
+# Simulation with no GUI, for tests
+ros2 launch tattotronix_gazebo simulation.launch.py headless:=true use_rviz:=false
+
+# Check the description parses and the tree resolves
+xacro src/tattotronix_description/urdf/tattotronix.urdf.xacro hardware:=none | check_urdf /dev/stdin
+```
+
+---
+
+## Contact
+
+**Author**: Mario David Alvarez Vallejo
+**Repository**: [github.com/MrDavidAlv/TATTOTRONIX](https://github.com/MrDavidAlv/TATTOTRONIX)
+**License**: Apache 2.0 -- see [LICENSE](LICENSE)
