@@ -171,6 +171,21 @@ def main():
         sweep[wn] = stats(e, tau, ts, wn)
         show(f"wn={wn:.0f}", sweep[wn])
 
+    # The recommended configuration, measured the same way as everything else.
+    # These used to live in a hand-written control_final.json that no script
+    # produced, which is the one thing section 11 of the notebook promises never
+    # happens.
+    print(hdr, flush=True)
+    final = {}
+    for wn, mode in ((20.0, "pid+g+v"), (40.0, "pid+g"), (40.0, "pid+g+v")):
+        e, tau, ts = run(model, chain, tt, Qp, QD, QDD, wn=wn, mode=mode)
+        key = f"wn{wn:.0f}_{mode}"
+        final[key] = stats(e, tau, ts, wn)
+        show(key, final[key])
+    (OUT / "control_final.json").write_text(json.dumps(
+        {"configs": final, "window_s": float(tt[-1]),
+         "window_start_s": float(t[start]), "window_entries": entries}, indent=2))
+
     (OUT / "control_study.json").write_text(json.dumps(
         {"modes": results, "sweep": {str(k): v for k, v in sweep.items()},
          "window_s": float(tt[-1]), "window_start_s": float(t[start]),

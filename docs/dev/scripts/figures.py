@@ -344,6 +344,8 @@ def fig_tracking():
     axes[1].legend(ncol=5, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, 1.22))
     grid_on(axes[1], "y")
     finish(fig, "09_tracking.png", "Following the logo with PID and gravity feedforward",
+           "The first 12 s of the path: one dot, filled without lifting, which is the easy "
+           "part of the drawing. Figure 10 measures the hard part. "
            f"Once settled the tip holds {err[settled].mean():.0f} um against a 300 um line. "
            f"Travel sits at {err[~down].mean():.0f} um because the velocity lag scales with feed, "
            f"and the needle enters the work still {err[down].max():.0f} um out because nothing "
