@@ -12,18 +12,23 @@ A tattoo machine does not draw outlines, it packs. The fill is therefore a
 boustrophedon at the needle's stroke pitch, preceded by one pass around the
 boundary, which is how a rotary machine lines and then shades a solid.
 
-WARNING on the artwork: `placeholder_mask()` is NOT the ROS logo. It is a
-sheared 3x3 dot lattice with roughly the right character, used so the rest of
-the chain can be developed and measured. The official mark has to come from the
-real artwork - see `from_image()`. Nothing downstream depends on which one is
-used, which is the point.
+Artwork: `ros_logo_mask()` is the official mark, rasterised from the SVG that
+`fetch_artwork.sh` downloads from ros-infrastructure/artwork. `placeholder_mask()`
+is the 3x3 dot lattice that stood in for it while the chain was being built; it
+is kept because it is a useful small case, and it is labelled a stand-in
+wherever it appears. Nothing downstream knows which one it is drawing, which is
+the point.
 
 Units are millimetres in the panel plane; the caller places that plane in the
 world.
 """
 
+from pathlib import Path
+
 import numpy as np
 from scipy import ndimage
+
+ARTWORK = Path(__file__).resolve().parents[1] / "artwork"
 
 # --- process parameters ------------------------------------------------------
 
@@ -62,9 +67,9 @@ def placeholder_mask(res=0.25):
 
 
 def from_image(path, width_mm, res=0.25, threshold=128, invert=False):
-    """Binary ink mask from an image file, scaled to `width_mm` across.
+    """Binary ink mask from an image, scaled to `width_mm` across.
 
-    Drop the official ROS logo here. Anything with an alpha channel is
+    Takes a path or an open file object. Anything with an alpha channel is
     composited onto white first, so a transparent PNG behaves.
     """
     from PIL import Image
@@ -86,6 +91,41 @@ def from_image(path, width_mm, res=0.25, threshold=128, invert=False):
     xs = (np.arange(out_w) - out_w / 2) * res
     ys = (np.arange(out_h) - out_h / 2)[::-1] * res   # image rows run downwards
     return mask, (xs, ys)
+
+
+def from_svg(path, width_mm, res=0.25, threshold=128):
+    """Binary ink mask from an SVG, rasterised at twice the sampling pitch.
+
+    Rasterising at the mask resolution would alias every curve the vector file
+    describes exactly; at 2x and then downsampling, an edge pixel is decided by
+    four subpixels rather than one, which is what keeps the counters of the R
+    and the O from closing up at small sizes.
+    """
+    try:
+        import cairosvg
+    except ImportError as e:                                  # pragma: no cover
+        raise RuntimeError(
+            "rasterising an SVG needs cairosvg: pip install --user cairosvg"
+        ) from e
+    import io
+    px = int(round(2 * width_mm / res))
+    buf = cairosvg.svg2png(url=str(path), output_width=px)
+    return from_image(io.BytesIO(buf), width_mm, res=res, threshold=threshold)
+
+
+def ros_logo_mask(width_mm=150.0, res=0.25):
+    """The official ROS logo, as an ink mask on the panel.
+
+    Not vendored: the mark is CC BY-NC 4.0 and covered by the ROS trademark
+    policy, and this repository is Apache-2.0. `fetch_artwork.sh` downloads it.
+    """
+    svg = ARTWORK / "ros_logo.svg"
+    if not svg.exists():
+        raise FileNotFoundError(
+            f"{svg} is missing. Run docs/dev/scripts/fetch_artwork.sh to "
+            "download the official mark from ros-infrastructure/artwork."
+        )
+    return from_svg(svg, width_mm, res=res)
 
 
 # --- fill --------------------------------------------------------------------
@@ -392,6 +432,26 @@ def selftest(verbose=True):
             print(f"  perimeter  {got:7.2f} mm   geometry {want:7.2f} mm   "
                   f"{abs(got - want) / want * 100:+.1f}%")
     ok &= all(abs(g - w) / w < 0.02 for g, w in zip(sorted(per, reverse=True), truth))
+
+    # The official mark, when it has been fetched. Its topology is known by
+    # looking at it: nine dots, then R O S, and exactly the R and the O have a
+    # counter. Asserting that is what proves the tracer handles real artwork
+    # and not only the shapes it was written against.
+    if (ARTWORK / "ros_logo.svg").exists():
+        mask, (xs, ys) = ros_logo_mask(150.0)
+        lab, n = ndimage.label(mask, structure=np.ones((3, 3)))
+        res = abs(xs[1] - xs[0])
+        regions = [lab == k for k in range(1, n + 1)
+                   if (lab == k).sum() * res * res >= MIN_BLOB_MM2]
+        holes = sorted(len(_loops(b)) - 1 for b in regions)
+        good = len(regions) == 12 and holes == [0] * 10 + [1] * 2
+        ok &= good
+        if verbose:
+            print(f"  ros logo   {len(regions):>2} regions, "
+                  f"{sum(holes)} counters  {'ok' if good else 'FAIL'}")
+    elif verbose:
+        print("  ros logo   not fetched; run fetch_artwork.sh")
+
     return ok
 
 

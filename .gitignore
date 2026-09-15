@@ -51,3 +51,8 @@ docs/dev/scripts/__pycache__/
 # obtained and `analysis.py` rebuilds them.
 docs/dev/data/*.npz
 docs/dev/data/*.npy
+
+# The official ROS logo is CC BY-NC 4.0 and covered by the ROS trademark
+# policy; this repository is Apache-2.0, so the mark is fetched, not vendored.
+# docs/dev/scripts/fetch_artwork.sh downloads it.
+docs/dev/artwork/
