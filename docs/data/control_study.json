@@ -2,68 +2,68 @@
   "modes": {
     "pid": {
       "diverged": false,
-      "marking_settled_mean_um": 1926.0936889277132,
-      "marking_settled_max_um": 34395.7304580895,
-      "marking_mean_um": 3080.0632209158766,
-      "marking_max_um": 48593.23421978282,
-      "travel_mean_um": 3776.4566070542965,
-      "tau_peak": 2.3760556379675264
+      "marking_settled_mean_um": 758.4726970613136,
+      "marking_settled_max_um": 11389.35702561956,
+      "marking_mean_um": 1715.3435997690683,
+      "marking_max_um": 42511.68353935245,
+      "travel_mean_um": 2521.003023134441,
+      "tau_peak": 2.3300358267210752
     },
     "pid+g": {
       "diverged": false,
-      "marking_settled_mean_um": 1123.2162688842925,
-      "marking_settled_max_um": 7304.04374512481,
-      "marking_mean_um": 1718.1661741700204,
-      "marking_max_um": 11744.536339243417,
-      "travel_mean_um": 3854.5306653160824,
-      "tau_peak": 1.9842916126930301
+      "marking_settled_mean_um": 60.99836156778491,
+      "marking_settled_max_um": 474.0759201057359,
+      "marking_mean_um": 120.20334945631585,
+      "marking_max_um": 949.1375818276778,
+      "travel_mean_um": 2532.177911682852,
+      "tau_peak": 1.827833601332916
     },
     "pid+g+v": {
       "diverged": false,
-      "marking_settled_mean_um": 951.0748944545851,
-      "marking_settled_max_um": 6695.554597970537,
-      "marking_mean_um": 1464.242827883155,
-      "marking_max_um": 9968.071262440788,
-      "travel_mean_um": 3642.957848831707,
-      "tau_peak": 1.903113639133157
+      "marking_settled_mean_um": 73.9942732853683,
+      "marking_settled_max_um": 460.7330391065932,
+      "marking_mean_um": 139.16649413519016,
+      "marking_max_um": 1431.730281804143,
+      "travel_mean_um": 2502.5920615404957,
+      "tau_peak": 1.8581260565528628
     },
     "computed torque": {
       "diverged": false,
-      "marking_settled_mean_um": 843.7030882325548,
-      "marking_settled_max_um": 5678.0941577559015,
-      "marking_mean_um": 1313.5674139399275,
-      "marking_max_um": 7111.308400535408,
-      "travel_mean_um": 3364.972458723505,
-      "tau_peak": 1.8523511818396565
+      "marking_settled_mean_um": 90.92975889591729,
+      "marking_settled_max_um": 427.90852035789857,
+      "marking_mean_um": 154.5075981565757,
+      "marking_max_um": 1491.0597672423223,
+      "travel_mean_um": 2211.6662514063787,
+      "tau_peak": 1.8085900868293574
     }
   },
   "sweep": {
     "10.0": {
       "diverged": false,
-      "marking_settled_mean_um": 2943.1939220477793,
-      "marking_settled_max_um": 11019.703766908056,
-      "marking_mean_um": 4369.922543835805,
-      "marking_max_um": 15858.447734032197,
-      "travel_mean_um": 6870.338213783373,
-      "tau_peak": 1.8096196537763833
+      "marking_settled_mean_um": 627.6519614226515,
+      "marking_settled_max_um": 2350.867842088661,
+      "marking_mean_um": 1131.2007764135656,
+      "marking_max_um": 4791.787128166067,
+      "travel_mean_um": 5366.536164439998,
+      "tau_peak": 1.7290792152927947
     },
     "20.0": {
       "diverged": false,
-      "marking_settled_mean_um": 1123.2162688842925,
-      "marking_settled_max_um": 7304.04374512481,
-      "marking_mean_um": 1718.1661741700204,
-      "marking_max_um": 11744.536339243417,
-      "travel_mean_um": 3854.5306653160824,
-      "tau_peak": 1.9842916126930301
+      "marking_settled_mean_um": 60.99836156778491,
+      "marking_settled_max_um": 474.0759201057359,
+      "marking_mean_um": 120.20334945631585,
+      "marking_max_um": 949.1375818276778,
+      "travel_mean_um": 2532.177911682852,
+      "tau_peak": 1.827833601332916
     },
     "40.0": {
       "diverged": false,
-      "marking_settled_mean_um": 193.24640306447452,
-      "marking_settled_max_um": 1827.5260192302467,
-      "marking_mean_um": 289.473262139753,
-      "marking_max_um": 2542.87700131457,
-      "travel_mean_um": 1258.055323003857,
-      "tau_peak": 2.333635530526324
+      "marking_settled_mean_um": 19.51003754406354,
+      "marking_settled_max_um": 227.0090303646126,
+      "marking_mean_um": 27.84037761844865,
+      "marking_max_um": 250.67934172074405,
+      "travel_mean_um": 855.9989140430572,
+      "tau_peak": 2.0943234575768432
     },
     "80.0": {
       "diverged": true
@@ -72,8 +72,8 @@
       "diverged": true
     }
   },
-  "window_s": 11.92221037570232,
-  "window_start_s": 329.12878258926133,
-  "window_entries": 7,
+  "window_s": 11.935960232908542,
+  "window_start_s": 380.2954957108536,
+  "window_entries": 6,
   "logo_width_mm": 150.0
 }

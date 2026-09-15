@@ -53,7 +53,7 @@ def window_start(P_mm, kind, t, window_s=WINDOW_S):
     counter of the R or the O has to lift and re-enter, and it is those entries
     that the loop tracks worst.
     """
-    entry_t = t[np.flatnonzero((kind[:-1] == 0) & (kind[1:] == 1))]
+    entry_t = t[np.flatnonzero((kind[:-1] != rp.KIND_MARK) & (kind[1:] == rp.KIND_MARK))]
     if len(entry_t) == 0:
         return 0
     counts = [(entry_t < s0 + window_s).sum() - (entry_t < s0).sum() for s0 in entry_t]
@@ -115,7 +115,7 @@ def main():
     stop = int(np.searchsorted(t, t[start] + WINDOW_S))
     win = slice(start, stop)
     tt = t[win] - t[start]
-    entries = int(((kind[win][:-1] == 0) & (kind[win][1:] == 1)).sum())
+    entries = int(((kind[win][:-1] != rp.KIND_MARK) & (kind[win][1:] == rp.KIND_MARK)).sum())
     print(f"window: {tt[-1]:.1f} s from t={t[start]:.0f} s, "
           f"{stop - start} path points, {entries} needle entries", flush=True)
 

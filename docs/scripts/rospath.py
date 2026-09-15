@@ -36,6 +36,10 @@ STROKE_PITCH = 1.2      # spacing between adjacent fill passes, mm
 POINT_STEP = 0.6        # path resampled to this arc length, mm
 CLEARANCE = 8.0         # travel height above the surface, mm
 PLUNGE_DEPTH = 1.5      # how far below the surface the needle is driven, mm
+APPROACH = 4.0          # last part of the plunge, taken at marking feed, mm
+                        # Swept in approach_study.py: 4 mm is where the worst
+                        # marking error falls under the 0.3 mm line width. It
+                        # costs 14% of cycle time.
 MIN_BLOB_MM2 = 4.0      # ignore specks smaller than this
 
 # --- placeholder artwork -----------------------------------------------------
@@ -298,14 +302,27 @@ def _inside(mask, grid, a, b, samples=12):
     return bool(mask[ri, ci].all())
 
 
+KIND_TRAVEL, KIND_MARK, KIND_APPROACH = 0, 1, 2
+
+
 def toolpath(mask=None, grid=None):
     """Full path as (N,3) in mm with z relative to the panel surface, plus a
-    per-point flag: 1 where the needle is in the work, 0 for travel.
+    per-point flag: 0 travel, 1 needle in the work, 2 the slow approach.
 
     The needle stays down for as long as the connection between two passes
     runs over ink, which is what a machine actually does; it lifts only to
     cross clean skin. Retracting on every scanline would double the cycle time
     and stipple the edges of every dot.
+
+    The plunge lands in two stages. A fast drop to `APPROACH` above the final
+    depth, then the last `APPROACH` mm at marking feed.
+
+    A single fast plunge arrives with the loop carrying its full velocity lag,
+    v / wn, and the trajectory marks from the first point without waiting: the
+    needle enters at a depth that is not the one commanded, at the start of
+    every stroke. Splitting it means the last millimetres are travelled at the
+    same feed as the drawing itself, so the lag the needle arrives with is the
+    lag it would have had anyway.
     """
     if mask is None:
         mask, grid = placeholder_mask()
@@ -314,15 +331,16 @@ def toolpath(mask=None, grid=None):
 
     def plunge(p):
         nonlocal down
-        pts.append([p[0], p[1], CLEARANCE]); kinds.append(0)
-        pts.append([p[0], p[1], -PLUNGE_DEPTH]); kinds.append(0)
+        pts.append([p[0], p[1], CLEARANCE]); kinds.append(KIND_TRAVEL)
+        pts.append([p[0], p[1], -PLUNGE_DEPTH + APPROACH]); kinds.append(KIND_TRAVEL)
+        pts.append([p[0], p[1], -PLUNGE_DEPTH]); kinds.append(KIND_APPROACH)
         down = True
 
     def retract():
         nonlocal down
         if down:
             last = pts[-1]
-            pts.append([last[0], last[1], CLEARANCE]); kinds.append(0)
+            pts.append([last[0], last[1], CLEARANCE]); kinds.append(KIND_TRAVEL)
             down = False
 
     for region in contours(mask, grid):
@@ -334,12 +352,12 @@ def toolpath(mask=None, grid=None):
             else:
                 prev = np.array(pts[-1][:2])
                 if _inside(mask, grid, prev, seg[0]):
-                    pts.append([seg[0, 0], seg[0, 1], -PLUNGE_DEPTH]); kinds.append(1)
+                    pts.append([seg[0, 0], seg[0, 1], -PLUNGE_DEPTH]); kinds.append(KIND_MARK)
                 else:
                     retract()
                     plunge(seg[0])
             for p in seg:
-                pts.append([p[0], p[1], -PLUNGE_DEPTH]); kinds.append(1)
+                pts.append([p[0], p[1], -PLUNGE_DEPTH]); kinds.append(KIND_MARK)
         retract()
     P = np.array(pts, float)
     kind = np.array(kinds, int)
@@ -351,9 +369,12 @@ def toolpath(mask=None, grid=None):
 
 
 def lengths(P, kind):
-    """(marked, travel) path length in mm, counting each segment once."""
+    """(marked, travel) path length in mm, counting each segment once.
+
+    The slow approach counts as travel: it is not on the drawing.
+    """
     d = np.linalg.norm(np.diff(P, axis=0), axis=1)
-    cutting = (kind[:-1] == 1) & (kind[1:] == 1)
+    cutting = (kind[:-1] == KIND_MARK) & (kind[1:] == KIND_MARK)
     return float(d[cutting].sum()), float(d[~cutting].sum())
 
 

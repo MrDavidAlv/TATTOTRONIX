@@ -79,13 +79,19 @@ is quoted against it.
 
 | Error source | Magnitude | Against 0.3 mm | Status |
 |---|---|---|---|
-| **Needle entry transient** | **2.3 mm**, 98 times per drawing | **8×** | **Open** — see [control](./control.md#4-the-needle-enters-before-the-loop-settles) |
-| Loop velocity lag | 206 µm while marking, settled | 0.7× | Bounded by the 200 Hz control rate |
-| Path discretisation | 0.6 mm between points | 2× | Adjustable, costs only IK time |
+| Path discretisation | 0.6 mm between points | 2× | **Now the largest modelled term.** Adjustable, costs only IK time |
+| Worst tracking error | 178.9 µm, at the hardest moment of the drawing | 0.6× | Bounded by the 200 Hz control rate |
+| Needle entry transient | was 2.3 mm, 98 times per drawing; now inside the tracking figure | — | **Fixed** by a 4 mm slow approach — see [control](./control.md#4-the-needle-enters-before-the-loop-settles) |
+| Settled tracking error | 19.3 µm | 0.06× | Bounded by the 200 Hz control rate |
 | Inverse kinematics residual | $10^{-6}$, dimensionless | — | Negligible |
 | Servo resolution | not modelled | — | Needs the encoder |
 | Backlash and flexure | not modelled | — | Needs the hardware |
 | Tissue deformation | not modelled | — | A separate project |
 
-The table is sorted by magnitude, and **the order is the result**. Control is no
-longer the limit; the trajectory is.
+The table is sorted by magnitude, and **the order is the result**. Every modelled
+term is now inside the line width, and the largest of them is the one thing on
+the list that costs nothing but computation to reduce.
+
+What is left is the bottom three rows, which are not modelled at all. They are
+what stops this being a credible *accuracy* figure rather than a credible
+*control* figure.

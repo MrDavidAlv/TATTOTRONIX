@@ -138,16 +138,19 @@ pass, which doubled cycle time and would have stippled every edge.
 | Resampling | 0.6 mm | Two points per stroke pitch |
 | Depth | 1.5 mm below the surface | **Placeholder** — depends on tissue |
 | Clearance | 8 mm | Clears the panel with margin |
+| Slow approach | 4 mm | The last part of the plunge, at marking feed — see [control](./control.md#the-fix) |
 | Marking feed | 6 mm/s | The order of what a tattooist does |
 | Travel feed | 60 mm/s | Limited by the arm, not the process |
 
-**On the logo:** 4372 points, 2507 mm marked against 3101 mm travelled, 470 s
+**On the logo:** 4470 points, 2507 mm marked against 3101 mm travelled, 537 s
 total, over **98 needle entries**. Every fill pass that meets the counter of the
 R or the O has to lift and re-enter, and that is where the travel goes.
 
-That last number is not just inefficiency. Each entry carries the transient
-described in [control](./control.md#4-the-needle-enters-before-the-loop-settles),
-so ordering the passes to lift less is worth more than the travel time it saves.
+That last number used to be the project's dominant error, because each entry
+drove the needle in while the loop was still settling. The
+[slow approach](./control.md#the-fix) fixed that, at 14% of cycle time. Ordering
+the passes to lift less would give that time back, and is worth doing for that
+reason rather than for accuracy now.
 
 ## 5. Time parameterisation
 
@@ -155,6 +158,9 @@ Constant feed per move type. Each segment's time is its length over its feed, an
 the cumulative time gives the reference $q_{\text{ref}}(t)$ the controller
 consumes.
 
-This is deliberately simple, and it is now the limiting simplification: a
-trapezoidal profile with acceleration limits is the direct fix for half the
-needle entry problem, because today every segment starts and stops in a step.
+This is deliberately simple. The plunge, which was the worst case of that
+simplicity, is handled specially by the slow approach above. Every other segment
+still starts and stops in a step, which is why acceleration feedforward has
+nothing clean to work with (see [control](./control.md#5-what-actually-helps));
+a trapezoidal profile with bounded acceleration is the general version of what
+the slow approach does for one move.

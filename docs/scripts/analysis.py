@@ -70,10 +70,17 @@ def path_to_world(P_mm):
 
 
 def time_parameterise(P, kind):
-    """Constant feed per move type; returns cumulative time at each point."""
+    """Constant feed per move type; returns cumulative time at each point.
+
+    Three feeds, not two. A segment is marking when both ends are in the work,
+    approach when either end is the slow landing, and travel otherwise. The
+    approach runs at the marking feed so the needle does not arrive carrying the
+    travel lag, which is ten times larger.
+    """
     d = np.linalg.norm(np.diff(P, axis=0), axis=1)
-    cutting = (kind[:-1] == 1) & (kind[1:] == 1)
-    v = np.where(cutting, FEED_MARK, FEED_TRAVEL)
+    marking = (kind[:-1] == rp.KIND_MARK) & (kind[1:] == rp.KIND_MARK)
+    approach = (kind[:-1] == rp.KIND_APPROACH) | (kind[1:] == rp.KIND_APPROACH)
+    v = np.where(marking | approach, FEED_MARK, FEED_TRAVEL)
     dt = d / v
     return np.concatenate([[0.0], np.cumsum(dt)])
 

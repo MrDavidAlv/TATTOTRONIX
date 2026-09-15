@@ -39,6 +39,7 @@ rows that bound what this model can honestly claim.
 | Path resampling | 0.6 mm | Chosen — two points per stroke pitch |
 | Plunge depth | 1.5 mm below surface | **Estimated** — depends on tissue |
 | Clearance height | 8 mm | Chosen — clears the panel with margin |
+| Slow approach | 4 mm | **Derived** — swept in `approach_study.py`; where the worst needle entry falls under the line width |
 | Marking feed | 6 mm/s | **Estimated** — the order of a tattooist's hand |
 | Travel feed | 60 mm/s | Chosen — limited by the arm, not the process |
 
@@ -46,13 +47,13 @@ rows that bound what this model can honestly claim.
 
 | Quantity | Value |
 |---|---|
-| Path points | 4372 |
+| Path points | 4470 |
 | Regions | 12 — nine dots, R, O, S |
 | Counters | 2 — the R and the O |
 | Marked length | 2507 mm |
 | Travel length | 3101 mm |
 | Needle entries | **98** |
-| Total time | 470 s |
+| Total time | 537 s |
 | IK convergence | 100% |
 | IK worst residual | 1.0 × 10⁻⁶ |
 
@@ -72,7 +73,7 @@ rows that bound what this model can honestly claim.
 | Link masses | see URDF | **Estimated** — bounding-box approximations |
 | Link inertia tensors | see URDF | **Estimated** — bounding-box approximations |
 | Peak gravity torque on the path | 1.91 N·m | **Derived** from the estimates above |
-| Peak commanded torque | 0.98 N·m | **Derived** |
+| Peak commanded torque | 0.80 N·m | **Derived** |
 | Joint effort limit | 20 N·m, all axes | **Estimated** — one number for every axis |
 | Joint velocity limit | 1.5 rad/s, all axes | **Estimated** — one number for every axis |
 
@@ -98,9 +99,12 @@ rows that bound what this model can honestly claim.
 
 | Metric | Value | Against a 0.3 mm line |
 |---|---|---|
-| Settled marking error | 206 µm | 0.7× |
-| Worst marking error | 2335 µm | **8×** |
-| Peak torque | 2.02 N·m | 10% of the 20 N·m limit |
+| Settled marking error | 19.3 µm | 0.06× |
+| Worst marking error | 178.9 µm | 0.6× |
+| Peak torque | 2.16 N·m | 11% of the 20 N·m limit |
+
+Both are inside the line width. Before the slow approach was added they were
+205.7 µm and 2335 µm, the second of them eight times the line.
 
 ---
 

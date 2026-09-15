@@ -111,9 +111,9 @@ Split, over the first 12 s of the logo — one dot, filled without lifting:
 
 | Segment | Mean | Worst |
 |---|---|---|
-| Marking, settled | **131.7 µm** | 2717 µm |
-| Marking, all | 265.5 µm | 7639 µm |
-| Travel | 3219 µm | 8402 µm |
+| Marking, settled | **92.2 µm** | 763 µm |
+| Marking, all | 97.2 µm | 763 µm |
+| Travel | 1196 µm | 3524 µm |
 
 The split was validated before the artwork changed: on the stand-in it gave
 164.5 µm settled, against the 165 µm `control_study.py` obtains independently for
@@ -121,29 +121,63 @@ the same structure and bandwidth. Two routes, one number.
 
 ## 4. The needle enters before the loop settles
 
-Splitting the segments exposes what the mean was hiding: **the worst marking
-error is 7.6 mm**, and it sits immediately after each plunge.
+> **Fixed.** This section records the defect, how it was measured and what it
+> cost, because the fix is only convincing next to the thing it fixed.
 
-The plunge is a travel move: the reference drops 9.5 mm at 60 mm/s and stops
-dead. Arriving at the bottom the loop is carrying $v/\omega_n = 3$ mm of lag, and
-the trajectory **marks from the first point**, without waiting. On skin that is a
-needle entering at a depth that is not the one commanded, at the start of every
-stroke.
+### The defect
+
+Splitting the error by needle state exposed what the mean was hiding: the worst
+marking error was **7.6 mm**, and it sat immediately after each plunge.
+
+The plunge was a travel move. The reference dropped 9.5 mm at 60 mm/s and
+stopped dead on the surface. Arriving at the bottom the loop was carrying
+$v/\omega_n = 3$ mm of lag, and the trajectory marked from the first point,
+without waiting. On skin that is a needle entering at a depth that is not the
+one commanded, at the start of every stroke.
 
 Dropping one second-order settling time, $4/\omega_n = 200$ ms, after each entry
-takes the worst from 7639 to 2717 µm — that is, **it is not enough**. In the
-figure the ringing lasts around 0.8 s, four times what second order predicts,
-because the reference stops dead and the integrator arrives wound up.
+took the worst from 7639 to 2717 µm — that is, **it was not enough**. The ringing
+lasted around 0.8 s, four times what second order predicts, because the
+reference stopped dead and the integrator arrived wound up.
 
-This is not corrected with a more generous window, which would be choosing the
-number. It is a defect in the **trajectory**, not in the metric. The fixes are to
-decelerate the approach over the last millimetre, or to wait for the settle
-before marking.
-
-**With the real logo this stops being a footnote.** The stand-in lifted the
+And with the real logo it was not a footnote. The stand-in artwork lifted the
 needle twice; the logo lifts it **98 times**, because every fill pass that meets
-the counter of the R or the O has to exit and re-enter. Ninety-eight stroke
-starts, each carrying this transient.
+the counter of the R or the O has to exit and re-enter.
+
+### The fix
+
+Land the last few millimetres at the marking feed instead of the travel feed.
+The plunge becomes two stages: a fast drop to `APPROACH` above the final depth,
+then the rest at 6 mm/s. The needle then arrives carrying the lag it would have
+had anyway while drawing, rather than ten times it.
+
+It is a **trajectory** fix, not a control fix, which is why none of the four
+control structures had touched it.
+
+<div align="center">
+<img src="../figures/12_approach.png" width="900"/>
+</div>
+
+Swept with everything else held fixed, every run starting at the same needle
+entry:
+
+| Slow approach | Worst entry | Settled mean | Peak torque | Cycle time |
+|---|---|---|---|---|
+| 0.0 mm | 2335 µm | 205.7 µm | 2.02 N·m | 470 s |
+| 0.5 mm | 1963 µm | 97.0 µm | 1.96 N·m | 486 s |
+| 1.0 mm | 1243 µm | 78.1 µm | 2.01 N·m | 493 s |
+| 2.0 mm | 518 µm | 37.4 µm | 2.09 N·m | 508 s |
+| **4.0 mm** | **196 µm** | 26.2 µm | 2.17 N·m | 537 s |
+
+**4 mm is where the worst entry falls under the 0.3 mm line width.** It costs
+14% of cycle time and essentially no torque.
+
+Two honesty notes on that table. The window is 12 s of path, and slowing the
+path means fewer entries fall inside it — seven at 0 mm, five at 4 mm — which
+deflates the *mean* for reasons other than the fix; the *worst* column is a
+maximum over entries rather than a sum, so that is the like-for-like comparison.
+And the run at 0 mm reproduces the previously measured 205.7 µm and 2334.6 µm
+exactly, which is what says the sweep is measuring what it claims to.
 
 ## 5. What actually helps
 
@@ -152,77 +186,86 @@ starts, each carrying this transient.
 </div>
 
 Measured over the **busiest 12 s of the path** — the stretch with the most needle
-entries, found from the path rather than fixed, which lands inside the **O** with
-7 entries. Running the study on the opening dots would measure the easy part of
-the drawing.
+entries, found from the path rather than fixed, which lands inside the **O**.
+Running the study on the opening dots would measure the easy part of the
+drawing.
 
 At $\omega_n = 20$ rad/s, full non-linear plant:
 
-| Structure | Settled, marking | Worst, marking | Travel | Peak torque |
+| Structure | Settled, marking | Worst settled | Worst, marking | Peak torque |
 |---|---|---|---|---|
-| PID only | 1926 µm | 48 593 µm | 3777 µm | 2.38 N·m |
-| PID + gravity | 1123 µm | 11 745 µm | 3855 µm | 1.98 N·m |
-| PID + gravity + velocity | 951 µm | 9968 µm | 3643 µm | 1.90 N·m |
-| Computed torque | **844 µm** | 7111 µm | 3365 µm | 1.85 N·m |
+| PID only | 758.5 µm | 11 389 µm | 42 512 µm | 2.30 N·m |
+| PID + gravity | **61.0 µm** | 474.1 µm | 949.1 µm | 1.83 N·m |
+| PID + gravity + velocity | 74.0 µm | 460.7 µm | 1432 µm | 1.86 N·m |
+| Computed torque | 90.9 µm | **427.9 µm** | 1491 µm | 1.81 N·m |
 
 Bandwidth sweep, PID + gravity:
 
-| $\omega_n$ | Settled, marking | Worst, marking | Peak torque | |
+| $\omega_n$ | Settled, marking | Worst settled | Peak torque | |
 |---|---|---|---|---|
-| 10 rad/s | 2943 µm | 15 858 µm | 1.81 N·m | |
-| 20 rad/s | 1123 µm | 11 745 µm | 1.98 N·m | |
-| 40 rad/s | **193 µm** | 2543 µm | 2.33 N·m | |
+| 10 rad/s | 627.7 µm | 2351 µm | 1.73 N·m | |
+| 20 rad/s | 61.0 µm | 474.1 µm | 1.83 N·m | |
+| 40 rad/s | **19.5 µm** | 227.0 µm | 2.09 N·m | |
 | 80 rad/s | — | — | — | **diverges** |
 | 120 rad/s | — | — | — | **diverges** |
 
-### What holds and what does not
+### What holds, and what the fix changed
 
-1. **Gravity feedforward is free and still worth having** (1926 → 1123 µm).
-2. **Velocity feedforward still lowers error and torque together** (1123 → 951 µm,
-   1.98 → 1.90 N·m). The loop stops fighting its own reference.
-3. **Computed torque no longer merely ties — it wins** (844 µm, best of the four).
-   On the stand-in it did not beat velocity feedforward, and the reason given was
-   that the reference acceleration comes from finite differences on a path with
-   discontinuous velocity. That is still true, but the logo has so many
-   discontinuities that the acceleration term, noisy as it is, corrects more than
-   it injects. *The earlier conclusion was not wrong: it was measured on a drawing
-   that did not have them.*
-4. **The stability cliff is where it was.** Between 40 and 80 rad/s, set by the
-   200 Hz `controller_manager` rate, not by the gains. Raising it needs a faster
-   controller, not different tuning.
+1. **Gravity feedforward is free and is the single biggest win** (758.5 →
+   61.0 µm). There has never been a reason not to have it.
+2. **The stability cliff is where it has always been.** Between 40 and 80 rad/s,
+   set by the 200 Hz `controller_manager` rate, not by the gains. Raising it
+   needs a faster controller, not different tuning.
+3. **Fixing the trajectory reversed the ranking of the control structures.**
+   This is worth stating plainly, because it was measured three times and gave
+   three answers.
 
-**And what none of the four touches:** the worst-case column. Those are the needle
-entries, and they stay in the thousands of microns in all four. Control does not
-fix a trajectory defect.
+   When the study ran on the stand-in artwork, computed torque tied with
+   velocity feedforward, and the reason given was that the reference
+   acceleration comes from finite differences on a path with discontinuous
+   velocity, so it injects about as much noise as it corrects.
+
+   When the study moved to the logo, computed torque *won* — the logo has so
+   many velocity discontinuities that the acceleration term was correcting more
+   than it injected.
+
+   With the slow approach in place, computed torque comes **last** on settled
+   mean (90.9 µm against 61.0 for gravity alone), while still giving the best
+   worst case. The discontinuities it was correcting for are gone, and what is
+   left of the term is its own noise.
+
+   None of the three measurements was wrong. Each was measured on a different
+   path, and the acceleration feedforward is only ever as good as the
+   acceleration it is handed. That is an argument for giving the trajectory a
+   trapezoidal profile with bounded acceleration, not against computed torque.
 
 ## 6. Recommended configuration
 
 $\omega_n = 40$ rad/s, PID by pole placement on the effective inertia, with
-gravity and velocity feedforward. Over the same hard window:
+gravity and velocity feedforward, over a 4 mm slow approach. Same hard window:
 
 | Configuration | Settled, marking | Worst, marking | Peak torque |
 |---|---|---|---|
-| $\omega_n = 20$, PID + g + v | 951 µm | 6696 µm | 1.90 N·m |
-| $\omega_n = 40$, PID + g | **193 µm** | 2543 µm | 2.33 N·m |
-| $\omega_n = 40$, PID + g + v | 206 µm | **2335 µm** | **2.02 N·m** |
+| $\omega_n = 20$, PID + g + v | 74.0 µm | 1432 µm | 1.86 N·m |
+| $\omega_n = 40$, PID + g | 19.5 µm | 250.7 µm | 2.09 N·m |
+| $\omega_n = 40$, PID + g + v | **19.3 µm** | **178.9 µm** | 2.16 N·m |
 
-The third is recommended. Its mean is 7% worse than the second, inside the noise
-of a 12 s window, but its worst case is better and peak torque drops **13%**,
-2.33 to 2.02 N·m. Against a 20 N·m limit neither is tight, but margin is spent
-once and the feedforward is free.
+**This is the first configuration whose worst case is inside the line width.**
+178.9 µm against 300 µm, with a settled mean of 19.3 µm — a factor of 16 below
+it — at 11% of the 20 N·m torque limit.
 
-### The price of no longer measuring the easy part
+The worst marking error and the worst *settled* error are now the same number.
+That is the clearest statement that the entry transient is gone: the worst
+moment of the drawing is no longer a needle entry.
 
-This model used to quote **22.5 µm mean and 272 µm worst**, and concluded it was
-the first configuration that could draw the logo recognisably. That figure was
-measured on continuous marking, on a stretch with no needle lifts. It is correct
-for what it measures — the **steady state**. It is not what the logo asks for.
+### How this number moved
 
-On the hard stretch the same configuration gives **206 µm mean** against a 0.3 mm
-line — a factor of 1.5, not 13 — and a worst case of **2.3 mm**, eight times the
-line width.
+| Measured on | Settled | Worst | What it was really saying |
+|---|---|---|---|
+| Stand-in artwork, continuous marking | 22.5 µm | 272 µm | The steady state, on the easy part |
+| Logo, busiest window, fast plunge | 205.7 µm | 2335 µm | What the drawing actually asked for |
+| Logo, busiest window, 4 mm approach | **19.3 µm** | **178.9 µm** | Both, and inside the line |
 
-The honest conclusion is that **control is no longer the problem, and is also not
-the solution**. In steady state there is margin to spare. What is missing is for
-the trajectory to stop driving the needle into the work mid-deceleration, 98
-times per drawing.
+The middle row is the one worth keeping in view. The first row was not wrong; it
+was measured on a stretch of drawing with no needle lifts, and the logo has 98.
+Finding that out cost nothing but measuring the right thing.

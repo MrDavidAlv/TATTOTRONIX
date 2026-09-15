@@ -208,7 +208,7 @@ def fig_toolpath():
         grid_on(ax)
     axes[1].set_xlabel("u  [mm]")
     marked, travel = rp.lengths(P, kind)
-    entries = int(((kind[:-1] == 0) & (kind[1:] == 1)).sum())
+    entries = int(((kind[:-1] != rp.KIND_MARK) & (kind[1:] == rp.KIND_MARK)).sum())
     finish(fig, "04_toolpath.png", "Toolpath over the artwork",
            f"The official ROS logo, rasterised from the SVG. Boundary pass then boustrophedon "
            f"fill at a {rp.STROKE_PITCH:g} mm stroke pitch: {marked:.0f} mm marked against "
@@ -468,8 +468,63 @@ def fig_contours():
            "per hole, certified here at 100% boundary coverage.")
 
 
+# --- 12. how much slow approach the needle entry needs -----------------------
+
+def fig_approach():
+    import json
+    f = DATA / "approach_study.json"
+    if not f.exists():
+        print("   (skipping 12, approach_study.json not found)")
+        return
+    S = json.loads(f.read_text())
+    A = S["approach_mm"]
+    xs = sorted(float(k) for k in A)
+    worst = [A[str(x)]["worst_um"] for x in xs]
+    settled = [A[str(x)]["settled_um"] for x in xs]
+    cycle = [A[str(x)]["cycle_s"] for x in xs]
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.0))
+
+    axes[0].plot(xs, worst, "-o", color=C[0], ms=5, mec=SURFACE, mew=1.2,
+                 label="worst entry")
+    axes[0].plot(xs, settled, "-o", color=C[2], ms=5, mec=SURFACE, mew=1.2,
+                 label="settled mean")
+    axes[0].axhline(300, color=C[1], lw=1.2, ls=(0, (4, 2)))
+    axes[0].text(xs[-1], 320, "0.3 mm line ", color=C[1], fontsize=8.2,
+                 ha="right", va="bottom")
+    axes[0].set_yscale("log")
+    axes[0].set_xlabel("slow approach  [mm]")
+    axes[0].set_ylabel("tip error  [um]")
+    axes[0].legend(fontsize=8.2)
+    for x, v in zip(xs, worst):
+        axes[0].annotate(f"{v:,.0f}".replace(",", " "), (x, v),
+                         textcoords="offset points", xytext=(0, 9),
+                         fontsize=7.8, color=INK2, ha="center")
+    grid_on(axes[0], "y")
+
+    base = cycle[0]
+    axes[1].plot(xs, [100 * (c / base - 1) for c in cycle], "-o", color=C[3],
+                 ms=5, mec=SURFACE, mew=1.2)
+    axes[1].set_xlabel("slow approach  [mm]")
+    axes[1].set_ylabel("cycle time  [% over a fast plunge]")
+    for x, c in zip(xs, cycle):
+        axes[1].annotate(f"{c:.0f} s", (x, 100 * (c / base - 1)),
+                         textcoords="offset points", xytext=(0, 9),
+                         fontsize=7.8, color=INK2, ha="center")
+    grid_on(axes[1], "y")
+    axes[0].set_title("what it buys", fontsize=10, loc="left", pad=8)
+    axes[1].set_title("what it costs", fontsize=10, loc="left", pad=8)
+
+    finish(fig, "12_approach.png", "Taking the last millimetres at marking feed",
+           "The plunge used to arrive at travel feed and stop dead, so the needle entered "
+           f"carrying ten times the lag it draws with. Landing the last {rp.APPROACH:g} mm at the "
+           "marking feed puts the worst entry under the line width. The settled mean also falls, "
+           "but a fixed 12 s window holds fewer entries as the path slows, so the worst column "
+           "is the one that is a like-for-like comparison.")
+
+
 if __name__ == "__main__":
     print("figures:")
     fig_chain(); fig_workspace(); fig_panel(); fig_toolpath(); fig_joint_traj()
     fig_manip(); fig_gravity(); fig_step(); fig_tracking(); fig_control_study()
-    fig_contours()
+    fig_contours(); fig_approach()

@@ -2,33 +2,33 @@
   "configs": {
     "wn20_pid+g+v": {
       "diverged": false,
-      "marking_settled_mean_um": 951.0748944545851,
-      "marking_settled_max_um": 6695.554597970537,
-      "marking_mean_um": 1464.242827883155,
-      "marking_max_um": 9968.071262440788,
-      "travel_mean_um": 3642.957848831707,
-      "tau_peak": 1.903113639133157
+      "marking_settled_mean_um": 73.9942732853683,
+      "marking_settled_max_um": 460.7330391065932,
+      "marking_mean_um": 139.16649413519016,
+      "marking_max_um": 1431.730281804143,
+      "travel_mean_um": 2502.5920615404957,
+      "tau_peak": 1.8581260565528628
     },
     "wn40_pid+g": {
       "diverged": false,
-      "marking_settled_mean_um": 193.24640306447452,
-      "marking_settled_max_um": 1827.5260192302467,
-      "marking_mean_um": 289.473262139753,
-      "marking_max_um": 2542.87700131457,
-      "travel_mean_um": 1258.055323003857,
-      "tau_peak": 2.333635530526324
+      "marking_settled_mean_um": 19.51003754406354,
+      "marking_settled_max_um": 227.0090303646126,
+      "marking_mean_um": 27.84037761844865,
+      "marking_max_um": 250.67934172074405,
+      "travel_mean_um": 855.9989140430572,
+      "tau_peak": 2.0943234575768432
     },
     "wn40_pid+g+v": {
       "diverged": false,
-      "marking_settled_mean_um": 205.67628097962984,
-      "marking_settled_max_um": 2334.613005358514,
-      "marking_mean_um": 302.8991730810382,
-      "marking_max_um": 2334.613005358514,
-      "travel_mean_um": 1257.844571250198,
-      "tau_peak": 2.0189687684874897
+      "marking_settled_mean_um": 19.302117329299755,
+      "marking_settled_max_um": 178.94988704006948,
+      "marking_mean_um": 22.48958300643567,
+      "marking_max_um": 178.94988704006948,
+      "travel_mean_um": 890.7759755388333,
+      "tau_peak": 2.1617459146262696
     }
   },
-  "window_s": 11.92221037570232,
-  "window_start_s": 329.12878258926133,
-  "window_entries": 7
+  "window_s": 11.935960232908542,
+  "window_start_s": 380.2954957108536,
+  "window_entries": 6
 }
