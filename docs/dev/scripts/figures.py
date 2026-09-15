@@ -360,38 +360,51 @@ def fig_control_study():
         return
     S = json.loads(f.read_text())
     modes = list(S["modes"].keys())
-    mean = [S["modes"][m]["mean_um"] for m in modes]
-    mx = [S["modes"][m]["max_um"] for m in modes]
+    mean = [S["modes"][m]["marking_settled_mean_um"] for m in modes]
+    mx = [S["modes"][m]["marking_max_um"] for m in modes]
 
     fig, axes = plt.subplots(1, 2, figsize=(10.6, 3.9))
     y = np.arange(len(modes))[::-1]
-    axes[0].barh(y + 0.18, mean, height=0.33, color=C[0], label="mean")
-    axes[0].barh(y - 0.18, mx, height=0.33, color=C[2], label="worst")
+    axes[0].barh(y + 0.18, mean, height=0.33, color=C[0], label="settled, marking")
+    axes[0].barh(y - 0.18, mx, height=0.33, color=C[2], label="worst, marking")
     axes[0].set_yticks(y); axes[0].set_yticklabels(modes)
     axes[0].set_xscale("log"); axes[0].set_xlabel("tip error  [um], log scale")
     axes[0].axvline(300, color=C[1], lw=1.2, ls=(0, (4, 2)))
-    axes[0].text(300, len(modes) - 0.4, " 0.3 mm line", color=C[1], fontsize=8.2)
+    axes[0].text(300, -0.62, " 0.3 mm line", color=C[1], fontsize=8.2,
+                 ha="left", va="center")
     axes[0].legend(fontsize=8.2, loc="lower right")
     for yy, v in zip(y + 0.18, mean):
         axes[0].text(v * 1.15, yy, f"{v:,.0f}", va="center", fontsize=7.8, color=INK2)
     grid_on(axes[0], "x")
 
     wns = sorted(float(k) for k in S["sweep"])
-    sm = [S["sweep"][str(w)]["mean_um"] for w in wns]
-    axes[1].plot(wns, sm, "-o", color=C[0], ms=5, mec=SURFACE, mew=1.2)
+    ok = [w for w in wns if not S["sweep"][str(w)]["diverged"]]
+    sm = [S["sweep"][str(w)]["marking_settled_mean_um"] for w in ok]
+    gone = [w for w in wns if S["sweep"][str(w)]["diverged"]]
+    axes[1].plot(ok, sm, "-o", color=C[0], ms=5, mec=SURFACE, mew=1.2)
+    for w in gone:
+        axes[1].axvline(w, color=C[7], lw=1.0, ls=(0, (2, 2)))
+    if gone:
+        axes[1].axvspan(min(gone), max(wns) * 1.05, color=C[7], alpha=0.07, lw=0)
+        axes[1].text(min(gone), max(sm), "  diverges", color=C[7], fontsize=8.2,
+                     ha="left", va="top")
+    axes[1].text(max(wns), 300, "0.3 mm line ", color=C[1], fontsize=8.2,
+                 ha="right", va="bottom")
     axes[1].axhline(300, color=C[1], lw=1.2, ls=(0, (4, 2)))
     axes[1].set_xlabel("closed loop bandwidth  $\\omega_n$  [rad/s]")
     axes[1].set_ylabel("mean tip error  [um]")
     axes[1].set_yscale("log")
-    for w, v in zip(wns, sm):
+    for w, v in zip(ok, sm):
         axes[1].annotate(f"{v:,.0f}", (w, v), textcoords="offset points",
                          xytext=(0, 8), fontsize=7.8, color=INK2, ha="center")
     grid_on(axes[1], "y")
     axes[1].set_title("raising the gain instead", fontsize=10, loc="left", pad=8)
     axes[0].set_title("feeding the reference forward", fontsize=10, loc="left", pad=8)
     finish(fig, "10_control_study.png", "What actually removes the tracking error",
-           "Velocity lag is proportional to feed over bandwidth, so feeding the reference "
-           "forward removes it outright while raising the gain only divides it down.")
+           f"Over the busiest {S['window_s']:.0f} s of the logo: {S['window_entries']} needle entries inside "
+           "the O. Feeding the reference forward halves the settled error and lowers peak torque; "
+           "raising the bandwidth to 40 rad/s divides it by fifteen, and above that the loop "
+           "diverges at 200 Hz. Neither touches the worst bars, which are the entries themselves.")
 
 
 # --- 11. contour tracing, retired method against the traced one --------------

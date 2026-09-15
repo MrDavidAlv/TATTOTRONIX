@@ -163,6 +163,27 @@ def simulate(model, Kp, Ki, Kd, q_ref_fn, t_end, dt=1.0 / 1000, q0=None,
     return (np.array(T), np.array(Q), np.array(QR), np.array(TAU))
 
 
+def needle_state(tt, kind_win, ts, wn):
+    """Is the needle in the work at each sample time, and has it settled?
+
+    Returns (down, settled, entries). `down` is marking; `settled` is marking
+    with one second-order settling time, 4/wn, dropped after each entry.
+
+    The needle enters the work straight off a plunge, which is a travel move at
+    ten times the feed, so the loop is still catching up when marking starts.
+    Averaging that transient into the marking figure reports the plunge, not the
+    drawing; leaving it out entirely hides a real defect. It is therefore
+    measured separately, and both numbers are reported.
+    """
+    marking = (kind_win[:-1] == 1) & (kind_win[1:] == 1)
+    down = np.interp(ts, tt[:-1], marking.astype(float)) > 0.5
+    entry = np.flatnonzero(down & ~np.concatenate([[False], down[:-1]]))
+    settled = down.copy()
+    for i in entry:
+        settled &= ~((ts >= ts[i]) & (ts < ts[i] + 4.0 / wn))
+    return down, settled, entry
+
+
 def main():
     chain, model = load_dyn()
     out = {}
@@ -239,18 +260,7 @@ def main():
     Ts = T[::20]
     err = np.array([np.linalg.norm(chain.tcp(a) - chain.tcp(b))
                     for a, b in zip(Qs[::20], QR[::20])])
-    marking = (kind[win][:-1] == 1) & (kind[win][1:] == 1)
-    down = np.interp(Ts, tt[:-1], marking.astype(float)) > 0.5
-
-    # The needle enters the work straight off a plunge, which is a travel move
-    # at ten times the feed, so the loop is still settling when marking starts.
-    # `settled` drops one second-order settling time, 4/wn, after each entry, so
-    # the steady figure is about drawing and the transient is reported on its
-    # own rather than averaged into it.
-    entry = np.flatnonzero(down & ~np.concatenate([[False], down[:-1]]))
-    settled = down.copy()
-    for i in entry:
-        settled &= ~((Ts >= Ts[i]) & (Ts < Ts[i] + 4.0 / TUNE_WN))
+    down, settled, entry = needle_state(tt, kind[win], Ts, TUNE_WN)
     out |= {"trk_cart_err": err, "trk_cart_T": Ts, "trk_cart_down": down,
             "trk_cart_settled": settled}
     print(f"  cartesian error, marking settled  mean {err[settled].mean()*1e6:7.1f} um  "
