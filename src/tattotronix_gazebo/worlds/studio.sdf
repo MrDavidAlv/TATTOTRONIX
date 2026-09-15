@@ -74,20 +74,23 @@
       </link>
     </model>
 
-    <!-- Work bench. 0.75 m is a standard bench height; the arm is bolted to
-         the top face, so the description spawns at z = 0.75. -->
+    <!-- Work bench. 0.75 m is a standard bench height and the arm is bolted
+         to the top face, so the description spawns at z = 0.75. The top is
+         0.70 x 0.50 m, sized to the arm rather than to a room: at the zero
+         pose the flange sits 214 mm out from the base and the pen tip 259 mm,
+         so a bench wider than this is scenery the robot can never touch. -->
     <model name="bench">
       <static>true</static>
       <pose>0 0 0.375 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
-            <box><size>1.2 0.8 0.75</size></box>
+            <box><size>0.70 0.50 0.75</size></box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
-            <box><size>1.2 0.8 0.75</size></box>
+            <box><size>0.70 0.50 0.75</size></box>
           </geometry>
           <material>
             <ambient>0.18 0.16 0.14 1</ambient>
@@ -97,16 +100,21 @@
       </link>
     </model>
 
-    <!-- Work surface: a 30 x 20 cm panel 5 mm thick, lying flat in front of
-         the arm and inside its reach. This is what tattoo paths are projected
-         onto. -->
+    <!-- Work surface: a 20 x 14 cm panel 5 mm thick, lying flat in front of
+         the arm, so the arm starts above it rather than having to travel to
+         find it. This is what tattoo paths are projected onto.
+
+         Centred at x = 0.21 m, which is under the flange. The tip lands 49 mm
+         further out, at x = 259 mm, because the tool axis runs along the
+         bracket's +x; that is still well inside the 200 mm panel. Centring on
+         the tip would mean moving this to x = 0.259. -->
     <model name="work_surface">
       <static>true</static>
-      <pose>0.32 0.0 0.7525 0 0 0</pose>
+      <pose>0.21 0.0 0.7525 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
-            <box><size>0.30 0.20 0.005</size></box>
+            <box><size>0.20 0.14 0.005</size></box>
           </geometry>
           <surface>
             <friction>
@@ -116,7 +124,7 @@
         </collision>
         <visual name="visual">
           <geometry>
-            <box><size>0.30 0.20 0.005</size></box>
+            <box><size>0.20 0.14 0.005</size></box>
           </geometry>
           <material>
             <ambient>0.55 0.42 0.38 1</ambient>
@@ -148,62 +156,104 @@
         <scene>scene</scene>
         <ambient_light>0.45 0.45 0.50</ambient_light>
         <background_color>0.12 0.13 0.16</background_color>
-        <camera_pose>0.95 -0.85 1.35 0 0.42 2.33</camera_pose>
+        <camera_pose>1.20 -1.00 1.25 0 0.30 2.42</camera_pose>
       </plugin>
 
       <plugin filename="GzSceneManager" name="Scene Manager">
         <ignition-gui>
+          <!-- These plugins have no UI of their own. Left at their default
+               size they render their own help text over the render window, so
+               the card is collapsed to nothing and made transparent. -->
           <property key="resizable" type="bool">false</property>
           <property key="showTitleBar" type="bool">false</property>
           <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="cardBackground" type="string">#00000000</property>
         </ignition-gui>
       </plugin>
 
       <plugin filename="InteractiveViewControl" name="Interactive view control">
         <ignition-gui>
+          <!-- These plugins have no UI of their own. Left at their default
+               size they render their own help text over the render window, so
+               the card is collapsed to nothing and made transparent. -->
           <property key="resizable" type="bool">false</property>
           <property key="showTitleBar" type="bool">false</property>
           <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="cardBackground" type="string">#00000000</property>
         </ignition-gui>
       </plugin>
 
       <plugin filename="CameraTracking" name="Camera Tracking">
         <ignition-gui>
+          <!-- These plugins have no UI of their own. Left at their default
+               size they render their own help text over the render window, so
+               the card is collapsed to nothing and made transparent. -->
           <property key="resizable" type="bool">false</property>
           <property key="showTitleBar" type="bool">false</property>
           <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="cardBackground" type="string">#00000000</property>
         </ignition-gui>
       </plugin>
 
       <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
         <ignition-gui>
+          <!-- These plugins have no UI of their own. Left at their default
+               size they render their own help text over the render window, so
+               the card is collapsed to nothing and made transparent. -->
           <property key="resizable" type="bool">false</property>
           <property key="showTitleBar" type="bool">false</property>
           <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="cardBackground" type="string">#00000000</property>
         </ignition-gui>
       </plugin>
 
       <plugin filename="SelectEntities" name="Select Entities">
         <ignition-gui>
+          <!-- These plugins have no UI of their own. Left at their default
+               size they render their own help text over the render window, so
+               the card is collapsed to nothing and made transparent. -->
           <property key="resizable" type="bool">false</property>
           <property key="showTitleBar" type="bool">false</property>
           <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="cardBackground" type="string">#00000000</property>
         </ignition-gui>
       </plugin>
 
       <plugin filename="MarkerManager" name="Marker manager">
         <ignition-gui>
+          <!-- These plugins have no UI of their own. Left at their default
+               size they render their own help text over the render window, so
+               the card is collapsed to nothing and made transparent. -->
           <property key="resizable" type="bool">false</property>
           <property key="showTitleBar" type="bool">false</property>
           <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="cardBackground" type="string">#00000000</property>
         </ignition-gui>
       </plugin>
 
       <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
         <ignition-gui>
+          <!-- These plugins have no UI of their own. Left at their default
+               size they render their own help text over the render window, so
+               the card is collapsed to nothing and made transparent. -->
           <property key="resizable" type="bool">false</property>
           <property key="showTitleBar" type="bool">false</property>
           <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="cardBackground" type="string">#00000000</property>
         </ignition-gui>
       </plugin>
 
