@@ -40,6 +40,19 @@ Thumbs.db
 colcon.meta
 *.log
 
-# Internal development notebook, not published
+# Internal development notebook, not published. The scripts and figures under
+# docs/ are published: they are the reproducible part, and a figure nobody can
+# regenerate is a claim nobody can check.
 DEVELOPMENT.md
-docs/dev/
+docs/scripts/__pycache__/
+
+# Regenerable caches. The JSON summaries beside them are published, because
+# they are the numbers the notebook quotes; the arrays are just how they were
+# obtained and `analysis.py` rebuilds them.
+docs/data/*.npz
+docs/data/*.npy
+
+# The official ROS logo is CC BY-NC 4.0 and covered by the ROS trademark
+# policy; this repository is Apache-2.0, so the mark is fetched, not vendored.
+# docs/scripts/fetch_artwork.sh downloads it.
+docs/artwork/

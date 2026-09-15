@@ -75,6 +75,18 @@ Visualization Manager:
         {}
       Update Interval: 0
       Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Logo trace
+      Namespaces:
+        {}
+      Topic:
+        Depth: 1
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /logo_trace
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 38; 40; 46

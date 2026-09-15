@@ -1,0 +1,45 @@
+{
+  "tcp_zero_mm": [
+    258.96,
+    -9.44,
+    245.58
+  ],
+  "path_points": 4470,
+  "path_time_s": 537.1854990428228,
+  "path_marked_mm": 2507.3251268308995,
+  "path_travel_mm": 3101.378323908155,
+  "ik_converged_pct": 100.0,
+  "ik_worst_residual": 9.998239592999677e-07,
+  "panel_reachable_pct": 98.41897233201581,
+  "mu_path_min": 0.0006214397448240735,
+  "mu_path_max": 0.0036558903078221555,
+  "Kp": [
+    28.1424,
+    19.4854,
+    6.2138,
+    0.2506,
+    0.0958
+  ],
+  "Ki": [
+    187.6157,
+    129.9029,
+    41.4254,
+    1.6706,
+    0.6384
+  ],
+  "Kd": [
+    1.40712,
+    0.97427,
+    0.31069,
+    0.01253,
+    0.00479
+  ],
+  "cart_err_marking_settled_mean_um": 92.22974706656656,
+  "cart_err_marking_settled_max_um": 763.4547805048719,
+  "cart_err_marking_mean_um": 97.15096632353124,
+  "cart_err_marking_max_um": 763.4547805048719,
+  "cart_err_travel_mean_um": 1196.4699620188478,
+  "cart_err_travel_max_um": 3523.6950839766805,
+  "tau_peak_Nm": 0.7999828652467443,
+  "grav_peak_Nm": 1.9131674344703213
+}
