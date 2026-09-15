@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fetch the official ROS logo into docs/dev/artwork/.
+# Fetch the official ROS logo into docs/artwork/.
 #
 # The mark is published by ros-infrastructure/artwork under CC BY-NC 4.0 and is
 # covered by the ROS trademark policy at https://www.ros.org/blog/media/. This

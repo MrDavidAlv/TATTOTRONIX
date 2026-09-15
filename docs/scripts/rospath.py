@@ -122,7 +122,7 @@ def ros_logo_mask(width_mm=150.0, res=0.25):
     svg = ARTWORK / "ros_logo.svg"
     if not svg.exists():
         raise FileNotFoundError(
-            f"{svg} is missing. Run docs/dev/scripts/fetch_artwork.sh to "
+            f"{svg} is missing. Run docs/scripts/fetch_artwork.sh to "
             "download the official mark from ros-infrastructure/artwork."
         )
     return from_svg(svg, width_mm, res=res)
