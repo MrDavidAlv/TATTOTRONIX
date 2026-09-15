@@ -13,7 +13,8 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
-        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
+        (os.path.join('share', package_name, 'config'),
+         glob('config/*.yaml') + glob('config/*.npz')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -22,5 +23,7 @@ setup(
     description='ros2_control controller configuration and spawners for the TATTOTRONIX arm',
     license='Apache-2.0',
     extras_require={'test': ['pytest']},
-    entry_points={'console_scripts': []},
+    entry_points={'console_scripts': [
+        'draw_logo = tattotronix_control.draw_logo:main',
+    ]},
 )
