@@ -66,6 +66,7 @@ ros2 launch tattotronix_gazebo simulation.launch.py
 - [What Is Real and What Is Placeholder](#what-is-real-and-what-is-placeholder)
 - [Known Issues](#known-issues)
 - [Usage](#usage)
+- [Acknowledgements](#acknowledgements)
 - [Contact](#contact)
 
 ---
@@ -461,6 +462,22 @@ ros2 launch tattotronix_gazebo simulation.launch.py headless:=true use_rviz:=fal
 # Check the description parses and the tree resolves
 xacro src/tattotronix_description/urdf/tattotronix.urdf.xacro hardware:=none | check_urdf /dev/stdin
 ```
+
+---
+
+## Acknowledgements
+
+This project started in 2020 as an invitation from my robotics teacher **Olmer
+García**, on an initiative by **Alis Paraquiva** and **Valeria Jorge**. It was
+left unfinished when the pandemic took me out of the city, and picked up again
+years later — which is what this repository is.
+
+Thank you to the three of them. Without that first invitation it would never
+have started.
+
+The full account is in **[docs/project-history.md](docs/project-history.md)**,
+including what the 2020 work was, what it became, and how the current version
+was built.
 
 ---
 
