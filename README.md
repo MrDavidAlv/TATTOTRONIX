@@ -423,6 +423,19 @@ from being an accuracy claim. See
   on `PATH` ahead of `/usr/bin`, `python3` resolves to its own 3.11 without
   PyYAML, and `colcon`, `xacro` and `ros2 launch` fail in confusing ways. Drop
   those entries from `PATH` in any shell used for ROS work.
+- **A second publisher on `/joint_states` freezes the RViz model.** A leftover
+  `joint_state_publisher` from some earlier launch keeps publishing zeros, and
+  `robot_state_publisher` interleaves them with the real values from
+  `joint_state_broadcaster`, so TF sits at the zero pose. The failure is
+  confusing because Gazebo keeps moving — it has its own state and never reads
+  the topic — and `/logo_trace` keeps growing, because `draw_logo` draws the
+  plan rather than the measured pose. Check with
+  `ros2 topic info /joint_states`: the count should be one.
+- **Nothing stops two simulations running at once.** Two of them fight over
+  `/clock`, and the symptom is RViz logging "Detected jump back in time" while
+  the controllers never finish activating. `docs/scripts/record_simulation.sh`
+  refuses to start when it finds one already up; by hand, check with
+  `pgrep -af "ign gazebo|rviz2|parameter_bridge"` before launching.
 - **MoveIt is not installed** and no motion planning is wired up yet. The arm
   accepts joint trajectories on `arm_controller` and nothing plans them.
 
