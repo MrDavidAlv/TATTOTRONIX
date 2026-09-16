@@ -107,10 +107,11 @@ away from the robot. The full write-up lives in
 |---|---|
 | <img src="docs/figures/01_chain.png" width="420"/><br/>**The chain.** Forward kinematics against live TF, agreeing to the resolution `tf2_echo` prints. | <img src="docs/figures/02_workspace.png" width="420"/><br/>**Workspace.** Uniform sampling of the joint box. The panel falls inside the envelope. |
 | <img src="docs/figures/03_panel.png" width="420"/><br/>**Panel reachability.** The needle can be put perpendicular over 98.4% of the surface. | <img src="docs/figures/11_contours.png" width="420"/><br/>**Contour tracing.** Sorting boundary pixels by angle works on a disc and collapses on a letterform. |
-| <img src="docs/figures/04_toolpath.png" width="420"/><br/>**Toolpath.** The official ROS logo: 2507 mm marked, 3101 mm travelled, 98 needle entries. | <img src="docs/figures/05_joint_trajectories.png" width="420"/><br/>**Joint trajectories.** `joint_4` sits at exactly zero, and that is the correct answer for flat work. |
-| <img src="docs/figures/06_manipulability.png" width="420"/><br/>**Conditioning.** Condition number 21 to 36 along the path; nowhere near a singularity. | <img src="docs/figures/07_gravity.png" width="420"/><br/>**Gravity torque.** Newton–Euler against the gradient of potential energy, agreeing to 10⁻¹¹ N·m. |
-| <img src="docs/figures/08_step.png" width="420"/><br/>**Step response.** Every gain traces back to a measured inertia and one bandwidth decision. | <img src="docs/figures/09_tracking.png" width="420"/><br/>**Tracking.** Settled the tip holds 132 µm; the spikes are needle entries and exits. |
-| <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 2.3 mm to 179 µm. |
+| <img src="docs/figures/04_toolpath.png" width="420"/><br/>**Toolpath.** The official ROS logo: 2558 mm marked, 3530 mm travelled, 121 needle entries. | <img src="docs/figures/11_contours.png" width="420"/><br/>**Contour tracing.** Sorting boundary pixels by angle works on a disc and collapses on a letterform. |
+| <img src="docs/figures/07_gravity.png" width="420"/><br/>**Gravity torque.** Newton–Euler against the gradient of potential energy, agreeing to 10⁻¹¹ N·m. | <img src="docs/figures/08_step.png" width="420"/><br/>**Step response.** Every gain traces back to a measured inertia and one bandwidth decision. |
+| <img src="docs/figures/09_tracking.png" width="420"/><br/>**Tracking.** Settled the tip holds 94 µm; the spikes are needle entries and exits. | <img src="docs/figures/05_joint_trajectories.png" width="420"/><br/>**Joint trajectories.** `joint_4` sits at exactly zero, the correct answer for flat work. |
+| <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 2.3 mm to 196 µm. |
+| <img src="docs/figures/13_resample.png" width="420"/><br/>**Resampling.** A finer path lowers peak torque rather than raising it: the feedforward differentiates it. | <img src="docs/figures/06_manipulability.png" width="420"/><br/>**Conditioning.** Condition number 21 to 36; nowhere near a singularity. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
 ### Watching it draw
@@ -137,6 +138,7 @@ python3 docs/scripts/rospath.py   # self-checks the contour tracer, then path st
 python3 docs/scripts/analysis.py  # ~15 min, writes docs/data/analysis.npz
 python3 docs/scripts/control_study.py    # ~30 min
 python3 docs/scripts/approach_study.py   # ~15 min
+python3 docs/scripts/resample_study.py   # ~10 min
 python3 docs/scripts/figures.py   # writes docs/figures/*.png
 python3 docs/scripts/export_trajectory.py   # trajectory for the draw_logo node
 python3 docs/scripts/render_drawing.py      # the animation at the top
@@ -402,9 +404,9 @@ is Apache-2.0. Run `docs/scripts/fetch_artwork.sh`.
 | Plunge depth and marking feed | 1.5 mm below the surface at 6 mm/s | Whatever real tissue turns out to need |
 
 **Where the model stands.** With gravity and velocity feedforward at
-`wn = 40 rad/s` and a 4 mm slow approach into the work, the tip holds 19.3 µm
-while marking and 178.9 µm at the worst moment of the drawing, against a 0.3 mm
-tattoo line. Every modelled error term is inside the line width. The three that
+`wn = 40 rad/s`, a 4 mm slow approach into the work and the path resampled at
+0.15 mm, the tip holds 15.2 µm while marking and 201.4 µm at the worst moment of
+the drawing, against a 0.3 mm tattoo line. Every modelled error term is inside the line width. The three that
 are not modelled — servo resolution, backlash and tissue — are what stop this
 from being an accuracy claim. See
 [control](docs/mathematical-model/control.md#6-recommended-configuration).
@@ -423,6 +425,19 @@ from being an accuracy claim. See
   on `PATH` ahead of `/usr/bin`, `python3` resolves to its own 3.11 without
   PyYAML, and `colcon`, `xacro` and `ros2 launch` fail in confusing ways. Drop
   those entries from `PATH` in any shell used for ROS work.
+- **A second publisher on `/joint_states` freezes the RViz model.** A leftover
+  `joint_state_publisher` from some earlier launch keeps publishing zeros, and
+  `robot_state_publisher` interleaves them with the real values from
+  `joint_state_broadcaster`, so TF sits at the zero pose. The failure is
+  confusing because Gazebo keeps moving — it has its own state and never reads
+  the topic — and `/logo_trace` keeps growing, because `draw_logo` draws the
+  plan rather than the measured pose. Check with
+  `ros2 topic info /joint_states`: the count should be one.
+- **Nothing stops two simulations running at once.** Two of them fight over
+  `/clock`, and the symptom is RViz logging "Detected jump back in time" while
+  the controllers never finish activating. `docs/scripts/record_simulation.sh`
+  refuses to start when it finds one already up; by hand, check with
+  `pgrep -af "ign gazebo|rviz2|parameter_bridge"` before launching.
 - **MoveIt is not installed** and no motion planning is wired up yet. The arm
   accepts joint trajectories on `arm_controller` and nothing plans them.
 

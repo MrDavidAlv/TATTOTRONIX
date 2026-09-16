@@ -33,7 +33,14 @@ ARTWORK = Path(__file__).resolve().parents[1] / "artwork"
 # --- process parameters ------------------------------------------------------
 
 STROKE_PITCH = 1.2      # spacing between adjacent fill passes, mm
-POINT_STEP = 0.6        # path resampled to this arc length, mm
+POINT_STEP = 0.15       # path resampled to this arc length, mm
+                        # Swept in resample_study.py. Going from 0.6 to 0.15 mm
+                        # takes the worst marking error from 179 to 19 um and
+                        # drops peak torque 22%, for 3.7x the points and 4% of
+                        # cycle time. Almost none of that is geometry: the win
+                        # is that the velocity feedforward comes from finite
+                        # differences on this path, and at 0.6 mm the reference
+                        # velocity is a staircase.
 CLEARANCE = 8.0         # travel height above the surface, mm
 PLUNGE_DEPTH = 1.5      # how far below the surface the needle is driven, mm
 APPROACH = 4.0          # last part of the plunge, taken at marking feed, mm
@@ -134,8 +141,16 @@ def ros_logo_mask(width_mm=150.0, res=0.25):
 
 # --- fill --------------------------------------------------------------------
 
-def _resample(points, step=POINT_STEP):
-    """Constant arc length resampling of a polyline."""
+def _resample(points, step=None):
+    """Constant arc length resampling of a polyline.
+
+    `step` defaults to POINT_STEP, read here rather than in the signature.
+    Python evaluates a default argument once, when the function is defined, so
+    `step=POINT_STEP` would freeze whatever the constant was at import and
+    silently ignore anyone who set it afterwards - which is exactly what a
+    sweep over the step does.
+    """
+    step = POINT_STEP if step is None else step
     if len(points) < 2:
         return points
     d = np.linalg.norm(np.diff(points, axis=0), axis=1)
@@ -252,8 +267,13 @@ def _boundary_loops(blob, xs, ys):
     return segs
 
 
-def _scanlines(blob, xs, ys, pitch=STROKE_PITCH):
-    """Boustrophedon fill of one region at the stroke pitch."""
+def _scanlines(blob, xs, ys, pitch=None):
+    """Boustrophedon fill of one region at the stroke pitch.
+
+    `pitch` defaults to STROKE_PITCH, read at call time for the same reason
+    `_resample` reads POINT_STEP at call time.
+    """
+    pitch = STROKE_PITCH if pitch is None else pitch
     res = float(ys[0] - ys[1]) if len(ys) > 1 else 1.0
     every = max(int(round(pitch / abs(res))), 1)
     runs = []

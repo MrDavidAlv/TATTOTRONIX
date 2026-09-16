@@ -523,8 +523,76 @@ def fig_approach():
            "is the one that is a like-for-like comparison.")
 
 
+# --- 13. what the resampling step buys ---------------------------------------
+
+def fig_resample():
+    import json
+    f = DATA / "resample_study.json"
+    if not f.exists():
+        print("   (skipping 13, resample_study.json not found)")
+        return
+    S = json.loads(f.read_text())
+    R = S["step_mm"]
+    xs = sorted((float(k) for k in R), reverse=True)
+    worst = [R[str(x)]["worst_um"] for x in xs]
+    settled = [R[str(x)]["settled_um"] for x in xs]
+    chord = [R[str(x)]["chord_um"] for x in xs]
+    pts = [R[str(x)]["points"] for x in xs]
+    tau = [R[str(x)]["tau_peak"] for x in xs]
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.0))
+
+    ax = axes[0]
+    ax.plot(xs, worst, "-o", color=C[0], ms=5, mec=SURFACE, mew=1.2, label="worst, marking")
+    ax.plot(xs, settled, "-o", color=C[2], ms=5, mec=SURFACE, mew=1.2, label="settled mean")
+    # A chord error of zero is not zero, it is "finer than the 0.25 mm mask can
+    # resolve": the traced contour has no detail left to depart from. Plotting
+    # it on a log axis would send the line off the bottom and claim perfection.
+    seen = [(x, c) for x, c in zip(xs, chord) if c > 0]
+    ax.plot([x for x, _ in seen], [c for _, c in seen], "-o", color=C[3], ms=5,
+            mec=SURFACE, mew=1.2, label="chord error")
+    for x, c in zip(xs, chord):
+        if c == 0:
+            ax.annotate("below what a\n0.25 mm mask resolves", (x, min(settled) * 1.1),
+                        textcoords="offset points", xytext=(6, 0), fontsize=7.6,
+                        color=C[3], va="center")
+    ax.axhline(300, color=C[1], lw=1.2, ls=(0, (4, 2)))
+    ax.text(xs[0], 320, " 0.3 mm line", color=C[1], fontsize=8.2, ha="left", va="bottom")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xticks(xs); ax.set_xticklabels([f"{x:g}" for x in xs])
+    ax.set_xlabel("resampling step  [mm]"); ax.set_ylabel("tip error  [um]")
+    ax.legend(fontsize=8.2)
+    grid_on(ax, "y")
+    ax.set_title("what it buys", fontsize=10, loc="left", pad=8)
+
+    ax = axes[1]
+    ax.plot(xs, pts, "-o", color=C[4], ms=5, mec=SURFACE, mew=1.2)
+    ax.set_xscale("log")
+    ax.set_xticks(xs); ax.set_xticklabels([f"{x:g}" for x in xs])
+    ax.set_xlabel("resampling step  [mm]")
+    ax.set_ylabel("path points", color=C[4])
+    ax.tick_params(axis="y", colors=C[4])
+    for x, p, tp in zip(xs, pts, tau):
+        ax.annotate(f"{p:,}".replace(",", " "), (x, p), textcoords="offset points",
+                    xytext=(0, 9), fontsize=7.8, color=INK2, ha="center")
+    ax2 = ax.twinx()
+    ax2.plot(xs, tau, "-s", color=C[1], ms=4.5, mec=SURFACE, mew=1.2)
+    ax2.set_ylabel("peak torque  [N m]", color=C[1])
+    ax2.tick_params(axis="y", colors=C[1])
+    ax2.spines["right"].set_visible(True); ax2.spines["right"].set_color(GRID)
+    grid_on(ax, "y")
+    ax.set_title("what it costs", fontsize=10, loc="left", pad=8)
+
+    finish(fig, "13_resample.png", "What the resampling step buys",
+           "The step was listed in the error budget as 0.6 mm against a 0.3 mm line, as though "
+           "spacing were error. The chord error it actually introduces is 118 um, and it is not "
+           "what dominates: the reference velocity comes from finite differences on this path, "
+           "so a coarse step makes the feedforward a staircase. Refining it lowers peak torque "
+           "rather than raising it, which is the signature of a smoother reference.")
+
+
 if __name__ == "__main__":
     print("figures:")
     fig_chain(); fig_workspace(); fig_panel(); fig_toolpath(); fig_joint_traj()
     fig_manip(); fig_gravity(); fig_step(); fig_tracking(); fig_control_study()
-    fig_contours(); fig_approach()
+    fig_contours(); fig_approach(); fig_resample()

@@ -31,7 +31,10 @@ def generate_launch_description():
     simulation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_gazebo, 'launch', 'simulation.launch.py')),
-        launch_arguments={'use_rviz': LaunchConfiguration('use_rviz')}.items())
+        launch_arguments={
+            'use_rviz': LaunchConfiguration('use_rviz'),
+            'rviz_config': LaunchConfiguration('rviz_config'),
+        }.items())
 
     draw = Node(
         package='tattotronix_control',
@@ -53,6 +56,10 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'use_rviz', default_value='true',
             description='RViz is where the ink trace is visible.'),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=os.path.join(pkg_gazebo, 'rviz', 'simulation.rviz'),
+            description='Passed through to simulation.launch.py.'),
         DeclareLaunchArgument(
             'settle', default_value='12.0',
             description='Seconds to wait for the controllers before sending.'),

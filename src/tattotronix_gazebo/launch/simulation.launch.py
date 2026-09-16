@@ -53,7 +53,7 @@ def generate_launch_description():
     controllers_file = os.path.join(
         pkg_control, 'config', 'tattotronix_controllers.yaml')
     default_world = os.path.join(pkg_gazebo, 'worlds', 'studio.sdf')
-    rviz_config_file = os.path.join(pkg_gazebo, 'rviz', 'simulation.rviz')
+    default_rviz_config = os.path.join(pkg_gazebo, 'rviz', 'simulation.rviz')
 
     _extend_gz_resource_path(
         os.path.dirname(pkg_description),
@@ -66,6 +66,7 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
     spawn_z = LaunchConfiguration('spawn_z')
+    rviz_config = LaunchConfiguration('rviz_config')
 
     declared_arguments = [
         DeclareLaunchArgument(
@@ -91,6 +92,13 @@ def generate_launch_description():
             'headless',
             default_value='false',
             description='Run the Gazebo server without the GUI, for CI and tests',
+        ),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=default_rviz_config,
+            description='RViz layout. The default is the one to work in; '
+                        'rviz/recording.rviz is the same displays with the docks '
+                        'hidden and the camera on the panel, for video',
         ),
         DeclareLaunchArgument(
             'world_name',
@@ -223,7 +231,7 @@ def generate_launch_description():
         name='rviz2',
         output='screen',
         condition=IfCondition(use_rviz),
-        arguments=['-d', rviz_config_file],
+        arguments=['-d', rviz_config],
         parameters=[{'use_sim_time': True}],
     )
 
