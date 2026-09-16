@@ -62,17 +62,46 @@ exposes:
 
 $$\tau = K_p e + K_i \textstyle\int e \, dt + K_d \dot e + \text{(feedforward)}$$
 
-The loop closes at **200 Hz**, the `controller_manager` rate in
+The loop closes at **1 kHz**, the `controller_manager` rate in
 `tattotronix_controllers.yaml`. The plant in simulation is the full non-linear
-dynamics, integrated at 1 kHz.
+dynamics, integrated at 1 kHz — 4 kHz in the rate study below, where the two
+have to be told apart.
+
+That rate is not a free choice: it is what sets the achievable bandwidth, and it
+used to be 200 Hz. See [the ceiling](#7-the-rate-is-the-ceiling).
 
 ### Tuning
 
-Each joint is treated as a second order plant with the inertia taken from the
-diagonal of $M(q)$ at a working pose. Fixing critical damping ($\zeta = 1$) and a
-bandwidth $\omega_n$:
+Each axis is a double integrator, $J\ddot q = \tau$, so a PID closes it as
 
-$$K_p = J\omega_n^2, \qquad K_d = 2\zeta\omega_n J, \qquad K_i = 0.15\,\omega_n K_p$$
+$$J s^3 + K_d s^2 + K_p s + K_i$$
+
+Placing **all three poles at $-\omega_n$** gives $(s + \omega_n)^3$, and therefore
+
+$$K_p = 3 J \omega_n^2, \qquad K_d = 3 J \omega_n, \qquad K_i = J \omega_n^3$$
+
+which has no overshoot by construction.
+
+**Two details that are not cosmetic.**
+
+An earlier version used the second order PD rule, $K_p = J\omega_n^2$ and
+$K_d = 2\zeta\omega_n J$, with an integral term bolted on as a fraction of $K_p$.
+That put the integral time at 0.33 s against a loop time constant of 0.05 s, and
+the step response overshot by 30 to 75 percent.
+
+And $J$ is the **effective** inertia, $1/(M^{-1})_{ii}$, not the diagonal of $M$.
+The two are not the same: the diagonal says how much inertia the axis carries
+*if every other axis is frozen*, and nothing freezes them. At the zero pose they
+differ by a factor of 2.2 on `joint_2` and 2.8 on `joint_3`, so using the
+diagonal detunes those two axes by that factor.
+
+| Axis | $1/(M^{-1})_{ii}$ | $\mathrm{diag}(M)$ |
+|---|---|---|
+| `joint_1` | 0.01561 | 0.01562 |
+| `joint_2` | 0.01552 | 0.03442 |
+| `joint_3` | 0.00366 | 0.01016 |
+| `joint_4` | 0.00019 | 0.00020 |
+| `joint_5` | 0.00007 | 0.00010 |
 
 What matters is not the values but that **every gain traces back to a measured
 inertia and a single bandwidth decision**, rather than to a knob someone turned
@@ -111,9 +140,9 @@ Split, over the first 12 s of the logo — one dot, filled without lifting:
 
 | Segment | Mean | Worst |
 |---|---|---|
-| Marking, settled | **94.0 µm** | 720 µm |
-| Marking, all | 99.1 µm | 720 µm |
-| Travel | 1313 µm | 3671 µm |
+| Marking, settled | **94.9 µm** | 725 µm |
+| Marking, all | 99.7 µm | 725 µm |
+| Travel | 1295 µm | 3526 µm |
 
 The split was validated before the artwork changed: on the stand-in it gave
 164.5 µm settled, against the 165 µm `control_study.py` obtains independently for
@@ -194,20 +223,24 @@ At $\omega_n = 20$ rad/s, full non-linear plant:
 
 | Structure | Settled, marking | Worst settled | Worst, marking | Peak torque |
 |---|---|---|---|---|
-| PID only | 430.3 µm | 15 010 µm | 30 677 µm | 1.79 N·m |
-| PID + gravity | 51.0 µm | 453.7 µm | 622.5 µm | 1.51 N·m |
-| PID + gravity + velocity | **40.6 µm** | **320.6 µm** | 863.6 µm | 1.56 N·m |
-| Computed torque | 43.7 µm | 339.1 µm | 1185 µm | 1.52 N·m |
+| PID only | 442.0 µm | 16 200 µm | 30 037 µm | 1.78 N·m |
+| PID + gravity | 48.1 µm | 450.5 µm | 598.8 µm | 1.51 N·m |
+| PID + gravity + velocity | **39.6 µm** | **319.2 µm** | 820.4 µm | 1.55 N·m |
+| Computed torque | 43.4 µm | 339.8 µm | 1136 µm | 1.51 N·m |
 
 Bandwidth sweep, PID + gravity:
 
 | $\omega_n$ | Settled, marking | Worst settled | Peak torque | |
 |---|---|---|---|---|
-| 10 rad/s | 284.2 µm | 1252 µm | 1.44 N·m | |
-| 20 rad/s | 51.0 µm | 453.7 µm | 1.51 N·m | |
-| 40 rad/s | **16.8 µm** | 244.1 µm | 1.75 N·m | |
-| 80 rad/s | 27 937 µm | 53 486 µm | 20.0 N·m | **torque saturated** |
-| 120 rad/s | — | — | — | **diverges** |
+| 10 rad/s | 289.6 µm | 1271 µm | 1.44 N·m | |
+| 20 rad/s | 48.1 µm | 450.5 µm | 1.51 N·m | |
+| 40 rad/s | 17.0 µm | 246.5 µm | 1.72 N·m | |
+| 80 rad/s | 7.8 µm | 114.3 µm | 1.91 N·m | |
+| 160 rad/s | **6.2 µm** | 39.3 µm | 2.40 N·m | |
+| 240 rad/s | 6.1 µm | **28.4 µm** | 2.68 N·m | |
+
+There is no cliff in that column any more. There used to be one between 40 and
+80 rad/s, and it was never about the gains — see the next section.
 
 ### What holds, and what the fix changed
 
@@ -241,18 +274,22 @@ Bandwidth sweep, PID + gravity:
 
 ## 6. Recommended configuration
 
-$\omega_n = 40$ rad/s, PID by pole placement on the effective inertia, with
-gravity and velocity feedforward, over a 4 mm slow approach. Same hard window:
+$\omega_n = 160$ rad/s, PID by pole placement on the effective inertia, with
+gravity and velocity feedforward, over a 4 mm slow approach, at a 1 kHz loop
+rate. Same hard window:
 
 | Configuration | Settled, marking | Worst, marking | Peak torque |
 |---|---|---|---|
-| $\omega_n = 20$, PID + g + v | 40.6 µm | 863.6 µm | 1.56 N·m |
-| $\omega_n = 40$, PID + g | 16.8 µm | 288.7 µm | 1.75 N·m |
-| $\omega_n = 40$, PID + g + v | **15.2 µm** | **201.4 µm** | 1.81 N·m |
+| $\omega_n = 40$, PID + g + v | 15.2 µm | 200.0 µm | 1.77 N·m |
+| $\omega_n = 160$, PID + g | 6.2 µm | 40.4 µm | 2.40 N·m |
+| $\omega_n = 160$, PID + g + v | **6.3 µm** | **36.3 µm** | 2.37 N·m |
 
-**The whole drawing is inside the line width, worst case included.** 201.4 µm
-against 300 µm, with a settled mean of 15.2 µm — a factor of 20 below it — at 9%
-of the 20 N·m torque limit.
+**The whole drawing sits at an eighth of the line width, worst case included.**
+36.3 µm against 300 µm, with a settled mean of 6.3 µm, at 12% of the 20 N·m
+torque limit.
+
+240 rad/s is slightly better again — 28.4 µm — but it costs more torque and sits
+closer to the boundary in section 7. 160 leaves margin on both.
 
 The worst marking error and the worst *settled* error are now the same number.
 That is the clearest statement that the entry transient is gone: the worst
@@ -265,8 +302,58 @@ moment of the drawing is no longer a needle entry.
 | Stand-in artwork, continuous marking | 22.5 µm | 272 µm | The steady state, on the easy part |
 | Logo, busiest window, fast plunge | 205.7 µm | 2335 µm | What the drawing actually asked for |
 | Logo, 4 mm approach, 0.6 mm path | 19.3 µm | 178.9 µm | Inside the line, on a coarse reference |
-| Logo, 4 mm approach, 0.15 mm path | **15.2 µm** | **201.4 µm** | The same, on a reference worth differentiating |
+| Logo, 4 mm approach, 0.15 mm path | 15.2 µm | 200.0 µm | The same, on a reference worth differentiating |
+| The same, at 1 kHz and 160 rad/s | **6.3 µm** | **36.3 µm** | What the 200 Hz rate had been hiding |
 
 The middle row is the one worth keeping in view. The first row was not wrong; it
 was measured on a stretch of drawing with no needle lifts, and the logo has 98.
 Finding that out cost nothing but measuring the right thing.
+
+---
+
+## 7. The rate is the ceiling
+
+Every bandwidth sweep in this project used to stop at 40 rad/s, and every time
+the conclusion was "the gains cannot go higher". They could. What could not go
+higher was the rate the loop ran at.
+
+<div align="center">
+<img src="../figures/14_rate.png" width="900"/>
+</div>
+
+Sweeping the two together, gravity and velocity feedforward, worst marking error:
+
+| Rate | $\omega_n$ = 40 | $\omega_n$ = 80 | $\omega_n$ = 160 |
+|---|---|---|---|
+| 200 Hz | 220.1 µm | **saturated** | **diverges** |
+| 500 Hz | 215.2 µm | 129.5 µm | **saturated** |
+| 1000 Hz | 214.2 µm | 127.9 µm | **67.9 µm** |
+
+Two things fall out of that table.
+
+**The ceiling scales with the rate.** Each row's usable bandwidth roughly doubles
+as the rate doubles. Every working point has $\omega_n$ at or below about a
+quarter of the sample rate, and every failing one is above a third; the boundary
+lies between, and this sweep does not resolve it more finely.
+
+**Raising the rate alone buys nothing.** The $\omega_n$ = 40 column barely moves
+across a fivefold change in rate — 220 to 214 µm. The rate is not a source of
+accuracy, it is permission to ask for more bandwidth, and the bandwidth is what
+delivers.
+
+**And the failure is torque, not arithmetic.** At 200 Hz and 80 rad/s the loop
+does not produce non-finite numbers: it commands the full 20 N·m and sits there
+at 24 mm of error. A discrete loop asked for a bandwidth close to its own rate
+overshoots between samples and then demands whatever torque it takes to correct,
+which is a much more recognisable failure on real hardware than a NaN.
+
+### What this costs outside simulation
+
+In simulation, nothing: `update_rate: 1000` in
+`tattotronix_controllers.yaml` and the ceiling moves.
+
+On hardware it is a requirement on the servo interface rather than a preference.
+A bus that cannot sustain 1 kHz puts the ceiling back where it was, and with it
+the 200 µm worst case. That makes the interface rate a specification for the
+hardware this model is meant to describe, which is the kind of number worth
+knowing before buying anything.

@@ -1,31 +1,31 @@
 {
   "configs": {
-    "wn20_pid+g+v": {
-      "diverged": false,
-      "marking_settled_mean_um": 40.56915859616906,
-      "marking_settled_max_um": 320.5861085745097,
-      "marking_mean_um": 87.89307286756676,
-      "marking_max_um": 863.6491708967911,
-      "travel_mean_um": 2417.037288435619,
-      "tau_peak": 1.5584883725061949
-    },
-    "wn40_pid+g": {
-      "diverged": false,
-      "marking_settled_mean_um": 16.821828770840362,
-      "marking_settled_max_um": 244.1449509345729,
-      "marking_mean_um": 28.092948672618654,
-      "marking_max_um": 288.69718960793796,
-      "travel_mean_um": 706.4036122630988,
-      "tau_peak": 1.7501784288091113
-    },
     "wn40_pid+g+v": {
       "diverged": false,
-      "marking_settled_mean_um": 15.19282851513833,
-      "marking_settled_max_um": 168.66262575055055,
-      "marking_mean_um": 20.302539556999164,
-      "marking_max_um": 201.38253964610962,
-      "travel_mean_um": 769.2286922670253,
-      "tau_peak": 1.8076352861298328
+      "marking_settled_mean_um": 15.171697633224095,
+      "marking_settled_max_um": 172.26084532877599,
+      "marking_mean_um": 20.490828991054485,
+      "marking_max_um": 200.02837634755616,
+      "travel_mean_um": 775.101753967748,
+      "tau_peak": 1.7734832455106542
+    },
+    "wn160_pid+g": {
+      "diverged": false,
+      "marking_settled_mean_um": 6.2282842450898395,
+      "marking_settled_max_um": 39.26672087702706,
+      "marking_mean_um": 6.6450079930019,
+      "marking_max_um": 40.404601125754404,
+      "travel_mean_um": 60.57256539663266,
+      "tau_peak": 2.4031478325132785
+    },
+    "wn160_pid+g+v": {
+      "diverged": false,
+      "marking_settled_mean_um": 6.257002238188506,
+      "marking_settled_max_um": 35.30362810285265,
+      "marking_mean_um": 6.564793978284321,
+      "marking_max_um": 36.31090364490375,
+      "travel_mean_um": 62.4808170075826,
+      "tau_peak": 2.365842973019125
     }
   },
   "window_s": 11.985987608888024,

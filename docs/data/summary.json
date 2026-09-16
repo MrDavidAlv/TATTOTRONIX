@@ -34,12 +34,12 @@
     0.01261,
     0.00478
   ],
-  "cart_err_marking_settled_mean_um": 94.04273142834285,
-  "cart_err_marking_settled_max_um": 719.6278207294068,
-  "cart_err_marking_mean_um": 99.12795656135383,
-  "cart_err_marking_max_um": 719.6278207294068,
-  "cart_err_travel_mean_um": 1313.340072175965,
-  "cart_err_travel_max_um": 3671.3107728671544,
-  "tau_peak_Nm": 0.7981784155673899,
+  "cart_err_marking_settled_mean_um": 94.90222611490937,
+  "cart_err_marking_settled_max_um": 725.0153393662308,
+  "cart_err_marking_mean_um": 99.66606604973127,
+  "cart_err_marking_max_um": 725.0153393662308,
+  "cart_err_travel_mean_um": 1295.353406914871,
+  "cart_err_travel_max_um": 3525.8082632043297,
+  "tau_peak_Nm": 0.7920579620762505,
   "grav_peak_Nm": 1.913069697618398
 }

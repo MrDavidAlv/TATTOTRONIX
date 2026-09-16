@@ -73,7 +73,7 @@ rows that bound what this model can honestly claim.
 | Link masses | see URDF | **Estimated** — bounding-box approximations |
 | Link inertia tensors | see URDF | **Estimated** — bounding-box approximations |
 | Peak gravity torque on the path | 1.91 N·m | **Derived** from the estimates above |
-| Peak commanded torque | 0.80 N·m | **Derived** |
+| Peak commanded torque | 0.79 N·m | **Derived** |
 | Joint effort limit | 20 N·m, all axes | **Estimated** — one number for every axis |
 | Joint velocity limit | 1.5 rad/s, all axes | **Estimated** — one number for every axis |
 
@@ -86,9 +86,9 @@ rows that bound what this model can honestly claim.
 
 | Parameter | Value | Source |
 |---|---|---|
-| Control rate | 200 Hz | **Measured** — `tattotronix_controllers.yaml` |
+| Control rate | 1 kHz | **Derived** — swept in `rate_study.py`; it is what sets the bandwidth ceiling |
 | Simulation integration | 1 kHz, explicit Euler | Chosen |
-| Recommended bandwidth $\omega_n$ | 40 rad/s | **Derived** — the stability cliff sits between 40 and 80 |
+| Recommended bandwidth $\omega_n$ | 160 rad/s | **Derived** — usable up to about a quarter of the loop rate |
 | Damping $\zeta$ | 1.0 | Chosen — critical |
 | $K_p$ | `32.24, 19.43, 5.84, 0.252, 0.096` | **Derived** at $\omega_n$ = 20 |
 | $K_i$ | `214.9, 129.5, 38.9, 1.68, 0.637` | **Derived** at $\omega_n$ = 20 |
@@ -99,12 +99,13 @@ rows that bound what this model can honestly claim.
 
 | Metric | Value | Against a 0.3 mm line |
 |---|---|---|
-| Settled marking error | 15.2 µm | 0.05× |
-| Worst marking error | 201.4 µm | 0.7× |
-| Peak torque | 1.81 N·m | 9% of the 20 N·m limit |
+| Settled marking error | 6.3 µm | 0.02× |
+| Worst marking error | 36.3 µm | 0.12× |
+| Peak torque | 2.37 N·m | 12% of the 20 N·m limit |
 
-Both are inside the line width. Before the slow approach was added they were
-205.7 µm and 2335 µm, the second of them eight times the line.
+Both are well inside the line width. Before the slow approach was added they
+were 205.7 µm and 2335 µm, the second of them eight times the line; before the
+loop rate was raised, 15.2 µm and 200.0 µm.
 
 ---
 

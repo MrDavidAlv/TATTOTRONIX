@@ -41,7 +41,7 @@ MODES = {
 WINDOW_S = 12.0     # length of the studied window, s
 
 
-def window_start(P_mm, kind, t, window_s=WINDOW_S):
+def window_start(P_mm, kind, t, window_s=None):
     """Index where the busiest `window_s` of the path begins.
 
     Busiest means the most needle entries. Found from the path rather than
@@ -53,6 +53,7 @@ def window_start(P_mm, kind, t, window_s=WINDOW_S):
     counter of the R or the O has to lift and re-enter, and it is those entries
     that the loop tracks worst.
     """
+    window_s = WINDOW_S if window_s is None else window_s
     entry_t = t[np.flatnonzero((kind[:-1] != rp.KIND_MARK) & (kind[1:] == rp.KIND_MARK))]
     if len(entry_t) == 0:
         return 0
@@ -60,15 +61,21 @@ def window_start(P_mm, kind, t, window_s=WINDOW_S):
     return int(np.searchsorted(t, entry_t[int(np.argmax(counts))]))
 
 
-def run(model, chain, tt, QQ, QD, QDD, wn, mode, dt=1.0 / 1000, tau_max=20.0):
-    """Returns (errors, peak torques, sample times); errors sampled every 20 steps."""
+def run(model, chain, tt, QQ, QD, QDD, wn, mode, dt=1.0 / 1000, tau_max=20.0,
+        control_hz=None):
+    """Returns (errors, peak torques, sample times); errors sampled every 20 steps.
+
+    `control_hz` defaults to CONTROL_HZ, read here rather than in the signature
+    so a sweep over the controller rate is not silently ignored.
+    """
+    control_hz = CONTROL_HZ if control_hz is None else control_hz
     Kp, Ki, Kd = tune(model, QQ[len(QQ) // 2], wn=wn)
     cfg = MODES[mode]
     n = model.n
     q = QQ[0].copy()
     qd = QD[0].copy()
     ei = np.zeros(n)
-    ctrl_every = max(int(round((1.0 / CONTROL_HZ) / dt)), 1)
+    ctrl_every = max(int(round((1.0 / control_hz) / dt)), 1)
     tau = np.zeros(n)
     steps = int(tt[-1] / dt)
     errs, taus, ts = [], [], []
@@ -166,7 +173,7 @@ def main():
 
     print(hdr, flush=True)
     sweep = {}
-    for wn in (10.0, 20.0, 40.0, 80.0, 120.0):
+    for wn in (10.0, 20.0, 40.0, 80.0, 160.0, 240.0):
         e, tau, ts = run(model, chain, tt, Qp, QD, QDD, wn=wn, mode="pid+g")
         sweep[wn] = stats(e, tau, ts, wn)
         show(f"wn={wn:.0f}", sweep[wn])
@@ -177,7 +184,7 @@ def main():
     # happens.
     print(hdr, flush=True)
     final = {}
-    for wn, mode in ((20.0, "pid+g+v"), (40.0, "pid+g"), (40.0, "pid+g+v")):
+    for wn, mode in ((40.0, "pid+g+v"), (160.0, "pid+g"), (160.0, "pid+g+v")):
         e, tau, ts = run(model, chain, tt, Qp, QD, QDD, wn=wn, mode=mode)
         key = f"wn{wn:.0f}_{mode}"
         final[key] = stats(e, tau, ts, wn)

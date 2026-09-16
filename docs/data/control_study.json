@@ -2,80 +2,95 @@
   "modes": {
     "pid": {
       "diverged": false,
-      "marking_settled_mean_um": 430.3261105402543,
-      "marking_settled_max_um": 15010.022419542162,
-      "marking_mean_um": 1017.0925473391937,
-      "marking_max_um": 30676.731656769804,
-      "travel_mean_um": 2134.124295058737,
-      "tau_peak": 1.7926579357092538
+      "marking_settled_mean_um": 441.95036000592927,
+      "marking_settled_max_um": 16200.099944043433,
+      "marking_mean_um": 1017.8644235737124,
+      "marking_max_um": 30036.67581146548,
+      "travel_mean_um": 2105.1719556734847,
+      "tau_peak": 1.7762559092505597
     },
     "pid+g": {
       "diverged": false,
-      "marking_settled_mean_um": 50.96904950003708,
-      "marking_settled_max_um": 453.7465202596503,
-      "marking_mean_um": 100.12733879450244,
-      "marking_max_um": 622.482061436358,
-      "travel_mean_um": 2265.373028194708,
-      "tau_peak": 1.5106209027208033
+      "marking_settled_mean_um": 48.13200604618167,
+      "marking_settled_max_um": 450.51625714659946,
+      "marking_mean_um": 96.58418246713816,
+      "marking_max_um": 598.8440657663905,
+      "travel_mean_um": 2238.762620497019,
+      "tau_peak": 1.5065827152786886
     },
     "pid+g+v": {
       "diverged": false,
-      "marking_settled_mean_um": 40.56915859616906,
-      "marking_settled_max_um": 320.5861085745097,
-      "marking_mean_um": 87.89307286756676,
-      "marking_max_um": 863.6491708967911,
-      "travel_mean_um": 2417.037288435619,
-      "tau_peak": 1.5584883725061949
+      "marking_settled_mean_um": 39.58953062215008,
+      "marking_settled_max_um": 319.2059244145154,
+      "marking_mean_um": 88.13640634866391,
+      "marking_max_um": 820.4282346044068,
+      "travel_mean_um": 2373.3310588116924,
+      "tau_peak": 1.5451692050609838
     },
     "computed torque": {
       "diverged": false,
-      "marking_settled_mean_um": 43.65035652520293,
-      "marking_settled_max_um": 339.0858558447875,
-      "marking_mean_um": 101.56232088925161,
-      "marking_max_um": 1184.6744429356077,
-      "travel_mean_um": 2112.4080172752774,
-      "tau_peak": 1.5235955756366195
+      "marking_settled_mean_um": 43.431779335864086,
+      "marking_settled_max_um": 339.7909098851102,
+      "marking_mean_um": 102.89928179585289,
+      "marking_max_um": 1135.7143836052862,
+      "travel_mean_um": 2072.744249015172,
+      "tau_peak": 1.5131167441964206
     }
   },
   "sweep": {
     "10.0": {
       "diverged": false,
-      "marking_settled_mean_um": 284.21550609731446,
-      "marking_settled_max_um": 1252.2365568738219,
-      "marking_mean_um": 657.8207856174632,
-      "marking_max_um": 3304.47433123731,
-      "travel_mean_um": 5062.675208412523,
-      "tau_peak": 1.4393714970886882
+      "marking_settled_mean_um": 289.5588205290856,
+      "marking_settled_max_um": 1270.9180779607718,
+      "marking_mean_um": 664.2856678772213,
+      "marking_max_um": 3301.7327923775615,
+      "travel_mean_um": 5043.195836036178,
+      "tau_peak": 1.4382569786292914
     },
     "20.0": {
       "diverged": false,
-      "marking_settled_mean_um": 50.96904950003708,
-      "marking_settled_max_um": 453.7465202596503,
-      "marking_mean_um": 100.12733879450244,
-      "marking_max_um": 622.482061436358,
-      "travel_mean_um": 2265.373028194708,
-      "tau_peak": 1.5106209027208033
+      "marking_settled_mean_um": 48.13200604618167,
+      "marking_settled_max_um": 450.51625714659946,
+      "marking_mean_um": 96.58418246713816,
+      "marking_max_um": 598.8440657663905,
+      "travel_mean_um": 2238.762620497019,
+      "tau_peak": 1.5065827152786886
     },
     "40.0": {
       "diverged": false,
-      "marking_settled_mean_um": 16.821828770840362,
-      "marking_settled_max_um": 244.1449509345729,
-      "marking_mean_um": 28.092948672618654,
-      "marking_max_um": 288.69718960793796,
-      "travel_mean_um": 706.4036122630988,
-      "tau_peak": 1.7501784288091113
+      "marking_settled_mean_um": 17.011990901123095,
+      "marking_settled_max_um": 246.4958998708431,
+      "marking_mean_um": 28.33607394879957,
+      "marking_max_um": 281.77250034594493,
+      "travel_mean_um": 715.2081527960836,
+      "tau_peak": 1.7212845654397948
     },
     "80.0": {
       "diverged": false,
-      "marking_settled_mean_um": 27937.127064076234,
-      "marking_settled_max_um": 53485.7053469011,
-      "marking_mean_um": 27667.495715434517,
-      "marking_max_um": 53485.7053469011,
-      "travel_mean_um": 27445.21771413677,
-      "tau_peak": 20.0
+      "marking_settled_mean_um": 7.794328016777982,
+      "marking_settled_max_um": 114.29958831060895,
+      "marking_mean_um": 10.525105560239187,
+      "marking_max_um": 138.04060695066102,
+      "travel_mean_um": 180.9390263699359,
+      "tau_peak": 1.9060328649451352
     },
-    "120.0": {
-      "diverged": true
+    "160.0": {
+      "diverged": false,
+      "marking_settled_mean_um": 6.2282842450898395,
+      "marking_settled_max_um": 39.26672087702706,
+      "marking_mean_um": 6.6450079930019,
+      "marking_max_um": 40.404601125754404,
+      "travel_mean_um": 60.57256539663266,
+      "tau_peak": 2.4031478325132785
+    },
+    "240.0": {
+      "diverged": false,
+      "marking_settled_mean_um": 6.0889195327652015,
+      "marking_settled_max_um": 28.431753112470147,
+      "marking_mean_um": 6.10487555856391,
+      "marking_max_um": 28.431753112470147,
+      "travel_mean_um": 36.27880847262689,
+      "tau_peak": 2.6769358876862164
     }
   },
   "window_s": 11.985987608888024,
