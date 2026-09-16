@@ -46,7 +46,11 @@ def claims():
     s = json.loads((DATA / "summary.json").read_text())
     cs = json.loads((DATA / "control_study.json").read_text())
     cf = json.loads((DATA / "control_final.json").read_text())
-    rec = cf["configs"]["wn40_pid+g+v"]
+    # The recommended configuration is the one with the smallest worst case,
+    # picked from the file rather than named here: hardcoding the key meant the
+    # check went stale the moment the recommendation moved, which is the one
+    # thing it exists to prevent.
+    rec = min(cf["configs"].values(), key=lambda c: c["marking_max_um"])
     pid_g = cs["modes"]["pid+g"]
 
     MM = "docs/mathematical-model/"

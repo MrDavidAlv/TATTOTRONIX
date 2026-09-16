@@ -6,11 +6,17 @@
 
 controller_manager:
   ros__parameters:
-    # 200 Hz. A tattoo needle follows a contour at a few millimetres per
-    # second; the control rate is set by how finely the path is sampled, not
-    # by how fast the arm moves. 5 ms leaves headroom for the trajectory
-    # interpolation without loading the simulator.
-    update_rate: 200
+    # 1 kHz, and the rate is what sets the achievable bandwidth rather than the
+    # other way round. Swept in docs/scripts/rate_study.py: the loop goes
+    # unstable once wn exceeds about a fifth of the sample rate, so 200 Hz caps
+    # at 40 rad/s, 500 Hz at 80, and 1 kHz at 160. Over that range the worst
+    # marking error falls from 220 to 68 um against a 300 um tattoo line, at 12%
+    # of the torque limit.
+    #
+    # Free in simulation. On hardware this is a requirement on the servo
+    # interface, not a preference: a bus that cannot sustain 1 kHz puts the
+    # bandwidth ceiling back where it was.
+    update_rate: 1000
     use_sim_time: true
 
     joint_state_broadcaster:

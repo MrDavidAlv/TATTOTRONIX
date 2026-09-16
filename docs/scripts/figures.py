@@ -591,8 +591,87 @@ def fig_resample():
            "rather than raising it, which is the signature of a smoother reference.")
 
 
+# --- 14. controller rate against achievable bandwidth ------------------------
+
+def fig_rate():
+    import json
+    f = DATA / "rate_study.json"
+    if not f.exists():
+        print("   (skipping 14, rate_study.json not found)")
+        return
+    S = json.loads(f.read_text())
+    runs = list(S["runs"].values())
+    rates = sorted({r["rate"] for r in runs})
+    wns = sorted({r["wn"] for r in runs})
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.0))
+
+    ax = axes[0]
+    # Failures go in a band of their own. Plotting them at a huge error value
+    # would put them on the same scale as the working points and invite reading
+    # "saturated at 20 N m" as just a larger number.
+    FAIL_Y = 900.0
+    for i, wn in enumerate(wns):
+        xs = [r["rate"] for r in runs if r["wn"] == wn and r["verdict"] == "ok"]
+        ys = [r["worst_um"] for r in runs if r["wn"] == wn and r["verdict"] == "ok"]
+        ax.plot(xs, ys, "-o", color=C[i], ms=7, mec=SURFACE, mew=1.4,
+                label=f"$\\omega_n$ = {wn:.0f} rad/s", zorder=3)
+        for r in runs:
+            if r["wn"] == wn and r["verdict"] != "ok":
+                # nudge apart so two series failing at the same rate stay legible
+                ax.plot([r["rate"] * (1 + 0.035 * (i - 1))], [FAIL_Y], "X",
+                        color=C[i], ms=9, mew=1.0, mec=SURFACE, zorder=3)
+        for x, y in zip(xs, ys):
+            ax.annotate(f"{y:.0f}", (x, y), textcoords="offset points",
+                        xytext=(0, 10), fontsize=7.8, color=INK2, ha="center")
+    ax.axhspan(FAIL_Y / 1.45, FAIL_Y * 1.45, color=C[7], alpha=0.07, lw=0, zorder=0)
+    ax.text(rates[0] * 0.82, FAIL_Y * 1.55, "torque saturated, or divergent",
+            fontsize=7.8, color=C[7], va="bottom")
+    ax.axhline(300, color=C[1], lw=1.2, ls=(0, (4, 2)), zorder=1)
+    ax.text(rates[0] * 0.82, 330, "0.3 mm line", color=C[1], fontsize=8.2,
+            ha="left", va="bottom")
+    ax.set_yscale("log"); ax.set_xscale("log")
+    ax.set_xticks(rates); ax.set_xticklabels([f"{r:.0f}" for r in rates])
+    ax.set_xlim(rates[0] * 0.78, rates[-1] * 1.55)
+    ax.set_ylim(20, 2200)
+    ax.set_xlabel("controller rate  [Hz]"); ax.set_ylabel("worst marking error  [um]")
+    ax.legend(fontsize=8.2, loc="lower left")
+    grid_on(ax, "y")
+    ax.set_title("what the rate buys", fontsize=10, loc="left", pad=8)
+
+    ax = axes[1]
+    ok = [(r["rate"], r["wn"]) for r in runs if r["verdict"] == "ok"]
+    bad = [(r["rate"], r["wn"]) for r in runs if r["verdict"] != "ok"]
+    ax.scatter([a for a, _ in ok], [b for _, b in ok], s=58, color=C[2],
+               edgecolor=SURFACE, linewidth=1.2, label="usable", zorder=3)
+    ax.scatter([a for a, _ in bad], [b for _, b in bad], s=58, color=C[7],
+               marker="X", edgecolor=SURFACE, linewidth=1.0, label="saturated or divergent",
+               zorder=3)
+    xs = np.array([rates[0] * 0.8, rates[-1] * 1.25])
+    for frac, style in ((0.24, (0, (4, 2))), (0.32, (0, (1, 2)))):
+        ax.plot(xs, frac * xs, color=MUTED, lw=1.0, ls=style, zorder=1)
+        ax.text(xs[-1], frac * xs[-1], f"  $\\omega_n$ = {frac:g} f", fontsize=7.8,
+                color=MUTED, va="center")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xticks(rates); ax.set_xticklabels([f"{r:.0f}" for r in rates])
+    ax.set_yticks(wns); ax.set_yticklabels([f"{w:.0f}" for w in wns])
+    ax.set_xlim(rates[0] * 0.75, rates[-1] * 1.9)
+    ax.set_xlabel("controller rate  [Hz]")
+    ax.set_ylabel("bandwidth  $\\omega_n$  [rad/s]")
+    ax.legend(fontsize=8.2, loc="upper left")
+    grid_on(ax)
+    ax.set_title("where the ceiling is", fontsize=10, loc="left", pad=8)
+
+    finish(fig, "14_rate.png", "The controller rate sets the bandwidth ceiling",
+           "Every earlier sweep stopped at 40 rad/s and blamed the gains. The ceiling is the "
+           "sample rate: what fails is not the tuning but asking a discrete loop for a "
+           "bandwidth close to its own rate, and the symptom is torque saturating at the limit. "
+           "Usable up to about a quarter of the rate; the boundary lies between the two lines, "
+           "which this sweep does not resolve more finely.")
+
+
 if __name__ == "__main__":
     print("figures:")
     fig_chain(); fig_workspace(); fig_panel(); fig_toolpath(); fig_joint_traj()
     fig_manip(); fig_gravity(); fig_step(); fig_tracking(); fig_control_study()
-    fig_contours(); fig_approach(); fig_resample()
+    fig_contours(); fig_approach(); fig_resample(); fig_rate()

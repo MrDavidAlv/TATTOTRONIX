@@ -26,7 +26,7 @@ PANEL_Z = 0.005
 PANEL_X = 0.21
 PANEL_W, PANEL_H = 0.20, 0.14
 
-CONTROL_HZ = 200.0          # matches the controller manager rate
+CONTROL_HZ = 1000.0         # matches the controller manager rate
 FEED_MARK = 0.006           # m/s with the needle in the work
 FEED_TRAVEL = 0.060         # m/s clear of the work
 
@@ -110,8 +110,11 @@ LOGO_WIDTH_MM = 150.0
 TUNE_WN = 20.0      # loop bandwidth the cached run is tuned at, rad/s
 
 
-def tune(model, q_ref, wn=TUNE_WN, zeta=1.0):
+def tune(model, q_ref, wn=None, zeta=1.0):
     """Gains by pole placement on the effective joint inertia.
+
+    `wn` defaults to TUNE_WN, read in the body: a module constant used as a
+    default argument freezes at import.
 
     Each axis is a double integrator, J qdd = tau, so a PID closes it as
 
@@ -135,6 +138,7 @@ def tune(model, q_ref, wn=TUNE_WN, zeta=1.0):
     inertia and to one bandwidth decision, rather than to a knob someone
     turned until it stopped oscillating.
     """
+    wn = TUNE_WN if wn is None else wn
     J = 1.0 / np.diag(np.linalg.inv(model.inertia(q_ref)))
     Kp = 3.0 * J * wn ** 2
     Kd = 3.0 * J * wn
