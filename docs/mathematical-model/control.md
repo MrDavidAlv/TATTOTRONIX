@@ -111,9 +111,9 @@ Split, over the first 12 s of the logo — one dot, filled without lifting:
 
 | Segment | Mean | Worst |
 |---|---|---|
-| Marking, settled | **92.2 µm** | 763 µm |
-| Marking, all | 97.2 µm | 763 µm |
-| Travel | 1196 µm | 3524 µm |
+| Marking, settled | **94.0 µm** | 720 µm |
+| Marking, all | 99.1 µm | 720 µm |
+| Travel | 1313 µm | 3671 µm |
 
 The split was validated before the artwork changed: on the stand-in it gave
 164.5 µm settled, against the 165 µm `control_study.py` obtains independently for
@@ -194,19 +194,19 @@ At $\omega_n = 20$ rad/s, full non-linear plant:
 
 | Structure | Settled, marking | Worst settled | Worst, marking | Peak torque |
 |---|---|---|---|---|
-| PID only | 758.5 µm | 11 389 µm | 42 512 µm | 2.30 N·m |
-| PID + gravity | **61.0 µm** | 474.1 µm | 949.1 µm | 1.83 N·m |
-| PID + gravity + velocity | 74.0 µm | 460.7 µm | 1432 µm | 1.86 N·m |
-| Computed torque | 90.9 µm | **427.9 µm** | 1491 µm | 1.81 N·m |
+| PID only | 430.3 µm | 15 010 µm | 30 677 µm | 1.79 N·m |
+| PID + gravity | 51.0 µm | 453.7 µm | 622.5 µm | 1.51 N·m |
+| PID + gravity + velocity | **40.6 µm** | **320.6 µm** | 863.6 µm | 1.56 N·m |
+| Computed torque | 43.7 µm | 339.1 µm | 1185 µm | 1.52 N·m |
 
 Bandwidth sweep, PID + gravity:
 
 | $\omega_n$ | Settled, marking | Worst settled | Peak torque | |
 |---|---|---|---|---|
-| 10 rad/s | 627.7 µm | 2351 µm | 1.73 N·m | |
-| 20 rad/s | 61.0 µm | 474.1 µm | 1.83 N·m | |
-| 40 rad/s | **19.5 µm** | 227.0 µm | 2.09 N·m | |
-| 80 rad/s | — | — | — | **diverges** |
+| 10 rad/s | 284.2 µm | 1252 µm | 1.44 N·m | |
+| 20 rad/s | 51.0 µm | 453.7 µm | 1.51 N·m | |
+| 40 rad/s | **16.8 µm** | 244.1 µm | 1.75 N·m | |
+| 80 rad/s | 27 937 µm | 53 486 µm | 20.0 N·m | **torque saturated** |
 | 120 rad/s | — | — | — | **diverges** |
 
 ### What holds, and what the fix changed
@@ -246,13 +246,13 @@ gravity and velocity feedforward, over a 4 mm slow approach. Same hard window:
 
 | Configuration | Settled, marking | Worst, marking | Peak torque |
 |---|---|---|---|
-| $\omega_n = 20$, PID + g + v | 74.0 µm | 1432 µm | 1.86 N·m |
-| $\omega_n = 40$, PID + g | 19.5 µm | 250.7 µm | 2.09 N·m |
-| $\omega_n = 40$, PID + g + v | **19.3 µm** | **178.9 µm** | 2.16 N·m |
+| $\omega_n = 20$, PID + g + v | 40.6 µm | 863.6 µm | 1.56 N·m |
+| $\omega_n = 40$, PID + g | 16.8 µm | 288.7 µm | 1.75 N·m |
+| $\omega_n = 40$, PID + g + v | **15.2 µm** | **201.4 µm** | 1.81 N·m |
 
-**This is the first configuration whose worst case is inside the line width.**
-178.9 µm against 300 µm, with a settled mean of 19.3 µm — a factor of 16 below
-it — at 11% of the 20 N·m torque limit.
+**The whole drawing is inside the line width, worst case included.** 201.4 µm
+against 300 µm, with a settled mean of 15.2 µm — a factor of 20 below it — at 9%
+of the 20 N·m torque limit.
 
 The worst marking error and the worst *settled* error are now the same number.
 That is the clearest statement that the entry transient is gone: the worst
@@ -264,7 +264,8 @@ moment of the drawing is no longer a needle entry.
 |---|---|---|---|
 | Stand-in artwork, continuous marking | 22.5 µm | 272 µm | The steady state, on the easy part |
 | Logo, busiest window, fast plunge | 205.7 µm | 2335 µm | What the drawing actually asked for |
-| Logo, busiest window, 4 mm approach | **19.3 µm** | **178.9 µm** | Both, and inside the line |
+| Logo, 4 mm approach, 0.6 mm path | 19.3 µm | 178.9 µm | Inside the line, on a coarse reference |
+| Logo, 4 mm approach, 0.15 mm path | **15.2 µm** | **201.4 µm** | The same, on a reference worth differentiating |
 
 The middle row is the one worth keeping in view. The first row was not wrong; it
 was measured on a stretch of drawing with no needle lifts, and the logo has 98.

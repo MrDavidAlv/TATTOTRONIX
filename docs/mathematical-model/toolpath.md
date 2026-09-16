@@ -141,15 +141,15 @@ pass, which doubled cycle time and would have stippled every edge.
 | Parameter | Value | Reason |
 |---|---|---|
 | Stroke pitch | 1.2 mm | Overlap on a ~0.3 mm line |
-| Resampling | 0.6 mm | Two points per stroke pitch |
+| Resampling | 0.15 mm | See below — it is the reference the feedforward differentiates, not just spacing |
 | Depth | 1.5 mm below the surface | **Placeholder** — depends on tissue |
 | Clearance | 8 mm | Clears the panel with margin |
 | Slow approach | 4 mm | The last part of the plunge, at marking feed — see [control](./control.md#the-fix) |
 | Marking feed | 6 mm/s | The order of what a tattooist does |
 | Travel feed | 60 mm/s | Limited by the arm, not the process |
 
-**On the logo:** 4470 points, 2507 mm marked against 3101 mm travelled, 537 s
-total, over **98 needle entries**. Every fill pass that meets the counter of the
+**On the logo:** 16 732 points, 2558 mm marked against 3530 mm travelled, 561 s
+total, over **121 needle entries**. Every fill pass that meets the counter of the
 R or the O has to lift and re-enter, and that is where the travel goes.
 
 That last number used to be the project's dominant error, because each entry
@@ -158,11 +158,48 @@ drove the needle in while the loop was still settling. The
 the passes to lift less would give that time back, and is worth doing for that
 reason rather than for accuracy now.
 
-## 5. Time parameterisation
+## 5. Timing and sampling
 
 Constant feed per move type. Each segment's time is its length over its feed, and
 the cumulative time gives the reference $q_{\text{ref}}(t)$ the controller
 consumes.
+
+### What the resampling step is actually for
+
+<div align="center">
+<img src="../figures/13_resample.png" width="900"/>
+</div>
+
+The error budget used to list "0.6 mm between points" against a 0.3 mm line and
+call it twice the line width. That conflates the *spacing* of the points with
+the *error* they cause. The controller interpolates between them, so what the
+spacing costs is chord deviation — how far the straight run between two points
+departs from the curve they were sampled from — which goes as roughly
+$h^2/8R$, not as $h$. Measured on the traced contours it is **118 µm** at
+0.6 mm, not 600.
+
+It still mattered, for a different reason. The reference velocity handed to the
+feedforward comes from finite differences on this path, so a coarse step makes
+that velocity a staircase and the feedforward injects as much as it corrects.
+
+| Step | Points | Chord error | Settled | Worst, marking | Peak torque |
+|---|---|---|---|---|---|
+| 0.60 mm | 4470 | 118.0 µm | 19.3 µm | 178.9 µm | 2.16 N·m |
+| 0.30 mm | 8568 | 73.4 µm | 24.3 µm | 189.0 µm | 1.94 N·m |
+| **0.15 mm** | 16 732 | below the mask | **7.9 µm** | **19.4 µm** | **1.68 N·m** |
+
+**Peak torque falls as the step is refined**, which is the giveaway: a finer path
+is not asking the arm for more, it is asking for something smoother. Inverse
+kinematics still converges at 100% of points and the whole cycle grows by 4%.
+
+Two honest notes. The 0.30 mm row is slightly *worse* than 0.60 on the dynamic
+figures — the trend is not monotonic at this resolution and the table says so
+rather than drawing a clean curve through it. And "below the mask" is not zero
+error: the traced contour is only known to the 0.25 mm mask pitch, so at 0.15 mm
+there is no finer detail left to depart from. Going below this buys nothing
+until the mask resolution goes with it.
+
+### Time parameterisation
 
 This is deliberately simple. The plunge, which was the worst case of that
 simplicity, is handled specially by the slow approach above. Every other segment

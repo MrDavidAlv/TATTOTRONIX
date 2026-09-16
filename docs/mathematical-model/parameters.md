@@ -36,7 +36,7 @@ rows that bound what this model can honestly claim.
 |---|---|---|
 | Line width | 0.3 mm | **Estimated** — the tolerance everything is judged against |
 | Stroke pitch | 1.2 mm | Chosen — overlap on a 0.3 mm line |
-| Path resampling | 0.6 mm | Chosen — two points per stroke pitch |
+| Path resampling | 0.15 mm | **Derived** — swept in `resample_study.py`; the reference the velocity feedforward differentiates |
 | Plunge depth | 1.5 mm below surface | **Estimated** — depends on tissue |
 | Clearance height | 8 mm | Chosen — clears the panel with margin |
 | Slow approach | 4 mm | **Derived** — swept in `approach_study.py`; where the worst needle entry falls under the line width |
@@ -47,13 +47,13 @@ rows that bound what this model can honestly claim.
 
 | Quantity | Value |
 |---|---|
-| Path points | 4470 |
+| Path points | 16 732 |
 | Regions | 12 — nine dots, R, O, S |
 | Counters | 2 — the R and the O |
-| Marked length | 2507 mm |
-| Travel length | 3101 mm |
-| Needle entries | **98** |
-| Total time | 537 s |
+| Marked length | 2558 mm |
+| Travel length | 3530 mm |
+| Needle entries | **121** |
+| Total time | 561 s |
 | IK convergence | 100% |
 | IK worst residual | 1.0 × 10⁻⁶ |
 
@@ -90,18 +90,18 @@ rows that bound what this model can honestly claim.
 | Simulation integration | 1 kHz, explicit Euler | Chosen |
 | Recommended bandwidth $\omega_n$ | 40 rad/s | **Derived** — the stability cliff sits between 40 and 80 |
 | Damping $\zeta$ | 1.0 | Chosen — critical |
-| $K_p$ | `33.10, 19.38, 5.75, 0.253, 0.096` | **Derived** at $\omega_n$ = 20 |
-| $K_i$ | `220.7, 129.2, 38.3, 1.69, 0.638` | **Derived** at $\omega_n$ = 20 |
-| $K_d$ | `1.655, 0.969, 0.287, 0.0127, 0.0048` | **Derived** at $\omega_n$ = 20 |
+| $K_p$ | `32.24, 19.43, 5.84, 0.252, 0.096` | **Derived** at $\omega_n$ = 20 |
+| $K_i$ | `214.9, 129.5, 38.9, 1.68, 0.637` | **Derived** at $\omega_n$ = 20 |
+| $K_d$ | `1.612, 0.971, 0.292, 0.0126, 0.0048` | **Derived** at $\omega_n$ = 20 |
 | Feedforward | gravity + velocity | **Derived** — see [control](./control.md#6-recommended-configuration) |
 
 ## Performance, on the hardest stretch
 
 | Metric | Value | Against a 0.3 mm line |
 |---|---|---|
-| Settled marking error | 19.3 µm | 0.06× |
-| Worst marking error | 178.9 µm | 0.6× |
-| Peak torque | 2.16 N·m | 11% of the 20 N·m limit |
+| Settled marking error | 15.2 µm | 0.05× |
+| Worst marking error | 201.4 µm | 0.7× |
+| Peak torque | 1.81 N·m | 9% of the 20 N·m limit |
 
 Both are inside the line width. Before the slow approach was added they were
 205.7 µm and 2335 µm, the second of them eight times the line.
