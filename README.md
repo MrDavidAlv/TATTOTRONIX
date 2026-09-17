@@ -42,7 +42,15 @@ docker compose build
 docker compose run --rm dev                  # a shell, no graphics
 docker compose run --rm dev colcon test
 docker compose run --rm gui ros2 launch tattotronix_gazebo draw.launch.py
+
+docker compose run --rm ci                   # exactly what CI checks
 ```
+
+Run `ci` before pushing. It is the same image with **nothing mounted over it**,
+which is the difference that matters: `dev` mounts the workspace, so a file
+missing from the image is still there because the mount put it back. The
+document certification passed that way and failed the moment CI ran it without
+a mount.
 
 `dev` is headless and is what the analysis scripts and CI use. `gui` is the same
 image with the host display handed in, for watching the simulation. They are
