@@ -111,7 +111,7 @@ def solve_path(chain, P):
 # 75 mm. It falls as the drawing moves out, so the mark stays centred, and 150
 # on a 200 mm panel is the largest size that keeps the condition number in the
 # thirties.
-LOGO_WIDTH_MM = 150.0
+ARTWORK_WIDTH_MM = 150.0
 
 TUNE_WN = 20.0      # loop bandwidth the cached run is tuned at, rad/s
 
@@ -215,7 +215,7 @@ def main():
             "panel_mu": mu, "panel_margin": margin}
 
     print("toolpath...")
-    mask, grid = rp.ros_logo_mask(LOGO_WIDTH_MM)
+    mask, grid = rp.ros_logo_mask(ARTWORK_WIDTH_MM)
     P_mm, kind = rp.toolpath(mask, grid)
     Pw = path_to_world(P_mm)
     t = time_parameterise(Pw, kind)

@@ -53,7 +53,31 @@ def _wrap(text, width):
     return "\n".join(textwrap.wrap(text, width))
 
 
-D = np.load(DATA / "analysis.npz")
+class _Cached:
+    """The analysis results, opened on first use rather than on import.
+
+    analysis.npz is a regenerable cache and is not in the repository, so loading
+    it at import time made this module unimportable on a fresh clone - and with
+    it check_docs.py, which imports every script to check the paths they compute.
+    Deferring the read keeps `D["key"]` reading the same at every call site while
+    letting the module be imported by something that only wants its constants.
+    """
+
+    def __init__(self, path):
+        self._path = path
+        self._data = None
+
+    def __getitem__(self, key):
+        if self._data is None:
+            if not self._path.exists():
+                raise SystemExit(
+                    f"{self._path} is missing. Run analysis.py first: the figures "
+                    "are drawn from its results, not from the documents.")
+            self._data = np.load(self._path)
+        return self._data[key]
+
+
+D = _Cached(DATA / "analysis.npz")
 JOINTS = [f"joint_{i+1}" for i in range(5)]
 
 

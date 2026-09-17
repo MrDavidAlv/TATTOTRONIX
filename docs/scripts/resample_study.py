@@ -22,7 +22,7 @@ import numpy as np
 from scipy import ndimage
 
 import rospath as rp
-from analysis import (LOGO_WIDTH_MM, needle_state, path_to_world, solve_path,
+from analysis import (ARTWORK_WIDTH_MM, needle_state, path_to_world, solve_path,
                       time_parameterise)
 from control_study import WINDOW_S, run, window_start
 from dynamics import load as load_dyn
@@ -75,7 +75,7 @@ def build(step, entry_no=None):
     old = rp.POINT_STEP
     rp.POINT_STEP = step
     try:
-        mask, grid = rp.ros_logo_mask(LOGO_WIDTH_MM)
+        mask, grid = rp.ros_logo_mask(ARTWORK_WIDTH_MM)
         P_mm, kind = rp.toolpath(mask, grid)
     finally:
         rp.POINT_STEP = old

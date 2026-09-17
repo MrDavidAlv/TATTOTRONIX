@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 
 import rospath as rp
-from analysis import (LOGO_WIDTH_MM, needle_state, path_to_world, solve_path,
+from analysis import (ARTWORK_WIDTH_MM, needle_state, path_to_world, solve_path,
                       time_parameterise)
 from control_study import WINDOW_S, run, window_start
 from dynamics import load as load_dyn
@@ -60,7 +60,7 @@ def build(approach, entry_no=None):
     old = rp.APPROACH
     rp.APPROACH = approach
     try:
-        mask, grid = rp.ros_logo_mask(LOGO_WIDTH_MM)
+        mask, grid = rp.ros_logo_mask(ARTWORK_WIDTH_MM)
         P_mm, kind = rp.toolpath(mask, grid)
     finally:
         rp.APPROACH = old

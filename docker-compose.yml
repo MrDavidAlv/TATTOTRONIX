@@ -40,6 +40,37 @@ services:
     stdin_open: true
     tty: true
 
+  # What CI runs: the image with nothing mounted over it.
+  #
+  # `dev` mounts the workspace, which is what you want while editing and which
+  # is also how a whole class of problem stays invisible - a file excluded from
+  # the image is still there, because the mount put it back. The documents'
+  # certification passed that way for a week and failed the moment CI ran it
+  # without a mount. Run this before pushing.
+  #
+  #   docker compose run --rm ci
+  ci:
+    image: tattotronix:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+      args:
+        UID: "${HOST_UID:-1000}"
+        GID: "${HOST_GID:-1000}"
+    working_dir: /ws
+    command: >-
+      bash -lc '
+        set -e
+        colcon test --event-handlers console_cohesion- --return-code-on-test-failure
+        python3 -m pytest tests/ -q
+        python3 -m flake8 src/ docs/scripts tools tests
+        python3 docs/scripts/check_docs.py
+        ros2 launch tattotronix_gazebo draw.launch.py --show-args > /dev/null
+        ros2 launch tattotronix_gazebo simulation.launch.py --show-args > /dev/null
+        echo "everything CI checks, checked"
+      '
+
   # Software rendering. Works anywhere, including a machine with no GPU
   # passed through, which is what a container gets by default: the host driver
   # is not inside it, so OpenGL falls back to llvmpipe. Fine for looking at the
@@ -65,7 +96,7 @@ services:
   # use. The difference is not cosmetic - software GL renders the studio world
   # at a few frames a second.
   #
-  #   docker compose run --rm gui-nvidia ros2 launch tattotronix_gazebo draw_logo.launch.py
+  #   docker compose run --rm gui-nvidia ros2 launch tattotronix_gazebo draw.launch.py
   gui-nvidia:
     extends: gui
     environment:

@@ -108,7 +108,7 @@ cd "$REPO"
 source install/setup.bash
 
 echo "launching the simulation ..."
-ros2 launch tattotronix_gazebo draw_logo.launch.py "speed:=$SPEED" \
+ros2 launch tattotronix_gazebo draw.launch.py "speed:=$SPEED" \
   "rviz_config:=$REPO/src/tattotronix_gazebo/rviz/recording.rviz" \
   > "$WORK/sim.log" 2>&1 &
 LAUNCH_PID=$!

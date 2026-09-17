@@ -5,15 +5,25 @@ log/
 **/__pycache__/
 *.pyc
 
-# Regenerable caches and large media. The figures are documentation, not
-# inputs, and copying 17 MB of PNG into every layer is 17 MB per layer.
+# Regenerable caches. Everything else under docs/ is copied in: check_docs.py
+# verifies that every image and link in the documents resolves, and excluding
+# the figures made that check pass locally - where the workspace is mounted over
+# the image - and fail in CI, where it is not. An image that cannot certify its
+# own documents is an image CI cannot trust.
 docs/data/*.npz
 docs/data/*.npy
-docs/figures/
 docs/artwork/
 
-# Not this repository's to ship, and not needed to build.
-docs/images/
+# Not this repository's to ship. These are in .gitignore for the same reason, so
+# a CI checkout never has them; keeping them out here too means a local build
+# produces the same image CI does, rather than one that quietly carries a
+# personal photograph and two organisations' logos.
+docs/images/foto.jpg
+docs/images/logo semillero robotica.jpg
+docs/images/logocolectivohagamos.webp
+src/tattotronix_control/config/trajectories/ingeniero.npz
+
+# Internal, and not needed to build.
 DEVELOPMENT.md
 
 # Version control and editor state.

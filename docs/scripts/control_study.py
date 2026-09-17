@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 import rospath as rp
-from analysis import (CONTROL_HZ, LOGO_WIDTH_MM, needle_state, path_to_world,
+from analysis import (CONTROL_HZ, ARTWORK_WIDTH_MM, needle_state, path_to_world,
                       solve_path, time_parameterise, tune)
 from dynamics import load as load_dyn
 
@@ -106,7 +106,7 @@ def run(model, chain, tt, QQ, QD, QDD, wn, mode, dt=1.0 / 1000, tau_max=20.0,
 
 def main():
     chain, model = load_dyn()
-    mask, grid = rp.ros_logo_mask(LOGO_WIDTH_MM)
+    mask, grid = rp.ros_logo_mask(ARTWORK_WIDTH_MM)
     P_mm, kind = rp.toolpath(mask, grid)
     Pw = path_to_world(P_mm)
     t = time_parameterise(Pw, kind)
@@ -196,7 +196,7 @@ def main():
     (OUT / "control_study.json").write_text(json.dumps(
         {"modes": results, "sweep": {str(k): v for k, v in sweep.items()},
          "window_s": float(tt[-1]), "window_start_s": float(t[start]),
-         "window_entries": entries, "logo_width_mm": LOGO_WIDTH_MM}, indent=2))
+         "window_entries": entries, "artwork_width_mm": ARTWORK_WIDTH_MM}, indent=2))
     print("\nwrote", OUT / "control_study.json")
 
 

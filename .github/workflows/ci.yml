@@ -109,7 +109,7 @@ jobs:
         run: |
           docker run --rm tattotronix:ci bash -lc '
             cd /ws
-            ros2 launch tattotronix_gazebo draw_logo.launch.py --show-args
+            ros2 launch tattotronix_gazebo draw.launch.py --show-args
             ros2 launch tattotronix_gazebo simulation.launch.py --show-args
           '
 

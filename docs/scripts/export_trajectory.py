@@ -16,9 +16,9 @@ someone can edit by hand is a result nobody can check.
 
 Writes into src/tattotronix_control/config/trajectories/, one file per drawing,
 holding the joint angles, the time at each point, the needle state, and the tip
-position the drawing trace is rendered from. `draw_logo` picks one by name:
+position the drawing trace is rendered from. `draw` picks one by name:
 
-    ros2 launch tattotronix_gazebo draw_logo.launch.py art:=mylogo
+    ros2 launch tattotronix_gazebo draw.launch.py art:=mylogo
 """
 
 import argparse
@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 
 import rospath as rp
-from analysis import (LOGO_WIDTH_MM, path_to_world, solve_path,
+from analysis import (ARTWORK_WIDTH_MM, path_to_world, solve_path,
                       time_parameterise)
 from dynamics import load as load_dyn
 
@@ -43,7 +43,7 @@ def main():
                                    "image's own stem")
     ap.add_argument("--method", default="threshold", choices=("threshold", "edges"),
                     help="threshold for solid artwork, edges for photographs")
-    ap.add_argument("--width", type=float, default=LOGO_WIDTH_MM,
+    ap.add_argument("--width", type=float, default=ARTWORK_WIDTH_MM,
                     help="how wide the mark is drawn, mm")
     ap.add_argument("--pitch", type=float, default=None,
                     help="fill spacing, mm; defaults to rospath.STROKE_PITCH")
@@ -88,14 +88,14 @@ def main():
         kind=kind.astype(np.int8),
         marked=marked,
         tcp=tcp.astype(np.float32),
-        logo_width_mm=args.width,
+        artwork_width_mm=args.width,
         source=source)
     entries = int(((kind[:-1] != rp.KIND_MARK) & (kind[1:] == rp.KIND_MARK)).sum())
     ink, air = rp.lengths(P_mm, kind)
     print(f"  wrote {out} ({out.stat().st_size / 1024:.0f} KiB)")
     print(f"  {len(Q)} points, {ink:.0f} mm marked, {air:.0f} mm travelled, "
           f"{entries} needle entries")
-    print(f"  run it:  ros2 launch tattotronix_gazebo draw_logo.launch.py art:={name}")
+    print(f"  run it:  ros2 launch tattotronix_gazebo draw.launch.py art:={name}")
 
 
 if __name__ == "__main__":

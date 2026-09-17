@@ -1,6 +1,6 @@
 """Render the arm drawing the logo, from the solved trajectory.
 
-This is not a screen capture. It is the same trajectory `draw_logo` sends to the
+This is not a screen capture. It is the same trajectory `draw` sends to the
 controller, drawn directly, and it says so on the frame. The distinction matters:
 a screen capture of RViz would show the *commanded* path too, since the ink
 marker is drawn from the plan, so rendering it here loses nothing and gains a
@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import rospath as rp
-from analysis import LOGO_WIDTH_MM, PANEL_X, PANEL_Z, path_to_world, time_parameterise
+from analysis import ARTWORK_WIDTH_MM, PANEL_X, PANEL_Z, path_to_world, time_parameterise
 from figures import C, GRID, INK, INK2, MUTED, SURFACE
 from kinematics import Chain
 
@@ -78,7 +78,7 @@ def main():
         sys.exit("ffmpeg is needed to write the video")
 
     chain = Chain.from_description()
-    mask, grid = rp.ros_logo_mask(LOGO_WIDTH_MM)
+    mask, grid = rp.ros_logo_mask(ARTWORK_WIDTH_MM)
     P_mm, kind = rp.toolpath(mask, grid)
     Pw = path_to_world(P_mm)
     t = time_parameterise(Pw, kind)
@@ -124,8 +124,8 @@ def main():
                   [max(reach[:, 0].max(), (PANEL_X + 0.10) * 1000),
                    reach[:, 2].max()])
     panel_lim = fit(panel_box,
-                    [-LOGO_WIDTH_MM / 2 - 10, -LOGO_WIDTH_MM / 2 - 10],
-                    [LOGO_WIDTH_MM / 2 + 10, LOGO_WIDTH_MM / 2 + 10])
+                    [-ARTWORK_WIDTH_MM / 2 - 10, -ARTWORK_WIDTH_MM / 2 - 10],
+                    [ARTWORK_WIDTH_MM / 2 + 10, ARTWORK_WIDTH_MM / 2 + 10])
     # The panel is 200 x 140 mm; never show more of it than exists.
     panel_lim = (max(panel_lim[0], -100), min(panel_lim[1], 100),
                  max(panel_lim[2], -70), min(panel_lim[3], 70))

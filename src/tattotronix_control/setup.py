@@ -39,6 +39,6 @@ setup(
     license='Apache-2.0',
     extras_require={'test': ['pytest']},
     entry_points={'console_scripts': [
-        'draw_logo = tattotronix_control.draw_logo:main',
+        'draw = tattotronix_control.draw:main',
     ]},
 )
