@@ -32,21 +32,26 @@ ARTWORK = Path(__file__).resolve().parents[1] / "artwork"
 
 # --- process parameters ------------------------------------------------------
 
-STROKE_PITCH = 1.2      # spacing between adjacent fill passes, mm
-POINT_STEP = 0.15       # path resampled to this arc length, mm
-                        # Swept in resample_study.py. Going from 0.6 to 0.15 mm
-                        # takes the worst marking error from 179 to 19 um and
-                        # drops peak torque 22%, for 3.7x the points and 4% of
-                        # cycle time. Almost none of that is geometry: the win
-                        # is that the velocity feedforward comes from finite
-                        # differences on this path, and at 0.6 mm the reference
-                        # velocity is a staircase.
+# Spacing between adjacent fill passes. Note this is not coverage: a 0.3 mm
+# needle at 1.2 mm leaves 0.9 mm of skin between passes, which is hatching. A
+# pitch at or below the line width fills solid, at four times the marking time.
+STROKE_PITCH = 1.2
+
+# Arc length the path is resampled to. Swept in resample_study.py: going from
+# 0.6 to 0.15 mm takes the worst marking error from 179 to 19 um and drops peak
+# torque 22%, for 3.7x the points and 4% of cycle time. Almost none of that is
+# geometry - the win is that the velocity feedforward comes from finite
+# differences on this path, and at 0.6 mm the reference velocity is a staircase.
+POINT_STEP = 0.15
+
 CLEARANCE = 8.0         # travel height above the surface, mm
 PLUNGE_DEPTH = 1.5      # how far below the surface the needle is driven, mm
-APPROACH = 4.0          # last part of the plunge, taken at marking feed, mm
-                        # Swept in approach_study.py: 4 mm is where the worst
-                        # marking error falls under the 0.3 mm line width. It
-                        # costs 14% of cycle time.
+
+# Last part of the plunge, taken at marking feed rather than travel feed. Swept
+# in approach_study.py: 4 mm is where the worst needle entry falls under the
+# 0.3 mm line width, for 14% of cycle time.
+APPROACH = 4.0
+
 MIN_BLOB_MM2 = 4.0      # ignore specks smaller than this
 
 # --- placeholder artwork -----------------------------------------------------
@@ -495,8 +500,8 @@ def selftest(verbose=True):
         edge_px = set(zip(*(a.tolist() for a in np.nonzero(edge))))
         coverage = len(edge_px & traced) / len(edge_px)
 
-        closed = all(abs(l[0][0] - l[-1][0]) <= 1 and abs(l[0][1] - l[-1][1]) <= 1
-                     for l in loops)
+        closed = all(abs(lp[0][0] - lp[-1][0]) <= 1 and abs(lp[0][1] - lp[-1][1]) <= 1
+                     for lp in loops)
         good = len(loops) == holes_expected and closed and coverage > 0.999
         ok &= good
         rows.append((kind, holes_expected, len(loops), closed, coverage, good))
@@ -551,7 +556,7 @@ if __name__ == "__main__":
     P, kind = toolpath(mask, grid)
     marked, travel = lengths(P, kind)
     xs, ys = grid
-    print(f"artwork         : placeholder lattice (NOT the ROS logo)")
+    print("artwork         : placeholder lattice (NOT the ROS logo)")
     print(f"extents         : {xs[-1] - xs[0]:.0f} x {ys[0] - ys[-1]:.0f} mm")
     print(f"regions         : {len(contours(mask, grid))}")
     print(f"path points     : {len(P)}  ({int((kind == 1).sum())} in the work)")

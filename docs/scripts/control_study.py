@@ -24,8 +24,8 @@ from pathlib import Path
 import numpy as np
 
 import rospath as rp
-from analysis import (CONTROL_HZ, LOGO_WIDTH_MM, PANEL_Z, needle_state,
-                      path_to_world, solve_path, time_parameterise, tune)
+from analysis import (CONTROL_HZ, LOGO_WIDTH_MM, needle_state, path_to_world,
+                      solve_path, time_parameterise, tune)
 from dynamics import load as load_dyn
 
 OUT = Path(__file__).resolve().parents[1] / "data"

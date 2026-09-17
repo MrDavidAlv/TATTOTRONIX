@@ -47,6 +47,7 @@ plt.rcParams.update({
     "legend.frameon": False, "axes.spines.top": False, "axes.spines.right": False,
 })
 
+
 def _wrap(text, width):
     import textwrap
     return "\n".join(textwrap.wrap(text, width))
@@ -89,7 +90,6 @@ def grid_on(ax, axis="both"):
 # --- 1. the arm at the zero pose, and while marking --------------------------
 
 def fig_chain():
-    import subprocess
     from kinematics import Chain
     chain = Chain.from_description()
     poses = [(np.zeros(5), "zero pose"), (D["path_q"][len(D["path_q"]) // 2], "marking the panel")]
@@ -219,7 +219,7 @@ def fig_toolpath():
 # --- 5. joint trajectories ---------------------------------------------------
 
 def fig_joint_traj():
-    t, Q, kind = D["path_t"], D["path_q"], D["path_kind"]
+    t, Q = D["path_t"], D["path_q"]
     fig, axes = plt.subplots(5, 1, figsize=(10.0, 7.0), sharex=True)
     for i, ax in enumerate(axes):
         ax.plot(t, np.rad2deg(Q[:, i]), color=C[i], lw=1.3)
@@ -240,7 +240,7 @@ def fig_joint_traj():
 # --- 6. manipulability along the path ----------------------------------------
 
 def fig_manip():
-    t, mu, kind = D["path_t"], D["path_mu"], D["path_kind"]
+    t, mu = D["path_t"], D["path_mu"]
     fig, ax = plt.subplots(figsize=(10.0, 3.2))
     ax.plot(t, mu, color=C[0], lw=1.0)
     ax.fill_between(t, 0, mu, color=C[0], alpha=0.10)
@@ -403,7 +403,8 @@ def fig_control_study():
     axes[1].set_title("raising the gain instead", fontsize=10, loc="left", pad=8)
     axes[0].set_title("feeding the reference forward", fontsize=10, loc="left", pad=8)
     finish(fig, "10_control_study.png", "What actually removes the tracking error",
-           f"Over the busiest {S['window_s']:.0f} s of the logo: {S['window_entries']} needle entries inside "
+           f"Over the busiest {S['window_s']:.0f} s of the logo: "
+           f"{S['window_entries']} needle entries inside "
            "the O. Feeding the reference forward halves the settled error and lowers peak torque; "
            "raising the bandwidth to 40 rad/s divides it by fifteen, and above that the loop "
            "diverges at 200 Hz. Neither touches the worst bars, which are the entries themselves.")

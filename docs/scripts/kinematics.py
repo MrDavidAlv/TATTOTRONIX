@@ -59,12 +59,15 @@ class Chain:
         for name in CHAIN:
             j = joints[name]
             origin = j.find("origin")
-            xyz = np.fromstring(origin.get("xyz", "0 0 0"), sep=" ") if origin is not None else np.zeros(3)
-            rpy = np.fromstring(origin.get("rpy", "0 0 0"), sep=" ") if origin is not None else np.zeros(3)
+            xyz = (np.fromstring(origin.get("xyz", "0 0 0"), sep=" ")
+                   if origin is not None else np.zeros(3))
+            rpy = (np.fromstring(origin.get("rpy", "0 0 0"), sep=" ")
+                   if origin is not None else np.zeros(3))
             axis_el = j.find("axis")
             axis = np.fromstring(axis_el.get("xyz"), sep=" ") if axis_el is not None else None
             limit = j.find("limit")
-            lim = (float(limit.get("lower")), float(limit.get("upper"))) if limit is not None else None
+            lim = ((float(limit.get("lower")), float(limit.get("upper")))
+                   if limit is not None else None)
             self.segments.append({
                 "name": name,
                 "T": homogeneous(rpy_to_matrix(*rpy), xyz),

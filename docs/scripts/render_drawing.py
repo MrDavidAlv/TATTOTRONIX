@@ -53,6 +53,7 @@ def fit(box, lo, hi, pad=0.06):
     return (mid[0] - span[0] / 2, mid[0] + span[0] / 2,
             mid[1] - span[1] / 2, mid[1] + span[1] / 2)
 
+
 FIG = Path(__file__).resolve().parents[1] / "figures"
 
 # Two views rather than one isometric.
