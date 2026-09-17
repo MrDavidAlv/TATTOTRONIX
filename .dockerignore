@@ -1,0 +1,23 @@
+# Build products: the image builds its own.
+build/
+install/
+log/
+**/__pycache__/
+*.pyc
+
+# Regenerable caches and large media. The figures are documentation, not
+# inputs, and copying 17 MB of PNG into every layer is 17 MB per layer.
+docs/data/*.npz
+docs/data/*.npy
+docs/figures/
+docs/artwork/
+
+# Not this repository's to ship, and not needed to build.
+docs/images/
+DEVELOPMENT.md
+
+# Version control and editor state.
+.git/
+.github/
+.vscode/
+.idea/
