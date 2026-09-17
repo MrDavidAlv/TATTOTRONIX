@@ -13,6 +13,7 @@ surface. Sped up; the full run is 561 s at a 6 mm/s marking feed.
 
 <div align="center" width="70%">
 
+[![CI](https://github.com/MrDavidAlv/TATTOTRONIX/actions/workflows/ci.yml/badge.svg)](https://github.com/MrDavidAlv/TATTOTRONIX/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10-yellow?logo=python)](#)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu)](#)
 [![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros)](#)
@@ -422,7 +423,9 @@ material: `myworkcell_core`, `myworkcell_support` and `myworkcell_moveit_config`
 are a tutorial cell built around a UR5 that is not part of this project,
 `fake_ar_publisher` is its stand-in perception node, and the vendored
 `joint_state_publisher` packages are ROS 1 forks of packages Humble ships. All
-of it is gone from this branch and still reachable on `main`.
+of it was removed on the way to ROS 2, and none of it is lost: the history is
+still in this branch, and `git show 19fa6ae` is the ROS 1 tree as it stood in
+February 2022.
 
 What carried over is the CAD and the joint geometry. Four things had to be
 corrected on the way, because ROS 1 tolerated them and ROS 2 does not:

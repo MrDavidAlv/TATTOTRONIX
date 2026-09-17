@@ -1,0 +1,135 @@
+# Build the image the developer uses, then run everything inside it.
+#
+# The point of building the image rather than installing ROS step by step is
+# that "passes CI" and "works on my machine" become the same claim. The cost is
+# a slow first run; the layer cache brings later ones down, and the dependency
+# layer only rebuilds when a package manifest changes.
+
+name: CI
+
+# humble is the integration branch this project actually uses - work is merged
+# into it by pull request - and development is where that work happens. Both are
+# gated, and pull requests into either are checked before merge, which is the
+# only point at which a red build costs nothing to fix.
+on:
+  push:
+    branches: [humble, development, 'feature/**']
+  pull_request:
+    branches: [humble, development]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A newer push makes an older run irrelevant, except on humble, where every
+  # commit's result is worth keeping.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/humble' }}
+
+jobs:
+  build-and-test:
+    name: Build, test and certify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          # The history check in tests/test_repo_style.py needs more than the
+          # single commit a default checkout gives it.
+          fetch-depth: 50
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build the development image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: dev
+          load: true
+          tags: tattotronix:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            UID=1000
+            GID=1000
+
+      # The image builds the workspace, so reaching this step at all means the
+      # three packages compile. Building again would only re-prove that.
+      - name: Package tests
+        run: |
+          docker run --rm tattotronix:ci bash -lc '
+            cd /ws
+            colcon test --event-handlers console_direct+ --return-code-on-test-failure
+          '
+
+      - name: Test summary
+        if: always()
+        run: |
+          docker run --rm tattotronix:ci bash -lc 'cd /ws && colcon test-result --all --verbose'
+
+      - name: Repository tests
+        run: |
+          docker run --rm tattotronix:ci bash -lc 'cd /ws && python3 -m pytest tests/ -v'
+
+      - name: Style
+        run: |
+          docker run --rm tattotronix:ci bash -lc '
+            cd /ws
+            python3 -m flake8 src/ docs/scripts tools tests
+          '
+
+      # The documents quote numbers that come out of the analysis. This fails if
+      # one of them has drifted from the file it was computed into, or if a link,
+      # an image or a heading anchor is broken.
+      - name: Certify the documents
+        run: |
+          docker run --rm tattotronix:ci bash -lc 'cd /ws && python3 docs/scripts/check_docs.py'
+
+      # Run on the runner, not in the image: .dockerignore excludes .git, so the
+      # same check inside the container would find no history and pass without
+      # having looked at anything.
+      - name: No attribution in the history
+        run: |
+          python3 - <<'PY'
+          import subprocess, sys
+          banned = ('co-authored-by: claude', 'generated with',
+                    'claude-session', 'noreply@anthropic.com')
+          log = subprocess.run(['git', 'log', '--format=%an <%ae>%n%B', '-50'],
+                               capture_output=True, text=True, check=True).stdout
+          assert log.strip(), 'git log returned nothing'
+          found = [b for b in banned if b in log.lower()]
+          if found:
+              sys.exit(f'attribution found in commit history: {found}')
+          print('history clean')
+          PY
+
+      - name: Launch files describe themselves
+        run: |
+          docker run --rm tattotronix:ci bash -lc '
+            cd /ws
+            ros2 launch tattotronix_gazebo draw_logo.launch.py --show-args
+            ros2 launch tattotronix_gazebo simulation.launch.py --show-args
+          '
+
+      # A headless simulation is the only check that the description, the
+      # controllers and the spawners still agree with each other. It is slower
+      # than everything above put together, so it runs last and only once the
+      # cheap checks have passed.
+      - name: Simulation comes up headless
+        run: |
+          docker run --rm tattotronix:ci bash -lc '
+            cd /ws
+            timeout 150 ros2 launch tattotronix_gazebo simulation.launch.py \
+              headless:=true use_rviz:=false > /tmp/sim.log 2>&1 &
+            for i in $(seq 1 30); do
+              sleep 5
+              grep -q "Configured and activated .*arm_controller" /tmp/sim.log && break
+            done
+            grep -q "Configured and activated .*arm_controller" /tmp/sim.log || {
+              echo "the arm controller never activated"; tail -40 /tmp/sim.log; exit 1; }
+            grep -c "\[ERROR\]" /tmp/sim.log > /tmp/errors || true
+            echo "controller activated; $(cat /tmp/errors) errors in the log"
+            test "$(cat /tmp/errors)" -eq 0
+          '
