@@ -12,7 +12,7 @@
   <exec_depend>joint_trajectory_controller</exec_depend>
   <exec_depend>tattotronix_description</exec_depend>
 
-  <!-- draw_logo: sends the solved trajectory and publishes the ink trace -->
+  <!-- draw: sends the solved trajectory and publishes the ink trace -->
   <exec_depend>rclpy</exec_depend>
   <exec_depend>control_msgs</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>

@@ -16,10 +16,12 @@
 Drive the arm through a solved trajectory, and show the ink.
 
 The whole chain - artwork, mask, contour, fill, inverse kinematics - is solved
-offline by docs/scripts and exported to config/logo_trajectory.npz. This node
-sends that trajectory to `joint_trajectory_controller` and, while it runs,
-publishes the part of the drawing the needle has already laid down as an RViz
-marker.
+offline by docs/scripts and exported into config/trajectories/. This node sends
+one of those to `joint_trajectory_controller` and, while it runs, publishes the
+part of the drawing the needle has already laid down as an RViz marker.
+
+Which drawing is the `art` parameter, a file name in that directory without the
+extension. The node lists what is installed when given a name it does not have.
 
 The marker is why the drawing is visible at all: neither Gazebo nor RViz leaves
 a mark when a tool passes over a surface, so without it the arm moves and
@@ -29,8 +31,8 @@ achieved one. That distinction matters and is why the marker is not evidence of
 accuracy - the tracking error is measured in docs/mathematical-model/control.md,
 not here.
 
-    ros2 run tattotronix_control draw_logo
-    ros2 run tattotronix_control draw_logo --ros-args -p art:=semillero
+    ros2 run tattotronix_control draw
+    ros2 run tattotronix_control draw --ros-args -p art:=semillero
 """
 
 from pathlib import Path
@@ -54,10 +56,10 @@ def _duration(seconds):
     return Duration(sec=sec, nanosec=int(round((seconds - sec) * 1e9)))
 
 
-class DrawLogo(Node):
+class Draw(Node):
 
     def __init__(self):
-        super().__init__("draw_logo")
+        super().__init__("draw")
         self.declare_parameter("art", DEFAULT_ART)
         self.declare_parameter("controller", "arm_controller")
         self.declare_parameter("speed", 1.0)
@@ -92,7 +94,7 @@ class DrawLogo(Node):
             f"{len(self.q)} points, {self.t[-1]:.0f} s at speed {speed:g}, "
             f"{int(self.marked.sum())} of them marking")
 
-        self.trace = self.create_publisher(Marker, "logo_trace", 1)
+        self.trace = self.create_publisher(Marker, "ink_trace", 1)
         self.client = ActionClient(
             self, FollowJointTrajectory,
             f"/{self.get_parameter('controller').value}/follow_joint_trajectory")
@@ -172,7 +174,7 @@ def _point(p):
 
 def main():
     rclpy.init()
-    node = DrawLogo()
+    node = Draw()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

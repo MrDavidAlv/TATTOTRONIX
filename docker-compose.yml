@@ -65,7 +65,7 @@ services:
   # use. The difference is not cosmetic - software GL renders the studio world
   # at a few frames a second.
   #
-  #   docker compose run --rm gui-nvidia ros2 launch tattotronix_gazebo draw_logo.launch.py
+  #   docker compose run --rm gui-nvidia ros2 launch tattotronix_gazebo draw.launch.py
   gui-nvidia:
     extends: gui
     environment:

@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 import rospath as rp
-from analysis import (LOGO_WIDTH_MM, needle_state, path_to_world, solve_path,
+from analysis import (ARTWORK_WIDTH_MM, needle_state, path_to_world, solve_path,
                       time_parameterise)
 from control_study import WINDOW_S, run, window_start
 from dynamics import load as load_dyn
@@ -41,7 +41,7 @@ TAU_MAX = 20.0
 def main():
     chain, model = load_dyn()
 
-    mask, grid = rp.ros_logo_mask(LOGO_WIDTH_MM)
+    mask, grid = rp.ros_logo_mask(ARTWORK_WIDTH_MM)
     P_mm, kind = rp.toolpath(mask, grid)
     Pw = path_to_world(P_mm)
     t = time_parameterise(Pw, kind)

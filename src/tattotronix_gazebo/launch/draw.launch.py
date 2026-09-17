@@ -17,18 +17,18 @@
 Bring the arm up in Gazebo and draw the ROS logo.
 
 Includes simulation.launch.py rather than repeating any of it, and starts
-draw_logo once the controller spawners have exited. Starting it earlier only
+draw once the controller spawners have exited. Starting it earlier only
 means the action client waits, but waiting on an event that already exists is
 cheaper than polling for one that does not.
 
-    ros2 launch tattotronix_gazebo draw_logo.launch.py
-    ros2 launch tattotronix_gazebo draw_logo.launch.py art:=semillero
-    ros2 launch tattotronix_gazebo draw_logo.launch.py art:=foto speed:=2.0
+    ros2 launch tattotronix_gazebo draw.launch.py
+    ros2 launch tattotronix_gazebo draw.launch.py art:=semillero
+    ros2 launch tattotronix_gazebo draw.launch.py art:=foto speed:=2.0
 
 `art` picks one of the trajectories installed by tattotronix_control; the node
 lists what it has if the name is not among them.
 
-The ink is an RViz marker on /logo_trace: nothing in Gazebo leaves a mark when a
+The ink is an RViz marker on /ink_trace: nothing in Gazebo leaves a mark when a
 tool passes over a surface, so without it the arm moves and nothing appears.
 """
 
@@ -56,8 +56,8 @@ def generate_launch_description():
 
     draw = Node(
         package='tattotronix_control',
-        executable='draw_logo',
-        name='draw_logo',
+        executable='draw',
+        name='draw',
         output='screen',
         parameters=[{
             'art': LaunchConfiguration('art'),
@@ -93,7 +93,7 @@ def generate_launch_description():
         simulation,
         # The controllers are spawned by simulation.launch.py on its own event
         # chain, so there is no handle here to hang an OnProcessExit on. A
-        # timer is honest about what it is: draw_logo waits for the action
+        # timer is honest about what it is: draw waits for the action
         # server anyway, and this only keeps its log quiet until then.
         TimerAction(period=12.0, actions=[draw]),
     ])

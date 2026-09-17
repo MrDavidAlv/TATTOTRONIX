@@ -41,7 +41,7 @@ docker compose build
 
 docker compose run --rm dev                  # a shell, no graphics
 docker compose run --rm dev colcon test
-docker compose run --rm gui ros2 launch tattotronix_gazebo draw_logo.launch.py
+docker compose run --rm gui ros2 launch tattotronix_gazebo draw.launch.py
 ```
 
 `dev` is headless and is what the analysis scripts and CI use. `gui` is the same
@@ -159,8 +159,8 @@ arm in simulation follows the same trajectory every number here was measured
 against:
 
 ```bash
-ros2 launch tattotronix_gazebo draw_logo.launch.py              # the ROS logo
-ros2 launch tattotronix_gazebo draw_logo.launch.py art:=foto    # something else
+ros2 launch tattotronix_gazebo draw.launch.py              # the ROS logo
+ros2 launch tattotronix_gazebo draw.launch.py art:=foto    # something else
 ```
 
 `art` picks one of the trajectories installed by `tattotronix_control`. Give it
@@ -176,7 +176,7 @@ a name it does not have and it lists the ones it does.
 
 Inverse kinematics converges at 100% of the path points for all five.
 
-The ink appears in RViz on `/logo_trace`. Nothing in Gazebo leaves a mark when a
+The ink appears in RViz on `/ink_trace`. Nothing in Gazebo leaves a mark when a
 tool passes over a surface, so without that marker the arm moves for nine
 minutes and nothing appears. The marker draws the *commanded* path; how closely
 the loop follows it is [measured separately](docs/mathematical-model/control.md),
@@ -191,11 +191,11 @@ on the full non-linear plant.
 ### Drawing something else
 
 Any raster image works. The mask is built, the toolpath planned, inverse
-kinematics solved, and the result written where `draw_logo` will find it:
+kinematics solved, and the result written where `draw` will find it:
 
 ```bash
 python3 docs/scripts/export_trajectory.py --image mylogo.png --name mylogo
-ros2 launch tattotronix_gazebo draw_logo.launch.py art:=mylogo
+ros2 launch tattotronix_gazebo draw.launch.py art:=mylogo
 ```
 
 Rebuild `tattotronix_control` afterwards so the new file is installed.
@@ -230,7 +230,7 @@ python3 docs/scripts/approach_study.py   # ~15 min
 python3 docs/scripts/resample_study.py   # ~10 min
 python3 docs/scripts/rate_study.py       # ~40 min
 python3 docs/scripts/figures.py   # writes docs/figures/*.png
-python3 docs/scripts/export_trajectory.py   # trajectory for the draw_logo node
+python3 docs/scripts/export_trajectory.py   # trajectory for the draw node
 python3 docs/scripts/render_drawing.py      # the animation at the top
 python3 docs/scripts/check_docs.py       # certifies the documents against the data
 ```
@@ -522,7 +522,7 @@ from being an accuracy claim. See
   `robot_state_publisher` interleaves them with the real values from
   `joint_state_broadcaster`, so TF sits at the zero pose. The failure is
   confusing because Gazebo keeps moving — it has its own state and never reads
-  the topic — and `/logo_trace` keeps growing, because `draw_logo` draws the
+  the topic — and `/ink_trace` keeps growing, because `draw` draws the
   plan rather than the measured pose. Check with
   `ros2 topic info /joint_states`: the count should be one.
 - **Nothing stops two simulations running at once.** Two of them fight over
