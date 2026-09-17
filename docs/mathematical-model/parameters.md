@@ -47,13 +47,13 @@ rows that bound what this model can honestly claim.
 
 | Quantity | Value |
 |---|---|
-| Path points | 16 732 |
+| Path points | 16 656 |
 | Regions | 12 — nine dots, R, O, S |
 | Counters | 2 — the R and the O |
 | Marked length | 2558 mm |
-| Travel length | 3530 mm |
-| Needle entries | **121** |
-| Total time | 561 s |
+| Travel length | 3455 mm |
+| Needle entries | **117** |
+| Total time | 557 s |
 | IK convergence | 100% |
 | IK worst residual | 1.0 × 10⁻⁶ |
 

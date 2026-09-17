@@ -116,7 +116,7 @@ elevation, the panel face on. 561 s compressed into 24 —
 | | |
 |---|---|
 | <img src="docs/figures/01_chain.png" width="420"/><br/>**The chain.** Forward kinematics against live TF, agreeing to the resolution `tf2_echo` prints. | <img src="docs/figures/02_workspace.png" width="420"/><br/>**Workspace.** Uniform sampling of the joint box. The panel falls inside the envelope. |
-| <img src="docs/figures/04_toolpath.png" width="420"/><br/>**Toolpath.** The official ROS logo: 2558 mm marked, 3530 mm travelled, 121 needle entries. | <img src="docs/figures/11_contours.png" width="420"/><br/>**Contour tracing.** Sorting boundary pixels by angle works on a disc and collapses on a letterform. |
+| <img src="docs/figures/04_toolpath.png" width="420"/><br/>**Toolpath.** The official ROS logo: 2558 mm marked, 3455 mm travelled, 117 needle entries. | <img src="docs/figures/11_contours.png" width="420"/><br/>**Contour tracing.** Sorting boundary pixels by angle works on a disc and collapses on a letterform. |
 | <img src="docs/figures/07_gravity.png" width="420"/><br/>**Gravity torque.** Newton–Euler against the gradient of potential energy, agreeing to 10⁻¹¹ N·m. | <img src="docs/figures/08_step.png" width="420"/><br/>**Step response.** Every gain traces back to a measured inertia and one bandwidth decision. |
 | <img src="docs/figures/09_tracking.png" width="420"/><br/>**Tracking.** Settled the tip holds 94 µm; the spikes are needle entries and exits. | <img src="docs/figures/05_joint_trajectories.png" width="420"/><br/>**Joint trajectories.** `joint_4` sits at exactly zero, the correct answer for flat work. |
 | <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 2.3 mm to 196 µm. |
@@ -131,14 +131,65 @@ arm in simulation follows the same trajectory every number here was measured
 against:
 
 ```bash
-ros2 launch tattotronix_gazebo draw_logo.launch.py
+ros2 launch tattotronix_gazebo draw_logo.launch.py              # the ROS logo
+ros2 launch tattotronix_gazebo draw_logo.launch.py art:=foto    # something else
 ```
+
+`art` picks one of the trajectories installed by `tattotronix_control`. Give it
+a name it does not have and it lists the ones it does.
+
+| `art:=` | Drawing | Method | Points | Marked | At the planned feed |
+|---|---|---|---|---|---|
+| `ros_logo` *(default)* | The official ROS logo | threshold | 16 656 | 2558 mm | 9 min |
+| `hagamos` | A wordmark | threshold | 28 468 | 4229 mm | 15 min |
+| `semillero` | A robotics club logo | threshold | 44 066 | 6718 mm | 26 min |
+| `foto` | A photograph, as line art | edges | 40 330 | 5320 mm | 38 min |
+| `ingeniero` | A flat illustration | threshold | 157 135 | 22 534 mm | 92 min |
+
+Inverse kinematics converges at 100% of the path points for all five.
 
 The ink appears in RViz on `/logo_trace`. Nothing in Gazebo leaves a mark when a
 tool passes over a surface, so without that marker the arm moves for nine
 minutes and nothing appears. The marker draws the *commanded* path; how closely
 the loop follows it is [measured separately](docs/mathematical-model/control.md),
 on the full non-linear plant.
+
+> **`speed` is not a playback rate.** It rescales the motion itself, so
+> `speed:=6` asks the arm to mark at 36 mm/s instead of 6. Past roughly 2x the
+> arm falls outside `joint_trajectory_controller`'s 0.1 rad trajectory
+> tolerance and the goal is aborted part-way through — the arm stops dead and
+> the drawing is left unfinished. That tolerance is doing its job.
+
+### Drawing something else
+
+Any raster image works. The mask is built, the toolpath planned, inverse
+kinematics solved, and the result written where `draw_logo` will find it:
+
+```bash
+python3 docs/scripts/export_trajectory.py --image mylogo.png --name mylogo
+ros2 launch tattotronix_gazebo draw_logo.launch.py art:=mylogo
+```
+
+Rebuild `tattotronix_control` afterwards so the new file is installed.
+
+**Pick the method to match the artwork.** `--method threshold`, the default,
+finds solid regions and suits logos, lettering and flat illustration. The
+polarity is decided rather than assumed — ink is whichever side of the threshold
+covers less than half the image — so artwork on a black field works without a
+flag. `--method edges` traces outlines instead, and is the honest choice for a
+photograph: thresholding a continuous-tone image fuses hair and dark clothing
+into one blob, and recovering that detail with a local threshold came to 34
+hours of marking on a 150 mm portrait. Edges give line art in a fraction of it.
+
+**`--pitch` is the fill spacing, and it is not the same as coverage.** The
+default 1.2 mm leaves a 0.9 mm gap between passes of a 0.3 mm needle, which is
+hatching rather than filling — legible on bold shapes, hollow on anything
+finer. A pitch at or below the line width fills solid, at four times the marking
+time. The trajectories above use 0.5 mm, which reads as filled without taking
+half an hour.
+
+It refuses to export a trajectory whose inverse kinematics did not converge
+everywhere, rather than hand the arm a path it cannot follow.
 
 ### Reproducing
 

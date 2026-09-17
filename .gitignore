@@ -56,3 +56,10 @@ docs/data/*.npy
 # policy; this repository is Apache-2.0, so the mark is fetched, not vendored.
 # docs/scripts/fetch_artwork.sh downloads it.
 docs/artwork/
+
+# Artwork used to test the pipeline that is not this repository's to publish:
+# a personal photograph, and two organisations' logos. The trajectories derived
+# from them are published, the artwork is not - the same rule the ROS mark gets.
+docs/images/foto.jpg
+docs/images/logo semillero robotica.jpg
+docs/images/logocolectivohagamos.webp

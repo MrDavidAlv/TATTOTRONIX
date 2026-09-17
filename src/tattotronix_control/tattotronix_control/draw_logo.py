@@ -15,7 +15,7 @@ accuracy - the tracking error is measured in docs/mathematical-model/control.md,
 not here.
 
     ros2 run tattotronix_control draw_logo
-    ros2 run tattotronix_control draw_logo --ros-args -p speed:=2.0
+    ros2 run tattotronix_control draw_logo --ros-args -p art:=semillero
 """
 
 from pathlib import Path
@@ -30,7 +30,8 @@ from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from visualization_msgs.msg import Marker
 
-TRAJECTORY = "logo_trajectory.npz"
+TRAJECTORIES = "trajectories"
+DEFAULT_ART = "ros_logo"
 
 
 def _duration(seconds):
@@ -42,6 +43,7 @@ class DrawLogo(Node):
 
     def __init__(self):
         super().__init__("draw_logo")
+        self.declare_parameter("art", DEFAULT_ART)
         self.declare_parameter("controller", "arm_controller")
         self.declare_parameter("speed", 1.0)
         self.declare_parameter("trace_frame", "base_link")
@@ -51,11 +53,16 @@ class DrawLogo(Node):
         if speed <= 0.0:
             raise ValueError("speed must be positive")
 
-        path = Path(get_package_share_directory("tattotronix_control")) / "config" / TRAJECTORY
+        art = str(self.get_parameter("art").value)
+        root = Path(get_package_share_directory("tattotronix_control")) / "config" / TRAJECTORIES
+        path = root / (art if art.endswith(".npz") else art + ".npz")
         if not path.exists():
+            have = sorted(p.stem for p in root.glob("*.npz"))
             raise FileNotFoundError(
-                f"{path} is missing. Run docs/scripts/export_trajectory.py, "
-                "then rebuild tattotronix_control.")
+                f"no trajectory named {art!r} in {root}. "
+                f"Available: {', '.join(have) if have else 'none'}. "
+                "Export one with docs/scripts/export_trajectory.py, then rebuild "
+                "tattotronix_control.")
         d = np.load(path, allow_pickle=False)
         self.joints = [str(j) for j in d["joints"]]
         self.q = d["q"].astype(float)
@@ -63,6 +70,9 @@ class DrawLogo(Node):
         self.marked = d["marked"]
         self.tcp = d["tcp"].astype(float)
 
+        src = str(d["source"]) if "source" in d else art
+        self.get_logger().info(
+            f"drawing {art}: {src}")
         self.get_logger().info(
             f"{len(self.q)} points, {self.t[-1]:.0f} s at speed {speed:g}, "
             f"{int(self.marked.sum())} of them marking")
