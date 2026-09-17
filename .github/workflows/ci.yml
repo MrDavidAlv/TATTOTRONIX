@@ -7,22 +7,22 @@
 
 name: CI
 
-# development is where work happens and humble is what it is promoted into, so
-# both are worth gating. Pull requests into either are checked before merge,
-# which is the only point at which a red build costs nothing to fix.
+# humble is the integration branch this project actually uses - work is merged
+# into it by pull request - and development is where that work happens. Both are
+# gated, and pull requests into either are checked before merge, which is the
+# only point at which a red build costs nothing to fix.
 on:
   push:
-    branches: [main, humble, development, 'feature/**']
+    branches: [humble, development, 'feature/**']
   pull_request:
-    branches: [main, humble, development]
+    branches: [humble, development]
   workflow_dispatch:
 
 concurrency:
-  # A newer push makes an older run irrelevant, except on main, where every
-  # commit's result is worth keeping.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: >-
-    ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/humble' }}
+  # A newer push makes an older run irrelevant, except on humble, where every
+  # commit's result is worth keeping.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/humble' }}
 
 jobs:
   build-and-test:
