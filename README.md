@@ -172,9 +172,18 @@ a name it does not have and it lists the ones it does.
 | `hagamos` | A wordmark | threshold | 28 468 | 4229 mm | 15 min |
 | `semillero` | A robotics club logo | threshold | 44 066 | 6718 mm | 26 min |
 | `foto` | A photograph, as line art | edges | 40 330 | 5320 mm | 38 min |
-| `ingeniero` | A flat illustration | threshold | 157 135 | 22 534 mm | 92 min |
 
-Inverse kinematics converges at 100% of the path points for all five.
+Inverse kinematics converges at 100% of the path points for all four.
+
+A fifth, `ingeniero`, is not in the repository. It is 3.9 MB and fully
+reproducible from an image that *is* here, which makes it the one derived
+artifact worth regenerating rather than versioning — the other four come from
+artwork this repository cannot publish, so their trajectory is the only copy.
+
+```bash
+python3 docs/scripts/export_trajectory.py \
+    --image docs/images/ingeniero.png --name ingeniero --pitch 0.5
+```
 
 The ink appears in RViz on `/ink_trace`. Nothing in Gazebo leaves a mark when a
 tool passes over a surface, so without that marker the arm moves for nine

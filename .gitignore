@@ -63,3 +63,11 @@ docs/artwork/
 docs/images/foto.jpg
 docs/images/logo semillero robotica.jpg
 docs/images/logocolectivohagamos.webp
+
+# A trajectory that is both large and fully reproducible from inputs this
+# repository does carry. The other four stay: three derive from artwork that is
+# not ours to publish, so the trajectory is the only copy, and ros_logo is the
+# default and should work on a fresh clone. Regenerate this one with
+#   python3 docs/scripts/export_trajectory.py \
+#       --image docs/images/ingeniero.png --name ingeniero --pitch 0.5
+src/tattotronix_control/config/trajectories/ingeniero.npz
