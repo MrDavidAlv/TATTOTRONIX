@@ -13,6 +13,7 @@ surface. Sped up; the full run is 561 s at a 6 mm/s marking feed.
 
 <div align="center" width="70%">
 
+[![CI](https://github.com/MrDavidAlv/TATTOTRONIX/actions/workflows/ci.yml/badge.svg)](https://github.com/MrDavidAlv/TATTOTRONIX/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10-yellow?logo=python)](#)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu)](#)
 [![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros)](#)

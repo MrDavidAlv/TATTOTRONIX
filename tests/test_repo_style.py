@@ -24,6 +24,8 @@ reason.
 import subprocess
 import sys
 
+import pytest
+
 LINTED = ['docs/scripts', 'tools', 'tests']
 
 
@@ -45,20 +47,31 @@ def test_every_script_compiles(repo):
     assert result.returncode == 0, result.stderr
 
 
+BANNED_IN_HISTORY = ('co-authored-by: claude', 'generated with',
+                     'claude-session', 'noreply@anthropic.com')
+
+
 def test_no_ai_attribution_in_the_history(repo):
     """The repository's own rule, enforced rather than remembered.
 
     Signing commits as an assistant takes credit for work that was several
     people's and several tools', and this project asks for none of it in the
     tree. It has had to be cleaned out of published history once.
+
+    Skipped rather than silently passed where there is no history to read. The
+    container image excludes .git, so inside it this check has nothing to look
+    at; CI runs the same check on the runner, where the checkout does. A test
+    that passes because it found nothing to test is worse than one that fails.
     """
-    result = subprocess.run(
-        ['git', 'log', '--format=%an <%ae>%n%B', 'origin/main..HEAD'],
+    inside_repo = subprocess.run(
+        ['git', 'rev-parse', '--is-inside-work-tree'],
         cwd=repo, capture_output=True, text=True)
-    if result.returncode != 0:          # no such ref in a shallow CI checkout
-        result = subprocess.run(['git', 'log', '--format=%an <%ae>%n%B', '-50'],
-                                cwd=repo, capture_output=True, text=True)
-    banned = ('co-authored-by: claude', 'generated with', 'claude-session',
-              'noreply@anthropic.com')
-    found = [b for b in banned if b in result.stdout.lower()]
+    if inside_repo.returncode != 0 or inside_repo.stdout.strip() != 'true':
+        pytest.skip('no git history here; CI checks this on the runner')
+
+    log = subprocess.run(['git', 'log', '--format=%an <%ae>%n%B', '-200'],
+                         cwd=repo, capture_output=True, text=True)
+    assert log.returncode == 0, log.stderr
+    assert log.stdout.strip(), 'git log returned nothing'
+    found = [b for b in BANNED_IN_HISTORY if b in log.stdout.lower()]
     assert not found, f'attribution found in commit history: {found}'
