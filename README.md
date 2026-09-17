@@ -27,6 +27,33 @@ surface. Sped up; the full run is 561 s at a 6 mm/s marking feed.
 
 ## Quick Start
 
+### In a container
+
+The environment this needs is specific enough to be worth pinning — see
+[Known Issues](#known-issues) for one way it goes wrong that does not look like
+an environment problem at all. The container is also what CI runs, so a green
+build and a working checkout are the same claim.
+
+```bash
+export HOST_UID=$(id -u) HOST_GID=$(id -g)   # only if your user is not 1000
+docker compose build
+
+docker compose run --rm dev                  # a shell, no graphics
+docker compose run --rm dev colcon test
+docker compose run --rm gui ros2 launch tattotronix_gazebo draw_logo.launch.py
+```
+
+`dev` is headless and is what the analysis scripts and CI use. `gui` is the same
+image with the host display handed in, for watching the simulation. They are
+separate because a container that needs an X socket fails on a machine with
+none, and CI is exactly that machine.
+
+The workspace is mounted, so edits on the host are what runs; `build/` and
+`install/` stay in named volumes, because mixing a host build tree with a
+container one breaks both.
+
+### On the host
+
 ```bash
 # 1. ROS 2 Humble on Ubuntu 22.04
 sudo apt update && sudo apt install ros-humble-desktop

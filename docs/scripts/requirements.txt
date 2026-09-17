@@ -1,0 +1,14 @@
+# Python packages the analysis scripts need beyond what ROS 2 Humble ships.
+#
+# numpy comes from the ROS side as python3-numpy and is declared in
+# tattotronix_control/package.xml; it is pinned here too so a plain
+# `pip install -r` outside ROS gets a working set.
+#
+# Lower bounds, not exact pins: this is an application, but it is also a
+# reproducibility argument, and a floor that matches Ubuntu 22.04's own
+# packages keeps the container and a bare 22.04 machine on the same code.
+numpy>=1.21
+scipy>=1.8
+matplotlib>=3.5
+pillow>=9.0
+cairosvg>=2.5
