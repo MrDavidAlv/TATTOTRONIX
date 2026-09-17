@@ -77,12 +77,19 @@ def placeholder_mask(res=0.25):
     return mask, (xs, ys)
 
 
-def from_image(path, width_mm, res=0.25, threshold=128, invert=False):
-    """Binary ink mask from an image, scaled to `width_mm` across.
+def _otsu(g):
+    """Threshold that best separates the grey histogram into two classes."""
+    hist, _ = np.histogram(g, bins=256, range=(0, 256))
+    total = hist.sum()
+    w = np.cumsum(hist)
+    m = np.cumsum(hist * np.arange(256))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        between = (m[-1] * w / total - m) ** 2 / (w * (total - w))
+    return int(np.nanargmax(between))
 
-    Takes a path or an open file object. Anything with an alpha channel is
-    composited onto white first, so a transparent PNG behaves.
-    """
+
+def _grey(path, width_mm, res):
+    """Greyscale image resampled onto the panel grid, in millimetres."""
     from PIL import Image
     im = Image.open(path)
     if im.mode in ("RGBA", "LA", "P"):
@@ -90,18 +97,58 @@ def from_image(path, width_mm, res=0.25, threshold=128, invert=False):
         bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
         im = Image.alpha_composite(bg, im)
     g = np.asarray(im.convert("L"), float)
-    ink = g < threshold
-    if invert:
-        ink = ~ink
-    h_px, w_px = ink.shape
-    mm_per_px = width_mm / w_px
+    h_px, w_px = g.shape
     out_w = int(round(width_mm / res))
-    out_h = int(round(h_px * mm_per_px / res))
-    zoom = (out_h / h_px, out_w / w_px)
-    mask = ndimage.zoom(ink.astype(float), zoom, order=1) > 0.5
+    out_h = int(round(h_px * (width_mm / w_px) / res))
+    G = ndimage.zoom(g, (out_h / h_px, out_w / w_px), order=1)
     xs = (np.arange(out_w) - out_w / 2) * res
     ys = (np.arange(out_h) - out_h / 2)[::-1] * res   # image rows run downwards
-    return mask, (xs, ys)
+    return G, (xs, ys)
+
+
+def _mask_threshold(G, threshold=None):
+    """Solid regions, split at `threshold` or at Otsu's.
+
+    The polarity is decided rather than assumed: **ink is the minority**. A
+    drawing has less ink on it than ground, so whichever side of the threshold
+    covers less than half the image is the ink. Without that, a logo on a black
+    field comes out as a filled rectangle with the artwork punched out of it.
+    """
+    t = _otsu(G) if threshold is None else threshold
+    dark = G < t
+    return dark if dark.mean() <= 0.5 else ~dark
+
+
+def _mask_edges(G, sigma=2.0, k=1.0):
+    """Line art: gradient magnitude above k standard deviations.
+
+    For a photograph this is the honest tool. Thresholding a continuous-tone
+    image fuses hair and dark clothing into one blob, and a local threshold
+    recovers the detail at a cost nobody will pay - on a 150 mm portrait it came
+    to 34 hours of marking. Edges give what a tattooist would actually draw from
+    a photo, and in a fraction of the time.
+    """
+    smooth = ndimage.gaussian_filter(G, sigma)
+    mag = np.hypot(ndimage.sobel(smooth, 0), ndimage.sobel(smooth, 1))
+    return mag > (mag.mean() + k * mag.std())
+
+
+def from_image(path, width_mm, res=0.25, method="threshold", threshold=None):
+    """Binary ink mask from any image, scaled to `width_mm` across.
+
+    `method` is "threshold" for artwork with solid areas - logos, lettering,
+    flat illustration - or "edges" for photographs. Passing `threshold`
+    overrides Otsu's for the threshold method.
+
+    Takes a path or an open file object. Anything with an alpha channel is
+    composited onto white first, so a transparent PNG behaves.
+    """
+    G, grid = _grey(path, width_mm, res)
+    if method == "threshold":
+        return _mask_threshold(G, threshold), grid
+    if method == "edges":
+        return _mask_edges(G), grid
+    raise ValueError(f"unknown method {method!r}; use 'threshold' or 'edges'")
 
 
 def from_svg(path, width_mm, res=0.25, threshold=128):

@@ -140,9 +140,9 @@ Split, over the first 12 s of the logo — one dot, filled without lifting:
 
 | Segment | Mean | Worst |
 |---|---|---|
-| Marking, settled | **94.9 µm** | 725 µm |
-| Marking, all | 99.7 µm | 725 µm |
-| Travel | 1295 µm | 3526 µm |
+| Marking, settled | **94.7 µm** | 711 µm |
+| Marking, all | 99.4 µm | 711 µm |
+| Travel | 1303 µm | 3541 µm |
 
 The split was validated before the artwork changed: on the stand-in it gave
 164.5 µm settled, against the 165 µm `control_study.py` obtains independently for

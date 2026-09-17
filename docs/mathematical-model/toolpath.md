@@ -148,8 +148,8 @@ pass, which doubled cycle time and would have stippled every edge.
 | Marking feed | 6 mm/s | The order of what a tattooist does |
 | Travel feed | 60 mm/s | Limited by the arm, not the process |
 
-**On the logo:** 16 732 points, 2558 mm marked against 3530 mm travelled, 561 s
-total, over **121 needle entries**. Every fill pass that meets the counter of the
+**On the logo:** 16 656 points, 2558 mm marked against 3455 mm travelled, 557 s
+total, over **117 needle entries**. Every fill pass that meets the counter of the
 R or the O has to lift and re-enter, and that is where the travel goes.
 
 That last number used to be the project's dominant error, because each entry

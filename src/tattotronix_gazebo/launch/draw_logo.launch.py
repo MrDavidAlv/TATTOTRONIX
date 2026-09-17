@@ -8,7 +8,11 @@ means the action client waits, but waiting on an event that already exists is
 cheaper than polling for one that does not.
 
     ros2 launch tattotronix_gazebo draw_logo.launch.py
-    ros2 launch tattotronix_gazebo draw_logo.launch.py speed:=4.0
+    ros2 launch tattotronix_gazebo draw_logo.launch.py art:=semillero
+    ros2 launch tattotronix_gazebo draw_logo.launch.py art:=foto speed:=2.0
+
+`art` picks one of the trajectories installed by tattotronix_control; the node
+lists what it has if the name is not among them.
 
 The ink is an RViz marker on /logo_trace: nothing in Gazebo leaves a mark when a
 tool passes over a surface, so without it the arm moves and nothing appears.
@@ -42,6 +46,7 @@ def generate_launch_description():
         name='draw_logo',
         output='screen',
         parameters=[{
+            'art': LaunchConfiguration('art'),
             'speed': LaunchConfiguration('speed'),
             'use_sim_time': True,
         }],
@@ -49,10 +54,18 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument(
+            'art', default_value='ros_logo',
+            description='Which drawing to run. A name under '
+                        'tattotronix_control/config/trajectories, without the '
+                        '.npz. The node lists what is installed if the name '
+                        'does not match.'),
+        DeclareLaunchArgument(
             'speed', default_value='1.0',
             description='Time scale for the trajectory. 1.0 is the planned '
-                        '6 mm/s marking feed; anything faster is a preview, '
-                        'not a result.'),
+                        '6 mm/s marking feed. This rescales the motion itself, '
+                        'not a playback rate: past roughly 2x the arm falls '
+                        'outside the controller trajectory tolerance and the '
+                        'goal is aborted mid-drawing.'),
         DeclareLaunchArgument(
             'use_rviz', default_value='true',
             description='RViz is where the ink trace is visible.'),
