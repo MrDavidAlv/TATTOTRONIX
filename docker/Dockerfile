@@ -29,11 +29,20 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # cairosvg reaches libcairo through ctypes, so the library has to be present
 # even though nothing links against it at build time.
+#
+# ros2controlcli is what `ros2 control list_controllers` comes from. It is a
+# debugging tool rather than a dependency, so no package.xml declares it and
+# rosdep will not pull it in; without it the first thing anyone reaches for when
+# a controller does not come up is missing.
+#
+# xvfb and ffmpeg are for docs/scripts/record_simulation.sh, which runs the
+# simulation on a nested X server precisely so it does not need a real display.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         libcairo2 \
         xvfb \
         ffmpeg \
+        ros-${ROS_DISTRO}-ros2controlcli \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /ws

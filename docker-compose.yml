@@ -40,6 +40,10 @@ services:
     stdin_open: true
     tty: true
 
+  # Software rendering. Works anywhere, including a machine with no GPU
+  # passed through, which is what a container gets by default: the host driver
+  # is not inside it, so OpenGL falls back to llvmpipe. Fine for looking at the
+  # arm, slow for a long drawing.
   gui:
     extends: dev
     environment:
@@ -55,6 +59,26 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - "${XAUTHORITY:-/dev/null}:/tmp/.docker.xauth:ro"
     network_mode: host
+
+  # The same thing with the host GPU. Needs NVIDIA Container Toolkit installed
+  # on the host; without it this service fails to start and `gui` is the one to
+  # use. The difference is not cosmetic - software GL renders the studio world
+  # at a few frames a second.
+  #
+  #   docker compose run --rm gui-nvidia ros2 launch tattotronix_gazebo draw_logo.launch.py
+  gui-nvidia:
+    extends: gui
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+      LIBGL_ALWAYS_SOFTWARE: "0"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
 volumes:
   tattotronix-build:

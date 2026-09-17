@@ -56,6 +56,14 @@ arm_controller:
     allow_partial_joints_goal: false
     open_loop_control: false
 
+    # Stated rather than inherited. The default is true in Humble and the
+    # controller warns that it will become false, so leaving it unset means the
+    # behaviour changes on an upgrade rather than on a decision. false is what
+    # this arm wants: a drawing path ends with the needle stopped, and a
+    # trajectory that is allowed to finish while still moving is a trajectory
+    # whose last point is not where the tool ends up.
+    allow_nonzero_velocity_at_trajectory_end: false
+
     constraints:
       stopped_velocity_tolerance: 0.01
       goal_time: 0.5
