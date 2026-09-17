@@ -55,7 +55,8 @@ def claims():
 
     MM = "docs/mathematical-model/"
     out = [
-        ("path points", _spellings(s["path_points"], decimals=(0,)), [MM + "toolpath.md", MM + "parameters.md"]),
+        ("path points", _spellings(s["path_points"], decimals=(0,)),
+         [MM + "toolpath.md", MM + "parameters.md"]),
         ("marked length", _spellings(s["path_marked_mm"], unit=" mm"),
          [MM + "toolpath.md", "README.md"]),
         ("travel length", _spellings(s["path_travel_mm"], unit=" mm"),

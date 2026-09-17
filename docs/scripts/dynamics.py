@@ -116,22 +116,24 @@ class Model:
             ws.append(w_new); wds.append(wd_new); vds.append(vd_new); acs.append(ac)
             w, wd, vd = w_new, wd_new, vd_new
 
-        f = np.zeros(3); nn = np.zeros(3)
+        f_child = np.zeros(3)
+        n_child = np.zeros(3)
         tau = np.zeros(n)
         for i in range(n - 1, -1, -1):
             b = self.bodies[i]
             F = b["m"] * acs[i]
             N = b["I"] @ wds[i] + np.cross(ws[i], b["I"] @ ws[i])
+            f = F
+            nn = N + np.cross(b["com"], F)
             if i + 1 < n:
+                # The child's force and moment, brought into this frame, and
+                # the moment that force makes about this joint.
                 R_next, p_next = Rs[i + 1], ps[i + 1]
-                f_next, n_next = R_next @ f, R_next @ nn
-            else:
-                f_next, n_next = np.zeros(3), np.zeros(3)
-            f = F + f_next
-            nn = N + n_next + np.cross(b["com"], F)
-            if i + 1 < n:
-                nn = nn + np.cross(ps[i + 1], f_next)
+                f_next, n_next = R_next @ f_child, R_next @ n_child
+                f = f + f_next
+                nn = nn + n_next + np.cross(p_next, f_next)
             tau[i] = nn @ b["axis"]
+            f_child, n_child = f, nn
         return tau
 
     def gravity(self, q):

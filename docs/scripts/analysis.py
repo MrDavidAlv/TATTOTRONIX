@@ -10,12 +10,18 @@ from pathlib import Path
 import numpy as np
 
 import rospath as rp
+from dynamics import load as load_dyn
 
+# Every script here prints progress through runs that take minutes, and a
+# buffered stdout means the whole log arrives at once when it is over.
+# Shadowing print is narrower than setting PYTHONUNBUFFERED on every call.
 _print = print
+
+
 def print(*a, **k):
     k.setdefault('flush', True)
     _print(*a, **k)
-from dynamics import load as load_dyn
+
 
 OUT = Path(__file__).resolve().parents[1] / "data"
 OUT.mkdir(exist_ok=True)
@@ -255,6 +261,7 @@ def main():
     stop = int(np.searchsorted(t, t[0] + 12.0))
     win = slice(0, max(stop, 50))
     tt, QQ = t[win] - t[win][0], Qp[win]
+
     def ref(s):
         s = min(max(s, 0.0), tt[-1])
         return np.array([np.interp(s, tt, QQ[:, i]) for i in range(chain.n)])

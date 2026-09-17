@@ -32,7 +32,6 @@ resolves to the identity and is skipped.
 import argparse
 import glob
 import itertools
-import math
 import os
 import struct
 import xml.etree.ElementTree as ET
