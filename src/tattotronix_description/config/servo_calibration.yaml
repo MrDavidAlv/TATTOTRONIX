@@ -1,0 +1,34 @@
+# Which PCA9685 channel drives each servo, and how its pulse maps to the angle
+# of the joint it turns. Read by urdf/tattotronix.ros2_control.xacro when the
+# description is built with hardware:=pca9685.
+#
+# DECLARED, NOT MEASURED. Every value below is the catalogue convention for a
+# 180-degree hobby servo: 1500 us at mid travel and 500 to 2500 us end to end,
+# which is 636.62 us per radian, or 11.1 us per degree. No servo on the arm has
+# been measured against it. docs/hardware.md gives the procedure; do it before
+# the arm is driven.
+#
+#   channel      PCA9685 output, 0 to 15
+#   zero_us      the pulse at which the joint is at zero, as the URDF defines it
+#   us_per_rad   pulse per radian of joint angle. Signed: the sign is the way
+#                round the servo is mounted
+#   min_us       the pulse is never sent outside min_us..max_us, whatever the
+#   max_us       joint is asked for; set them inside the servo's real travel
+#
+# The shoulder, joint_2, has two servos on one joint: the second is the "_b"
+# set, and shares the first's pulse limits. They are declared here as mounted
+# facing each other, so the second turns the other way and its us_per_rad is
+# negative. If they are mounted the same way round, that sign is wrong and the
+# two will fight each other at full stall current. Check it with only one of
+# them connected.
+#
+# Channel 6 is left free for the tool's continuous-rotation SG90, which this
+# driver does not command yet.
+
+servos:
+  joint_1: {channel: 0, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
+  joint_2: {channel: 1, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0,
+            channel_b: 2, zero_us_b: 1500.0, us_per_rad_b: -636.62}
+  joint_3: {channel: 3, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
+  joint_4: {channel: 4, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
+  joint_5: {channel: 5, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}

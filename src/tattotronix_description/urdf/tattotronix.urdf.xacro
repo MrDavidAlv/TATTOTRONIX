@@ -8,10 +8,20 @@
     Swap the tool argument and the same arm carries a different end effector.
 
     Arguments
-      hardware          gz | mock | none
+      hardware          gz | mock | pca9685 | none
                         'none' leaves ros2_control out entirely, which is what
                         display.launch.py wants: a description RViz can render
                         with joint_state_publisher_gui and no controller stack.
+                        'pca9685' is the arm as built: its hobby servos driven
+                        through a PCA9685 board by tattotronix_hardware.
+      i2c_device        pca9685 only: the Linux I2C bus the board is on.
+      i2c_address       pca9685 only: the board's address; 64 is 0x40, the
+                        address with no jumpers soldered.
+      dry_run           pca9685 only: true runs the whole stack with the board
+                        simulated, sending nothing. For a first run, and for CI.
+      servo_calibration pca9685 only: which channel drives each joint and how
+                        its pulse maps to the angle. The default is declared,
+                        not measured; see config/servo_calibration.yaml.
       tool              tattoo | none
                         The pen in tattoo_tool.xacro is primitives sized to a
                         catalogue rotary machine, not measured hardware. It is
@@ -39,6 +49,11 @@
   <xacro:arg name="controllers_file" default=""/>
   <xacro:arg name="use_world_link" default="true"/>
   <xacro:arg name="mass_model" default="printed"/>
+  <xacro:arg name="i2c_device" default="/dev/i2c-1"/>
+  <xacro:arg name="i2c_address" default="64"/>
+  <xacro:arg name="dry_run" default="false"/>
+  <xacro:arg name="servo_calibration"
+             default="$(find tattotronix_description)/config/servo_calibration.yaml"/>
 
   <xacro:property name="hardware" value="$(arg hardware)"/>
   <xacro:property name="tool" value="$(arg tool)"/>
@@ -50,6 +65,13 @@
        Gazebo loads without a word. -->
   <xacro:if value="${mass_model not in ['box', 'printed']}">
     ${xacro.fatal('mass_model must be box or printed, not ' + str(mass_model))}
+  </xacro:if>
+
+  <!-- The same for the backend: an unknown one would match no branch in the
+       ros2_control macro and give the controller manager a system with no
+       hardware in it. -->
+  <xacro:if value="${hardware not in ['gz', 'mock', 'pca9685', 'none']}">
+    ${xacro.fatal('hardware must be gz, mock, pca9685 or none, not ' + str(hardware))}
   </xacro:if>
 
   <xacro:include filename="$(find tattotronix_description)/urdf/materials.xacro"/>
@@ -83,7 +105,9 @@
   </xacro:if>
 
   <xacro:unless value="${hardware == 'none'}">
-    <xacro:tattotronix_ros2_control name="tattotronix_system" hardware="${hardware}"/>
+    <xacro:tattotronix_ros2_control name="tattotronix_system" hardware="${hardware}"
+      i2c_device="$(arg i2c_device)" i2c_address="$(arg i2c_address)"
+      dry_run="$(arg dry_run)" servo_calibration="$(arg servo_calibration)"/>
   </xacro:unless>
 
   <xacro:if value="${hardware == 'gz'}">
