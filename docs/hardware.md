@@ -123,27 +123,37 @@ measurement**: 1500 µs at mid travel, 636.62 µs per radian. No servo on this a
 has been measured against them. Do this once per servo, and again after one is
 remounted.
 
-Take the horns off first, so that nothing is attached while a servo finds where
-it is.
+Calibrate one servo at a time, with only that one connected and its horn off.
+`servo_pulse` holds a single channel at a single pulse width, with nothing else
+running, and takes new widths as you type them:
 
-1. **Zero.** Start the arm with `ros2 launch tattotronix_hardware arm.launch.py`.
-   Every servo goes to the pulse for its joint's zero. Put each horn back so its
-   link is at the zero pose the URDF defines, as close as the spline allows. Set
-   `zero_us` to take up what the spline could not.
-2. **Direction.** Send one joint a small positive angle and watch which way it
-   turns. If it is the wrong way for the joint's axis in the URDF, change the
-   sign of its `us_per_rad`. With the arm running, this sends `joint_1` to
-   0.2 rad over two seconds and the others to zero:
+```bash
+ros2 run tattotronix_hardware servo_pulse 0 1500    # channel 0 at 1500 µs; an empty line stops
+```
+
+An empty line switches the channel off before the tool exits. Ctrl-C does not:
+it leaves the servo holding the last width it was given.
+
+1. **Zero.** Hold the servo at 1500 µs and fit the horn so its link is at the
+   zero pose the URDF defines, as close as the spline allows. Type widths until
+   it sits exactly there: that width is `zero_us`.
+2. **Direction and scale.** Type `zero_us` plus 318, half a radian at the
+   declared scale, and measure the angle the joint turns. Its sign against the
+   joint's axis in the URDF is the sign of `us_per_rad`, and 318 over the angle
+   in radians is its size.
+3. **Limits.** Step the width out each way, a few microseconds at a time, until
+   the joint reaches the end of its travel — the servo's, or the printed parts',
+   whichever comes first, and at the first sound of the servo straining — and
+   set `min_us` and `max_us` a little inside that. The driver never sends a
+   pulse outside them.
+4. **Check** with the whole arm running: this sends `joint_1` to 0.2 rad over two
+   seconds and the others to zero, and each joint should go where it is sent:
 
    ```bash
    ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory \
      "{joint_names: [joint_1, joint_2, joint_3, joint_4, joint_5],
        points: [{positions: [0.2, 0.0, 0.0, 0.0, 0.0], time_from_start: {sec: 2}}]}"
    ```
-3. **Scale.** Send ±0.5 rad and measure the angle it reaches. Scale `us_per_rad`
-   by what was asked over what was measured.
-4. **Limits.** Set `min_us` and `max_us` inside what the servo and the printed
-   parts can reach. The driver never sends a pulse outside them.
 
 **The shoulder carries two servos on one joint.** Calibrate it with only one of
 them connected, then the other alone. The second is declared as mounted facing
