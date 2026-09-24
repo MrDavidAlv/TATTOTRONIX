@@ -2,12 +2,12 @@
 #
 # Velocity and effort are the description's. Acceleration is derived:
 # each joint reaches its velocity limit in 0.20 s, and the torque that
-# costs is J_eff * a plus the measured peak gravity load of 1.91 N.m,
+# costs is J_eff * a plus the measured peak gravity load of 0.31 N.m,
 # against the effort limit the URDF declares. J_eff is 1/(M^-1)_ii,
 # recovered from the gains in docs/data/summary.json, which were placed
 # at 20 rad/s.
 #
-# Worst case across the arm is 10.6% of the available effort, so the
+# Worst case across the arm is 1.7% of the available effort, so the
 # ramp is a choice about smoothness rather than a limit being approached.
 
 joint_limits:
@@ -16,28 +16,28 @@ joint_limits:
     max_velocity: 1.5000
     has_acceleration_limits: true
     max_acceleration: 7.5000
-    # J_eff 2.721e-02 kg.m^2 -> 2.117 N.m of 20.0 available (10.6%)
+    # J_eff 3.602e-03 kg.m^2 -> 0.337 N.m of 20.0 available (1.7%)
   joint_2:
     has_velocity_limits: true
     max_velocity: 1.5000
     has_acceleration_limits: true
     max_acceleration: 7.5000
-    # J_eff 1.617e-02 kg.m^2 -> 2.034 N.m of 20.0 available (10.2%)
+    # J_eff 2.663e-03 kg.m^2 -> 0.330 N.m of 20.0 available (1.6%)
   joint_3:
     has_velocity_limits: true
     max_velocity: 1.5000
     has_acceleration_limits: true
     max_acceleration: 7.5000
-    # J_eff 4.828e-03 kg.m^2 -> 1.949 N.m of 20.0 available (9.7%)
+    # J_eff 6.272e-04 kg.m^2 -> 0.314 N.m of 20.0 available (1.6%)
   joint_4:
     has_velocity_limits: true
     max_velocity: 1.5000
     has_acceleration_limits: true
     max_acceleration: 7.5000
-    # J_eff 2.105e-04 kg.m^2 -> 1.915 N.m of 20.0 available (9.6%)
+    # J_eff 1.817e-05 kg.m^2 -> 0.310 N.m of 20.0 available (1.5%)
   joint_5:
     has_velocity_limits: true
     max_velocity: 1.5000
     has_acceleration_limits: true
     max_acceleration: 7.5000
-    # J_eff 7.966e-05 kg.m^2 -> 1.914 N.m of 20.0 available (9.6%)
+    # J_eff 3.017e-05 kg.m^2 -> 0.310 N.m of 20.0 available (1.5%)

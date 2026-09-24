@@ -23,20 +23,22 @@
       use_world_link    true bolts base_link to a world link, which is how the
                         arm is anchored in simulation. Set false when the
                         description is embedded in a larger cell.
-      mass_model        box (default) approximates each link by the solid box
-                        that fits its bounding box, with masses written by hand.
-                        printed is the arm as built: each link's printed shell,
-                        integrated from its mesh, plus the servos mounted in it,
-                        generated into inertials_printed.xacro by
-                        docs/scripts/mass_properties.py. Only inertia changes;
-                        geometry and kinematics are identical in both.
+      mass_model        printed (default) is the arm as built: each link's
+                        printed shell, integrated from its mesh, plus the servos
+                        mounted in it, generated into inertials_printed.xacro by
+                        docs/scripts/mass_properties.py. box is the earlier
+                        approximation by the solid box that fits each link's
+                        bounding box, with masses written by hand - kept so the
+                        two can be compared, and heavier than the arm by a factor
+                        of about eight. Only inertia changes; geometry and
+                        kinematics are identical in both.
   -->
 
   <xacro:arg name="hardware" default="none"/>
   <xacro:arg name="tool" default="tattoo"/>
   <xacro:arg name="controllers_file" default=""/>
   <xacro:arg name="use_world_link" default="true"/>
-  <xacro:arg name="mass_model" default="box"/>
+  <xacro:arg name="mass_model" default="printed"/>
 
   <xacro:property name="hardware" value="$(arg hardware)"/>
   <xacro:property name="tool" value="$(arg tool)"/>

@@ -2,13 +2,18 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!--
-    Inertia helpers.
+    Inertia helpers for the box mass model.
 
-    The CAD behind the meshes does not ship mass properties, so every link is
-    approximated by the solid primitive that best matches its bounding box.
-    These numbers are good enough to keep the physics solver stable and to let
-    ros2_control tune gains against something physical; they are NOT the real
-    inertia tensors and must be replaced once the CAD exports them.
+    The CAD behind the meshes does not ship mass properties, so this model
+    approximates every link by the solid primitive that best matches its
+    bounding box, with masses written by hand. It is no longer the default.
+    Those masses implied densities of 7 to 14 g/cm^3 - denser than steel - and
+    made the arm about eight times heavier than it is.
+
+    The default is now mass_model:=printed: the volumes are integrated from
+    the meshes themselves, and each link is its printed shell plus the servos
+    mounted in it (docs/scripts/mass_properties.py, which writes
+    inertials_printed.xacro). This file stays so the two can be compared.
   -->
 
   <xacro:macro name="inertial_box" params="mass x y z *origin">

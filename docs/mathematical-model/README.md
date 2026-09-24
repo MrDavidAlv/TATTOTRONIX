@@ -79,10 +79,10 @@ is quoted against it.
 
 | Error source | Magnitude | Against 0.3 mm | Status |
 |---|---|---|---|
-| Worst tracking error | 36.3 µm, at the hardest moment of the drawing | 0.12× | **Still the largest modelled term.** Bounded by the 1 kHz control rate |
-| Settled tracking error | 6.3 µm | 0.02× | Bounded by the 1 kHz control rate |
+| Worst tracking error | 46.8 µm, at the hardest moment of the drawing | 0.16× | **Still the largest modelled term.** Bounded by the 1 kHz control rate |
+| Settled tracking error | 6.5 µm | 0.02× | Bounded by the 1 kHz control rate |
 | Path discretisation | chord error below the mask resolution | — | **Fixed** by a 0.15 mm step — see [toolpath](./toolpath.md#what-the-resampling-step-is-actually-for) |
-| Needle entry transient | was 2.3 mm, 98 times per drawing | — | **Fixed** by a 4 mm slow approach — see [control](./control.md#4-the-needle-enters-before-the-loop-settles) |
+| Needle entry transient | was 3.2 mm, 98 times per drawing | — | **Fixed** by a 4 mm slow approach — see [control](./control.md#4-the-needle-enters-before-the-loop-settles) |
 | Inverse kinematics residual | $10^{-6}$, dimensionless | — | Negligible |
 | Servo resolution | not modelled | — | Needs the encoder |
 | Backlash and flexure | not modelled | — | Needs the hardware |
@@ -90,7 +90,7 @@ is quoted against it.
 
 The table is sorted by magnitude, and **the order is the result**. Every modelled
 term is now well inside the line width — the worst instant of the drawing sits at
-an eighth of it.
+a sixth of it.
 
 What is left is the bottom three rows, which are not modelled at all. They are
 what stops this being a credible *accuracy* figure rather than a credible

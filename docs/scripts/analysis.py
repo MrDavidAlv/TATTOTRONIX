@@ -318,6 +318,10 @@ def main():
         "tune_wn": float(TUNE_WN),
         "J_eff": (1.0 / np.diag(np.linalg.inv(model.inertia(q_ref)))).tolist(),
         "grav_zero_Nm": model.gravity(np.zeros(chain.n)).tolist(),
+        # control.md illustrates effective against diagonal inertia at the zero
+        # pose; its table is checked against these.
+        "J_eff_zero": (1.0 / np.diag(np.linalg.inv(model.inertia(np.zeros(chain.n))))).tolist(),
+        "M_diag_zero": np.diag(model.inertia(np.zeros(chain.n))).tolist(),
         "moving_mass_kg": float(sum(b["m"] for b in model.bodies)),
     }
     (OUT / "summary.json").write_text(json.dumps(summary, indent=2))

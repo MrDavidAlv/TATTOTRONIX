@@ -381,9 +381,14 @@ def _elements(root):
     return ET.tostring(root, encoding='unicode')
 
 
-def test_the_default_mass_model_is_the_box():
-    """Adding the argument must not have moved the default by a single element."""
-    assert _elements(_expand()) == _elements(_expand('mass_model:=box'))
+def test_the_default_mass_model_is_the_arm_as_built():
+    """The description defaults to the printed arm, not the box approximation.
+
+    Every published number is computed from the default, so which model it is
+    is a claim the documents make; this is where it is held.
+    """
+    assert _elements(_expand()) == _elements(_expand('mass_model:=printed'))
+    assert _elements(_expand()) != _elements(_expand('mass_model:=box'))
 
 
 def test_the_printed_model_changes_inertia_and_nothing_else():

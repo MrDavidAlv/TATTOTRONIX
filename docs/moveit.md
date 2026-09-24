@@ -55,9 +55,9 @@ through itself.
 **`joint_limits.yaml`** — velocity and effort come from the URDF. Acceleration
 is not in the URDF, so it is derived rather than picked: each joint is given
 0.2 s to reach its velocity limit, and the torque that costs is checked against
-the effort limit with the measured peak gravity load of 1.91 N·m already
-subtracted. Worst case across the arm is **10.6% of the available effort**, in
-line with the 12% the drawing itself uses. The effective inertia it is computed
+the effort limit with the measured peak gravity load of 0.31 N·m already
+subtracted. Worst case across the arm is **1.7% of the available effort**, in
+line with the 2% the drawing itself uses. The effective inertia it is computed
 against, 1/(M⁻¹)ᵢᵢ, is recovered from the published gains rather than re-derived.
 The ramp time is the one declared number, and deriving it this way is what shows
 the choice to be affordable instead of assuming it.

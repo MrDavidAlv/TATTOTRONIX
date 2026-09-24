@@ -157,8 +157,8 @@ elevation, the panel face on. 561 s compressed into 24 —
 | <img src="docs/figures/01_chain.png" width="420"/><br/>**The chain.** Forward kinematics against live TF, agreeing to the resolution `tf2_echo` prints. | <img src="docs/figures/02_workspace.png" width="420"/><br/>**Workspace.** Uniform sampling of the joint box. The panel falls inside the envelope. |
 | <img src="docs/figures/04_toolpath.png" width="420"/><br/>**Toolpath.** The official ROS logo: 2558 mm marked, 3455 mm travelled, 117 needle entries. | <img src="docs/figures/11_contours.png" width="420"/><br/>**Contour tracing.** Sorting boundary pixels by angle works on a disc and collapses on a letterform. |
 | <img src="docs/figures/07_gravity.png" width="420"/><br/>**Gravity torque.** Newton–Euler against the gradient of potential energy, agreeing to 10⁻¹¹ N·m. | <img src="docs/figures/08_step.png" width="420"/><br/>**Step response.** Every gain traces back to a measured inertia and one bandwidth decision. |
-| <img src="docs/figures/09_tracking.png" width="420"/><br/>**Tracking.** Settled the tip holds 94.7 µm; the spikes are needle entries and exits. | <img src="docs/figures/05_joint_trajectories.png" width="420"/><br/>**Joint trajectories.** `joint_4` sits at exactly zero, the correct answer for flat work. |
-| <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 2.3 mm to 196 µm. |
+| <img src="docs/figures/09_tracking.png" width="420"/><br/>**Tracking.** Settled the tip holds 118.2 µm; the spikes are needle entries and exits. | <img src="docs/figures/05_joint_trajectories.png" width="420"/><br/>**Joint trajectories.** `joint_4` sits at exactly zero, the correct answer for flat work. |
+| <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 3.2 mm to 347 µm at 40 rad/s; the recommended bandwidth takes the rest inside the line. |
 | <img src="docs/figures/13_resample.png" width="420"/><br/>**Resampling.** A finer path lowers peak torque rather than raising it: the feedforward differentiates it. | <img src="docs/figures/14_rate.png" width="420"/><br/>**Controller rate.** The bandwidth ceiling was never the gains — it was the 200 Hz loop rate. |
 | <img src="docs/figures/06_manipulability.png" width="420"/><br/>**Conditioning.** Condition number 21 to 36; nowhere near a singularity. | <img src="docs/figures/03_panel.png" width="420"/><br/>**Panel reachability.** The needle can be put perpendicular over 98.4% of the surface. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
@@ -384,8 +384,8 @@ and a test regenerates and compares them, so the description and its semantic
 copy cannot drift. Six of twenty-one link pairs are disabled, and only pairs
 rigidly attached to each other - a disable that has not been proved is not a
 faster planner, it is an arm allowed to pass through itself. The acceleration
-limit is derived from the effective inertia and costs 10.6% of the available
-torque, in line with the 12% the drawing uses.
+limit is derived from the effective inertia and costs 1.7% of the available
+torque, in line with the 2% the drawing uses.
 
 ### What it found immediately
 
@@ -598,7 +598,7 @@ is Apache-2.0. Run `docs/scripts/fetch_artwork.sh`.
 
 | Item | What it is now | Replace with |
 |------|----------------|--------------|
-| Link inertias | Bounding-box approximations at estimated masses | Real mass properties from CAD |
+| Link inertias | Each link's printed shell, its volume integrated from the mesh, plus the servos mounted in it - five large, two SG90 - at catalogue masses. The volumes are measured; the print density (0.35 of solid PLA) and the servo figures are declared | Weighing the parts once the arm is rebuilt |
 | Joint effort and velocity limits | 20 Nm, 1.5 rad/s on every axis | Per-axis gearbox characterisation |
 | The tattoo pen | One 45 mm x 3 mm cylinder on the tool axis | The pen, once it is built |
 | `tool0` offset | x from the far +x face of the bracket mesh, y and z from the middle hole of the outer face and the bearing seat behind it | A CAD datum |
@@ -607,7 +607,7 @@ is Apache-2.0. Run `docs/scripts/fetch_artwork.sh`.
 
 **Where the model stands.** With gravity and velocity feedforward at
 `wn = 160 rad/s` on a 1 kHz loop, a 4 mm slow approach into the work and the path
-resampled at 0.15 mm, the tip holds 6.3 µm while marking and 36.3 µm at the worst
+resampled at 0.15 mm, the tip holds 6.5 µm while marking and 46.8 µm at the worst
 moment of the drawing, against a 0.3 mm tattoo line. Every modelled error term is inside the line width. The three that
 are not modelled — servo resolution, backlash and tissue — are what stop this
 from being an accuracy claim. See

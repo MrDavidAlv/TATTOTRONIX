@@ -70,17 +70,21 @@ rows that bound what this model can honestly claim.
 
 | Parameter | Value | Source |
 |---|---|---|
-| Link masses | see URDF | **Estimated** — bounding-box approximations |
-| Link inertia tensors | see URDF | **Estimated** — bounding-box approximations |
-| Peak gravity torque on the path | 1.91 N·m | **Derived** from the estimates above |
-| Peak commanded torque | 0.79 N·m | **Derived** |
+| Link volumes | integrated from each mesh | **Measured** — closed surfaces, see `mass_properties.py` |
+| Print density | 0.35 of solid PLA, 1240 kg/m³ | **Declared** — a 20% infill part, which is not 20% of solid |
+| Servos | five MG996R at 55 g, two SG90 at 9 g | **Declared** — catalogue figures; the models were not confirmed |
+| Link masses and inertia tensors | `inertials_printed.xacro` | **Derived** — each printed shell plus the servos mounted in it |
+| Peak gravity torque on the path | 0.31 N·m | **Derived** from the mass model above |
+| Peak commanded torque | 0.12 N·m | **Derived** |
 | Joint effort limit | 20 N·m, all axes | **Estimated** — one number for every axis |
 | Joint velocity limit | 1.5 rad/s, all axes | **Estimated** — one number for every axis |
 
-> Everything in this section inherits the uncertainty of the mass estimates. The
-> structure of the model is verified to machine precision
-> ([control](./control.md#verification)); the magnitudes are worth whatever a
-> bounding box is worth.
+> The structure of the model is verified to machine precision
+> ([control](./control.md#verification)). The magnitudes rest on two
+> declarations, the print density and the servo figures, because the arm they
+> describe was lost and cannot be weighed. Everything else in them is measured.
+> Weighing one printed link and one servo, once the arm is rebuilt, replaces
+> both.
 
 ## Control
 
@@ -90,22 +94,22 @@ rows that bound what this model can honestly claim.
 | Simulation integration | 1 kHz, explicit Euler | Chosen |
 | Recommended bandwidth $\omega_n$ | 160 rad/s | **Derived** — usable up to about a quarter of the loop rate |
 | Damping $\zeta$ | 1.0 | Chosen — critical |
-| $K_p$ | `32.66, 19.41, 5.794, 0.2527, 0.0956` | **Derived** at $\omega_n$ = 20 |
-| $K_i$ | `217.7, 129.4, 38.63, 1.685, 0.6375` | **Derived** at $\omega_n$ = 20 |
-| $K_d$ | `1.633, 0.9703, 0.2897, 0.01263, 0.00478` | **Derived** at $\omega_n$ = 20 |
+| $K_p$ | `4.322, 3.196, 0.7526, 0.0218, 0.0362` | **Derived** at $\omega_n$ = 20 |
+| $K_i$ | `28.82, 21.31, 5.017, 0.1456, 0.2414` | **Derived** at $\omega_n$ = 20 |
+| $K_d$ | `0.2161, 0.1598, 0.03763, 0.00109, 0.00181` | **Derived** at $\omega_n$ = 20 |
 | Feedforward | gravity + velocity | **Derived** — see [control](./control.md#6-recommended-configuration) |
 
 ## Performance, on the hardest stretch
 
 | Metric | Value | Against a 0.3 mm line |
 |---|---|---|
-| Settled marking error | 6.3 µm | 0.02× |
-| Worst marking error | 36.3 µm | 0.12× |
-| Peak torque | 2.37 N·m | 12% of the 20 N·m limit |
+| Settled marking error | 6.5 µm | 0.02× |
+| Worst marking error | 46.8 µm | 0.16× |
+| Peak torque | 0.35 N·m | 2% of the 20 N·m limit |
 
 Both are well inside the line width. Before the slow approach was added they
-were 205.7 µm and 2335 µm, the second of them eight times the line; before the
-loop rate was raised, 15.2 µm and 200.0 µm.
+were 284.9 µm and 3221 µm, the second of them 11 times the line; before the
+loop rate was raised, 26.6 µm and 338.0 µm.
 
 ---
 
