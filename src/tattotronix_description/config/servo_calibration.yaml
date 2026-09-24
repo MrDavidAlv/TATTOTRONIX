@@ -22,9 +22,12 @@
 # two will fight each other at full stall current. Check it with only one of
 # them connected.
 #
-# The tool's continuous-rotation SG90 is on channel 6. It is listed so that the
-# wiring diagram, docs/scripts/wiring_diagram.py, draws it; the driver does not
-# command it yet.
+# The tool's continuous-rotation SG90 is on channel 6. Its pulse sets a speed,
+# not an angle, so it is not a joint: the driver gives it a speed interface from
+# -1 to 1. stop_us is the pulse at which it stands still, which is a trim and
+# drifts, so the driver sends no pulse at all for a speed of zero; us_per_speed
+# is the pulse added for full speed. DECLARED like the rest: 1500 us to stop,
+# 500 us either side for full speed, the convention for a continuous servo.
 
 servos:
   joint_1: {channel: 0, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
@@ -34,4 +37,4 @@ servos:
   joint_4: {channel: 4, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
   joint_5: {channel: 5, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
 
-tool: {channel: 6}
+tool: {channel: 6, stop_us: 1500.0, us_per_speed: 500.0, min_us: 1000.0, max_us: 2000.0}

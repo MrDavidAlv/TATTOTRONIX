@@ -78,10 +78,21 @@ class TestDryRun(unittest.TestCase):
                 rclpy.spin_until_future_complete(self.node, future, timeout_sec=2.0)
                 if future.result() is not None:
                     active = {c.name for c in future.result().controller if c.state == 'active'}
-                    if {'joint_state_broadcaster', 'arm_controller'} <= active:
+                    if {'joint_state_broadcaster', 'arm_controller', 'tool_controller'} <= active:
                         return active
             time.sleep(0.5)
         self.fail('the controllers never became active on the PCA9685 driver')
+
+    def test_the_tool_stays_out_of_the_joint_states(self):
+        """The tool's speed is an interface, not a joint the URDF has."""
+        self._active_controllers()
+        names = []
+        self.node.create_subscription(
+            JointState, '/joint_states', lambda msg: names.append(list(msg.name)), 10)
+        deadline = time.monotonic() + 5.0
+        while not names and time.monotonic() < deadline:
+            rclpy.spin_once(self.node, timeout_sec=0.1)
+        self.assertEqual(names[-1], JOINTS)
 
     def test_the_arm_follows_a_trajectory_with_no_board_attached(self):
         self._active_controllers()
