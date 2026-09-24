@@ -233,3 +233,67 @@ def test_every_joint_drives_exactly_one_set_of_servos(mp):
     origins = mp.joint_origins()
     for joint in driven:
         assert joint in origins, f'{joint} is not a joint in the description'
+
+
+XACRO = REPO / 'src' / 'tattotronix_description' / 'urdf' / 'inertials_printed.xacro'
+
+
+@pytest.fixture(scope='module')
+def built(mp):
+    """The arm as built, computed once for the tests below."""
+    return mp.build_printed()
+
+
+def test_the_inertials_file_is_what_the_generator_produces(mp, built):
+    """Regenerating must be a no-op, or the meshes or declarations moved on."""
+    assert XACRO.read_text(encoding='utf-8') == mp.render_xacro(built), (
+        'inertials_printed.xacro is stale. '
+        'Run: python3 docs/scripts/mass_properties.py --write-xacro'
+    )
+
+
+def test_the_inertials_file_expands_to_the_numbers_it_was_given(mp, built, tmp_path):
+    """The xacro has to survive xacro, and come out as the same robot.
+
+    A macro that expands to nothing, or to the wrong link's numbers, would pass
+    the text comparison above: the generator and the file would agree with
+    each other and both be wrong about what the description receives.
+    """
+    import subprocess
+    import xml.etree.ElementTree as ET
+    wrapper = tmp_path / 'probe.urdf.xacro'
+    body = '\n'.join(
+        f'  <link name="{n}"><xacro:printed_inertial_{n}/></link>' for n in built)
+    wrapper.write_text(
+        '<?xml version="1.0"?>\n'
+        '<robot name="probe" xmlns:xacro="http://www.ros.org/wiki/xacro">\n'
+        f'  <xacro:include filename="{XACRO}"/>\n{body}\n</robot>\n',
+        encoding='utf-8')
+    out = subprocess.run(['xacro', str(wrapper)], capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    root = ET.fromstring(out.stdout)
+    for name, (mass, com, tensor, _) in built.items():
+        inertial = root.find(f"link[@name='{name}']/inertial")
+        assert inertial is not None, f'{name} expanded to no inertial'
+        assert float(inertial.find('mass').get('value')) == pytest.approx(mass, rel=1e-5)
+        xyz = [float(v) for v in inertial.find('origin').get('xyz').split()]
+        assert np.allclose(xyz, com, atol=1e-6)
+        got = inertial.find('inertia')
+        assert float(got.get('ixy')) == pytest.approx(tensor[0][1], rel=1e-5, abs=1e-12)
+        assert float(got.get('izz')) == pytest.approx(tensor[2][2], rel=1e-5)
+
+
+def test_every_tensor_is_one_a_real_body_can_have(built):
+    """Principal moments must satisfy the triangle inequality.
+
+    For any rigid body I1 + I2 >= I3, for every ordering. A tensor that breaks
+    it is not merely inaccurate, it describes nothing that exists, and physics
+    engines either reject it or integrate it into an explosion. A composition
+    bug - a servo shifted the wrong way, a product of inertia with its sign
+    flipped - is exactly the kind of thing that produces one.
+    """
+    for name, (_, _, tensor, _) in built.items():
+        p = np.sort(np.linalg.eigvalsh(tensor))
+        assert p[0] > 0, f'{name} has a non-positive principal moment'
+        assert p[0] + p[1] >= p[2] * (1 - 1e-9), (
+            f'{name}: principal moments {p} break the triangle inequality')
