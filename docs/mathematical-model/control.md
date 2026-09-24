@@ -6,7 +6,7 @@
 >
 > **Worked through step by step, in the browser:** the
 > [dynamics notebook](../notebooks/02_dynamics.ipynb)
-> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/02_dynamics.ipynb)
+> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing)
 > rebuilds the equations of motion — inertia tensors, the mass matrix from kinetic
 > energy, Coriolis terms from Christoffel symbols, gravity from potential energy —
 > and checks each against the Newton–Euler model below by a route that shares none

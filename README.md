@@ -21,6 +21,8 @@ seconds for the arm to settle before it starts.
 [![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros)](#)
 [![Ignition Fortress](https://img.shields.io/badge/Gazebo-Fortress-orange)](#)
 [![ros2_control](https://img.shields.io/badge/ros2__control-Humble-00599C)](#)
+[![Colab: Kinematics](https://img.shields.io/badge/Colab-Kinematics-F9AB00?logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1Lmc4HzBdJf-z6v3CmRNt6g5lY85Nq4Dd?usp=sharing)
+[![Colab: Dynamics](https://img.shields.io/badge/Colab-Dynamics-F9AB00?logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-MrDavidAlv-181717?logo=github)](https://github.com/MrDavidAlv/TATTOTRONIX)
 
@@ -174,8 +176,8 @@ browser, with no ROS installed:
 
 | Notebook | | |
 |---|---|---|
-| **[Kinematics](docs/notebooks/01_kinematics.ipynb)** | Rotations and Rodrigues' formula, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, manipulability ellipsoids, damped least-squares inverse kinematics, and the arm drawing in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/01_kinematics.ipynb) |
-| **[Dynamics](docs/notebooks/02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix from kinetic energy, Coriolis terms from Christoffel symbols, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/02_dynamics.ipynb) |
+| **[Kinematics](docs/notebooks/01_kinematics.ipynb)** | Rotations and Rodrigues' formula, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, manipulability ellipsoids, damped least-squares inverse kinematics, and the arm drawing in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Lmc4HzBdJf-z6v3CmRNt6g5lY85Nq4Dd?usp=sharing) |
+| **[Dynamics](docs/notebooks/02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix from kinetic energy, Coriolis terms from Christoffel symbols, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing) |
 
 Each formula is implemented where it can be read and then checked against the
 model the repository runs, and every notebook is executed on each build, so their

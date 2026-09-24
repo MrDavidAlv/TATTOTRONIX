@@ -7,8 +7,8 @@ build, so a notebook that disagreed with the robot could not have been published
 
 | Notebook | What it covers | |
 |---|---|---|
-| **[Kinematics](01_kinematics.ipynb)** | Rotation matrices and Rodrigues' formula, the URDF's roll–pitch–yaw, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, singular values and manipulability ellipsoids, the workspace, damped least-squares inverse kinematics, and the arm drawing the ROS logo in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/01_kinematics.ipynb) |
-| **[Dynamics](02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix rebuilt from kinetic energy, Coriolis terms from Christoffel symbols and the skew-symmetry of Ṁ − 2C, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply while drawing | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/02_dynamics.ipynb) |
+| **[Kinematics](01_kinematics.ipynb)** | Rotation matrices and Rodrigues' formula, the URDF's roll–pitch–yaw, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, singular values and manipulability ellipsoids, the workspace, damped least-squares inverse kinematics, and the arm drawing the ROS logo in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Lmc4HzBdJf-z6v3CmRNt6g5lY85Nq4Dd?usp=sharing) |
+| **[Dynamics](02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix rebuilt from kinetic energy, Coriolis terms from Christoffel symbols and the skew-symmetry of Ṁ − 2C, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply while drawing | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing) |
 
 <div align="center">
 <img src="../figures/21_arm_3d.gif" width="70%"/>
@@ -59,5 +59,8 @@ python3 docs/notebooks/build.py                          # rebuild from the sour
 python3 docs/notebooks/build.py --export 01_kinematics 02_dynamics   # run and write figures
 ```
 
-The links above open the notebooks on the `humble` branch, the one this repository
-publishes.
+The badges open copies of the notebooks shared from Google Drive: anyone with the
+link can open and run them, and *File → Save a copy in Drive* keeps your changes.
+Their first cell clones the `humble` branch, the one this repository publishes, so
+the model a copy runs is always the current one. The notebook text is a snapshot;
+if a copy and the notebook here ever differ, the one here is the reference.

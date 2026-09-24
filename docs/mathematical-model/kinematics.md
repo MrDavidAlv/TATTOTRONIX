@@ -6,7 +6,7 @@
 >
 > **Worked through step by step, in the browser:** the
 > [kinematics notebook](../notebooks/01_kinematics.ipynb)
-> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/01_kinematics.ipynb)
+> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Lmc4HzBdJf-z6v3CmRNt6g5lY85Nq4Dd?usp=sharing)
 > derives everything on this page — rotations, homogeneous transforms, the forward
 > kinematics symbolically, the product of exponentials, the Jacobians — and checks
 > each against the code, and the figures marked *from the notebook* are its output.
