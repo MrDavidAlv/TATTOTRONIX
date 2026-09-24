@@ -127,6 +127,10 @@ def claims():
         ("sampled boundary, along the drawing",
          {f'between {lo:.3f} and {hi:.3f}', f'{lo:.3f} to {hi:.3f}'},
          [MM + "control.md", MM + "parameters.md"]),
+        # The slowest loop rate the recommended 160 rad/s survives anywhere on
+        # the drawing: the bandwidth over the lowest boundary.
+        ("slowest rate at the recommended bandwidth", {f'above {160 / lo:.0f} Hz'},
+         [MM + "control.md"]),
         ("drawing animation length", {f'{s["path_time_s"]:.0f} s compressed into 24'},
          [MM + "toolpath.md", "README.md"]),
         ("moveit plan waypoints", {f'{mv["plan"]["waypoints"]} waypoints over '
