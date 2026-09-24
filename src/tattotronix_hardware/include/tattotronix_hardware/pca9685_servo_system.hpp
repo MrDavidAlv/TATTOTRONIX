@@ -42,11 +42,6 @@ namespace tattotronix_hardware
 /// limits, the servo's pulse limits and the board's rounding - and the velocity
 /// is the rate that changes at. It is an honest echo of the command, not a
 /// measurement, and nothing downstream should read it as one.
-///
-/// A continuous-rotation servo, the tool's, is a gpio rather than a joint: its
-/// pulse sets a speed, not an angle, so it takes a speed from -1 to 1. A speed
-/// of zero sends no pulse at all, because the pulse at which such a servo
-/// stands still is a trim that drifts, and no pulse always stops it.
 class Pca9685ServoSystem : public hardware_interface::SystemInterface
 {
 public:
@@ -76,20 +71,6 @@ public:
   const RecordingBus * recording() const;
 
 private:
-  /// A continuous servo. Its ServoChannel maps speed rather than angle:
-  /// zero_us is the pulse that stops it, us_per_rad the pulse per unit speed.
-  struct Tool
-  {
-    std::string name;
-    ServoChannel servo;
-    int sent = -1;  // the count last sent; kOff once its channel is off
-    double command = 0.0;
-    double speed = 0.0;
-    bool has_state = false;
-  };
-
-  static constexpr int kOff = -2;
-
   struct Joint
   {
     std::string name;
@@ -105,11 +86,9 @@ private:
   };
 
   void send(Joint & joint);
-  void send(Tool & tool);
   void stop();
 
   std::vector<Joint> joints_;
-  std::vector<Tool> tools_;
   std::string device_ = "/dev/i2c-1";
   int address_ = 0x40;
   double frame_hz_ = 50.0;

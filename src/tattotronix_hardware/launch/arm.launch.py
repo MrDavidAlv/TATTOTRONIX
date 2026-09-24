@@ -120,16 +120,6 @@ def generate_launch_description():
         launch_arguments={'spawn_timeout': '30'}.items(),
     )
 
-    # The tool's motor has a controller only here: the simulation has no tool
-    # interface to give it.
-    tool_controller = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=['tool_controller', '--controller-manager', '/controller_manager',
-                   '--controller-manager-timeout', '30'],
-        output='screen',
-    )
-
     # The node waits for the controller's action server itself, so it can start
     # with everything else.
     draw = Node(
@@ -146,4 +136,4 @@ def generate_launch_description():
     )
 
     return LaunchDescription(
-        arguments + [robot_state_publisher, control_node, controllers, tool_controller, draw])
+        arguments + [robot_state_publisher, control_node, controllers, draw])
