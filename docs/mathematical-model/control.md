@@ -244,11 +244,13 @@ There is no cliff in that column any more. There used to be one between 40 and
 
 ### What holds, and what the fix changed
 
-1. **Gravity feedforward is free and is the single biggest win** (758.5 →
-   61.0 µm). There has never been a reason not to have it.
-2. **The stability cliff is where it has always been.** Between 40 and 80 rad/s,
-   set by the 200 Hz `controller_manager` rate, not by the gains. Raising it
-   needs a faster controller, not different tuning.
+1. **Gravity feedforward is free and is the single biggest win**: 442.0 →
+   48.1 µm settled, and 30 037 → 598.8 µm at worst. There has never been a
+   reason not to have it.
+2. **The stability cliff moved with the loop rate, and only with it.** At the
+   200 Hz this study first ran at, it sat between 40 and 80 rad/s. At 1 kHz the
+   sweep above has none up to 240 rad/s. The gains did not change; the rate
+   did. Section 7 measures it.
 3. **Fixing the trajectory reversed the ranking of the control structures.**
    This is worth stating plainly, because it was measured three times and gave
    three answers.
@@ -262,10 +264,15 @@ There is no cliff in that column any more. There used to be one between 40 and
    many velocity discontinuities that the acceleration term was correcting more
    than it injected.
 
-   With the slow approach in place, computed torque comes **last** on settled
-   mean (90.9 µm against 61.0 for gravity alone), while still giving the best
-   worst case. The discontinuities it was correcting for are gone, and what is
-   left of the term is its own noise.
+   With the slow approach in place, the table above splits the two measures.
+   On settled mean velocity feedforward is best (39.6 µm), computed torque sits
+   in between (43.4 µm) and gravity alone is last (48.1 µm). On the worst case
+   the order inverts: gravity alone 598.8 µm, velocity feedforward 820.4 µm,
+   computed torque 1136 µm. Computed torque is the structure most exposed at
+   the path's worst moments, which is consistent with the explanation given
+   the first time - its acceleration comes from finite differences, and those
+   are noisiest exactly where the reference changes abruptly. That explanation
+   fits every measurement so far; it has not been isolated experimentally.
 
    None of the three measurements was wrong. Each was measured on a different
    path, and the acceleration feedforward is only ever as good as the
