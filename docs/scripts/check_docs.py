@@ -193,8 +193,16 @@ DECLARED = {
 }
 
 
+#: Data files that carry no figure in um or N.m, and so are not allowed to
+#: vouch for one. The membership test compares numbers, not units, and a mass
+#: file full of areas and volumes will contain something that rounds to almost
+#: any figure: upper_arm_link's 299.57 cm^2 of surface once "traced" the 300 um
+#: line width.
+NOT_MEASURED_IN_UM_OR_NM = {"mass_properties.json"}
+
+
 def _data_values():
-    """Every number in every data file, however deeply nested."""
+    """Every number in every data file that carries um or N.m figures."""
     found = []
 
     def walk(obj):
@@ -210,6 +218,8 @@ def _data_values():
                 walk(v)
 
     for f in sorted(DATA.glob("*.json")):
+        if f.name in NOT_MEASURED_IN_UM_OR_NM:
+            continue
         walk(json.loads(f.read_text(encoding="utf-8")))
     return found
 
@@ -359,6 +369,39 @@ def check_inertia_table():
     return bad
 
 
+def check_mass():
+    """mass.md against mass_properties.json: its table cell by cell, and the
+    headline figures it states in prose. None of them is in um or N.m, so the
+    traceability check never reads them.
+    """
+    f = DATA / "mass_properties.json"
+    doc = ROOT / "docs" / "mathematical-model" / "mass.md"
+    if not f.exists() or not doc.exists():
+        return [f"{f.name} or {doc.name} is missing"]
+    m = json.loads(f.read_text(encoding="utf-8"))
+    text = doc.read_text(encoding="utf-8")
+    flat = re.sub(r"\s+", " ", text)
+    bad = []
+    for name, v in m["links"].items():
+        row = re.search(r"\|\s*`%s`\s*\|([^\n]+)" % re.escape(name), text)
+        if row is None:
+            bad.append(f"mass.md: no row for {name}")
+            continue
+        cells = [re.sub(r"[^\d.]", "", c) for c in row.group(1).split("|")[:6]]
+        want = [v["volume_cm3"], v["box_mass_kg"] * 1000, v["box_implied_density_g_cm3"],
+                v["shell_kg"] * 1000, v["servos_kg"] * 1000, v["total_kg"] * 1000]
+        for label, c, w in zip(("volume", "box mass", "density", "shell", "servos", "total"),
+                               cells, want):
+            if not c or not _traceable(c, [w]):
+                bad.append(f"mass.md: {name} {label} is written {c}, the data says {w:.4g}")
+    for phrase in (f"{m['total_kg']:.3f} kg", f"{m['box_total_kg']:.3f} kg",
+                   f"{m['servo_share_pct']:.1f}%", f"{m['box_implied_density_g_cm3']:.2f} g/cm³",
+                   f"factor of {m['box_over_printed']:.1f}"):
+        if not re.search(r"(?<![\d.])" + re.escape(phrase), flat):
+            bad.append(f"mass.md: expected '{phrase}'")
+    return bad
+
+
 def check_paths():
     """Every path the scripts resolve must still point at something.
 
@@ -394,7 +437,8 @@ def main():
     gains = check_gains()
     shares = check_shares()
     inertia = check_inertia_table()
-    for b in nums + traced + gains + shares + inertia + links + paths:
+    mass = check_mass()
+    for b in nums + traced + gains + shares + inertia + mass + links + paths:
         print("  FAIL", b)
     print(f"  {len(claims())} documented numbers, "
           f"{'all match' if not nums else str(len(nums)) + ' stale'}")
@@ -406,9 +450,11 @@ def main():
           + ("match the data" if not shares else f"{len(shares)} stale"))
     print("  inertia table:     "
           + ("matches the data" if not inertia else f"{len(inertia)} stale"))
+    print("  mass model:        "
+          + ("matches the data" if not mass else f"{len(mass)} stale"))
     print(f"  links and anchors: {'all resolve' if not links else str(len(links)) + ' broken'}")
     print(f"  script paths:      {'all resolve' if not paths else str(len(paths)) + ' broken'}")
-    return 1 if (nums or traced or gains or shares or inertia or links or paths) else 0
+    return 1 if (nums or traced or gains or shares or inertia or mass or links or paths) else 0
 
 
 if __name__ == "__main__":

@@ -34,7 +34,10 @@ dynamics, joint control and the error budget that ties them together.
 3. **[Control](./control.md)** — tuning by pole placement, the velocity lag,
    the needle entry transient that no control structure fixes, and **why the
    stability cliff was never about the gains**
-4. **[Parameters](./parameters.md)** — every value, with its source
+4. **[Mass properties](./mass.md)** — volumes integrated from the meshes, the
+   arm as built as printed shells plus seven servos, and **why the box
+   approximation made it eight times too heavy**
+5. **[Parameters](./parameters.md)** — every value, with its source
 
 ---
 

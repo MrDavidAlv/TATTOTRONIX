@@ -695,8 +695,60 @@ def fig_rate():
            "which this sweep does not resolve more finely.")
 
 
+def fig_mass():
+    """Box approximation against the arm as built, link by link."""
+    import json
+    f = DATA / "mass_properties.json"
+    if not f.exists():
+        raise SystemExit(f"{f} is missing. Run: "
+                         "python3 docs/scripts/mass_properties.py --write-data")
+    S = json.loads(f.read_text())
+    names = list(S["links"])
+    short = [n.replace("_link", "").replace("_", " ") for n in names]
+    box = np.array([S["links"][n]["box_mass_kg"] for n in names]) * 1000
+    shell = np.array([S["links"][n]["shell_kg"] for n in names]) * 1000
+    servo = np.array([S["links"][n]["servos_kg"] for n in names]) * 1000
+    y = np.arange(len(names))[::-1]
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 3.6), gridspec_kw={"wspace": 0.35})
+    BOX, SHELL, SERVO = MUTED, C[2], C[1]
+    h = 0.36
+    a1.barh(y + h / 2, box, h, color=BOX, label="box approximation", zorder=3)
+    a1.barh(y - h / 2, shell, h, color=SHELL, label="printed shell", zorder=3)
+    a1.barh(y - h / 2, servo, h, left=shell, color=SERVO, label="servos",
+            edgecolor=SURFACE, linewidth=1.0, zorder=3)
+    a1.set_yticks(y, short)
+    a1.set_xlabel("mass, g")
+    a1.set_title("Every link, on one scale", loc="left", fontsize=10)
+    grid_on(a1, "x")
+    a1.legend(loc="lower right", fontsize=8)
+    a2.barh(y, shell, 0.6, color=SHELL, zorder=3)
+    a2.barh(y, servo, 0.6, left=shell, color=SERVO, edgecolor=SURFACE, linewidth=1.0, zorder=3)
+    for yi, sh, sv in zip(y, shell, servo):
+        if sh < 8:
+            # Too narrow to hold its own label: both values go past the bar end.
+            a2.text(sh + sv + 2, yi, f"{sh:.1f} shell + {sv:.0f} servo", ha="left",
+                    va="center", fontsize=7.5, color=INK2)
+            continue
+        a2.text(sh / 2, yi, f"{sh:.1f}", ha="center", va="center", fontsize=7.5, color=INK)
+        if sv > 0:
+            a2.text(sh + sv / 2, yi, f"{sv:.0f}", ha="center", va="center",
+                    fontsize=7.5, color=INK)
+    a2.set_yticks(y, short)
+    a2.set_xlabel("mass, g")
+    a2.set_title("The arm as built: shell and servos", loc="left", fontsize=10)
+    grid_on(a2, "x")
+    finish(fig, "18_mass_model.png",
+           f"The box approximation made the arm {S['box_over_printed']:.1f} times too heavy",
+           f"{S['box_total_kg']:.3f} kg declared against {S['total_kg']:.3f} kg as built. "
+           f"Volumes are integrated from the meshes; the shells are printed at "
+           f"{S['declared']['printed_fraction']:.2f} of solid PLA and the servos are catalogue "
+           f"masses. The servos are {S['servo_share_pct']:.1f}% of the arm, "
+           "concentrated at the joints.")
+
+
 if __name__ == "__main__":
     print("figures:")
     fig_chain(); fig_workspace(); fig_panel(); fig_toolpath(); fig_joint_traj()
     fig_manip(); fig_gravity(); fig_step(); fig_tracking(); fig_control_study()
     fig_contours(); fig_approach(); fig_resample(); fig_rate()
+    fig_mass()

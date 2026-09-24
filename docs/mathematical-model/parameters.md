@@ -73,7 +73,7 @@ rows that bound what this model can honestly claim.
 | Link volumes | integrated from each mesh | **Measured** — closed surfaces, see `mass_properties.py` |
 | Print density | 0.35 of solid PLA, 1240 kg/m³ | **Declared** — a 20% infill part, which is not 20% of solid |
 | Servos | five MG996R at 55 g, two SG90 at 9 g | **Declared** — catalogue figures; the models were not confirmed |
-| Link masses and inertia tensors | `inertials_printed.xacro` | **Derived** — each printed shell plus the servos mounted in it |
+| Link masses and inertia tensors | `inertials_printed.xacro` | **Derived** — each printed shell plus the servos mounted in it; see [mass properties](./mass.md) |
 | Peak gravity torque on the path | 0.31 N·m | **Derived** from the mass model above |
 | Peak commanded torque | 0.12 N·m | **Derived** |
 | Joint effort limit | 20 N·m, all axes | **Estimated** — one number for every axis |

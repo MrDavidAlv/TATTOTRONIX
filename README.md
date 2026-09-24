@@ -139,7 +139,8 @@ away from the robot. The full write-up lives in
 | | |
 |---|---|
 | **[Kinematics](docs/mathematical-model/kinematics.md)** — the chain, forward kinematics verified against live TF, the 5×5 task Jacobian, and why five axes are exactly enough | **[Toolpath](docs/mathematical-model/toolpath.md)** — artwork to ink mask to contour and fill, Moore neighbour tracing, and what the stand-in artwork was hiding |
-| **[Control](docs/mathematical-model/control.md)** — Newton–Euler dynamics, tuning by pole placement, the velocity lag and the 200 Hz stability cliff | **[Parameters](docs/mathematical-model/parameters.md)** — every value with its source, and what the model cannot tell you |
+| **[Control](docs/mathematical-model/control.md)** — Newton–Euler dynamics, tuning by pole placement, the velocity lag and why the stability cliff was set by the loop rate | **[Parameters](docs/mathematical-model/parameters.md)** — every value with its source, and what the model cannot tell you |
+| **[Mass properties](docs/mathematical-model/mass.md)** — volumes integrated from the meshes, and the arm as built: printed shells plus five large servos and two SG90s | |
 
 <div align="center">
 <img src="docs/figures/drawing.gif" width="88%"/>
@@ -159,8 +160,9 @@ elevation, the panel face on. 561 s compressed into 24 —
 | <img src="docs/figures/07_gravity.png" width="420"/><br/>**Gravity torque.** Newton–Euler against the gradient of potential energy, agreeing to 10⁻¹¹ N·m. | <img src="docs/figures/08_step.png" width="420"/><br/>**Step response.** Every gain traces back to a measured inertia and one bandwidth decision. |
 | <img src="docs/figures/09_tracking.png" width="420"/><br/>**Tracking.** Settled the tip holds 118.2 µm; the spikes are needle entries and exits. | <img src="docs/figures/05_joint_trajectories.png" width="420"/><br/>**Joint trajectories.** `joint_4` sits at exactly zero, the correct answer for flat work. |
 | <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 3.2 mm to 347 µm at 40 rad/s; the recommended bandwidth takes the rest inside the line. |
-| <img src="docs/figures/13_resample.png" width="420"/><br/>**Resampling.** A finer path lowers peak torque rather than raising it: the feedforward differentiates it. | <img src="docs/figures/14_rate.png" width="420"/><br/>**Controller rate.** The bandwidth ceiling was never the gains — it was the 200 Hz loop rate. |
+| <img src="docs/figures/13_resample.png" width="420"/><br/>**Resampling.** A finer path lowers the settled error, because the feedforward differentiates it; on the arm as built the worst case no longer follows. | <img src="docs/figures/14_rate.png" width="420"/><br/>**Controller rate.** The bandwidth ceiling was never the gains — it was the 200 Hz loop rate. |
 | <img src="docs/figures/06_manipulability.png" width="420"/><br/>**Conditioning.** Condition number 21 to 36; nowhere near a singularity. | <img src="docs/figures/03_panel.png" width="420"/><br/>**Panel reachability.** The needle can be put perpendicular over 98.4% of the surface. |
+| <img src="docs/figures/18_mass_model.png" width="420"/><br/>**Mass model.** The box approximation made the arm eight times too heavy; as built, the servos are most of it. | <img src="docs/figures/16_collision_after.png" width="420"/><br/>**Collision geometry.** The shape every collision query reads, after the double transform was removed. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
 ### Watching it draw
