@@ -121,6 +121,15 @@ to roughly z = 72 mm, straight through the shoulder, which occupies z ∈ [51,
 RViz and Gazebo draw the STL, so the arm has always *looked* right. Only a
 collision check reads the DAE, and until now nothing did.
 
+![Collision geometry before the fix](figures/15_collision_before.png)
+![Collision geometry after the fix](figures/16_collision_after.png)
+
+*The same view of the collision geometry alone, at the home pose, before and
+after. Nothing else changed between the two. In the first, the wrist stands up
+as a bare cylinder, the links fold into the base and the tool mount with the pen
+floats detached — and that is the shape every collision query was answering
+about, while RViz and Gazebo drew a correct arm from the STLs.*
+
 ### The fix, and what it cost
 
 `tools/align_collision_meshes.py` now does both halves of its job: it bakes the
@@ -140,6 +149,20 @@ It compares the geometry **a loader actually sees**, node transform included,
 against the visual STL, because the raw vertices were already identical while
 the shapes were not. It was verified by putting the defect back: with
 `wrist_link`'s old matrix restored, it fails with an 18 mm discrepancy.
+
+---
+
+![MoveIt planning with the corrected geometry](figures/17_moveit_planning.png)
+
+*The MotionPlanning panel against the corrected description. The arm is entirely
+the goal-state colour: MoveIt paints a colliding link red, and none are. Before
+the fix this same view was red from the base to the pen.*
+
+The figures are taken by `docs/scripts/capture_rviz.sh`, which runs RViz on a
+nested X server. The desktop cannot be captured programmatically on this
+machine — GNOME refuses `ScreenshotArea` and Wayland hands x11grab a black
+frame — and a nested server is also a display no other session can land on top
+of, so taking a picture cannot disturb a simulation already running.
 
 ---
 

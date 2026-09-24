@@ -35,12 +35,16 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # rosdep will not pull it in; without it the first thing anyone reaches for when
 # a controller does not come up is missing.
 #
-# xvfb and ffmpeg are for docs/scripts/record_simulation.sh, which runs the
-# simulation on a nested X server precisely so it does not need a real display.
+# xvfb, x11-utils and ffmpeg are for the capture scripts, which run RViz and
+# the simulation on a nested X server precisely so they do not need a real
+# display. x11-utils supplies xdpyinfo, which is how those scripts wait for the
+# server to be up: without it the wait never succeeds and the capture reports
+# that X did not start when it did.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         libcairo2 \
         xvfb \
+        x11-utils \
         ffmpeg \
         ros-${ROS_DISTRO}-ros2controlcli \
     && rm -rf /var/lib/apt/lists/*
