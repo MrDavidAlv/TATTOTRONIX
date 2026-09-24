@@ -27,6 +27,15 @@ No Arduino is needed. The Pi talks to the PCA9685 over I²C, and the driver in
 
 ## 2. Wiring
 
+<div align="center">
+<img src="figures/31_wiring.png" width="100%"/>
+<br/>
+<sub>Drawn by <code>docs/scripts/wiring_diagram.py</code> from
+<code>servo_calibration.yaml</code>, the file the driver reads, so it cannot show a
+channel the arm does not use. <a href="figures/31_wiring.svg">Vector version, for
+printing.</a></sub>
+</div>
+
 | PCA9685 | Goes to |
 |---|---|
 | VCC, logic header | Pi pin 1, 3.3 V: the board's logic |

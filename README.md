@@ -99,7 +99,8 @@ ros2 launch tattotronix_gazebo simulation.launch.py
 ### On the real arm
 
 A Raspberry Pi 3 runs the same controllers against the arm's servos, through a
-PCA9685 board. [Running the real arm](docs/hardware.md) has the wiring, the
+PCA9685 board. [Running the real arm](docs/hardware.md) has the
+[wiring](docs/figures/31_wiring.png), the
 setup on the Pi and the calibration, which comes before anything moves. The
 servos report nothing back, so the real arm runs open loop: what it reports is
 what it was told, and the guide says what that costs.
@@ -217,7 +218,7 @@ model the repository runs, and every notebook is executed on each build, so thei
 | <img src="docs/figures/26_loop_structures.png" width="420"/><br/>**Loop structures.** One PID, three places for the reference to enter: the overshoot and the lag each one leaves. | <img src="docs/figures/27_coupled_modes.png" width="420"/><br/>**Coupled modes.** The arm splits the per-joint loops into five modes; none of them is the loop that was designed. |
 | <img src="docs/figures/28_rate_ceiling.png" width="420"/><br/>**The rate ceiling.** Stable while ωnT < 2/(3λmax): the rule that sorts all nine runs of the rate study. | <img src="docs/figures/29_past_the_ceiling.png" width="420"/><br/>**Past the ceiling.** The non-linear arm grows at the rate the sampled loop predicts, until the torque limit. |
 | <img src="docs/figures/18_mass_model.png" width="420"/><br/>**Mass model.** The box approximation made the arm eight times too heavy; as built, the servos are most of it. | <img src="docs/figures/16_collision_after.png" width="420"/><br/>**Collision geometry.** The shape every collision query reads, after the double transform was removed. |
-| <img src="docs/figures/30_actuators.png" width="420"/><br/>**Actuators.** The servos' dead band puts the needle up to 3.80 mm off a 0.3 mm line, whatever the controller does. | |
+| <img src="docs/figures/30_actuators.png" width="420"/><br/>**Actuators.** The servos' dead band puts the needle up to 3.80 mm off a 0.3 mm line, whatever the controller does. | <img src="docs/figures/31_wiring.png" width="420"/><br/>**Wiring.** Raspberry Pi 3, PCA9685, servo supply and the seven servos, drawn from the calibration the driver reads. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
 ### Watching it draw
