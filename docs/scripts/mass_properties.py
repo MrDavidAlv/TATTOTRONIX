@@ -97,9 +97,16 @@ PRINTED_FRACTION = 0.35
 
 #: The servos. Masses and dimensions are catalogue figures for the parts named,
 #: declared because the model was not confirmed. Changing them is one line each.
+#: Stall torque is the catalogue figure at 4.8 V - 9.4 kg.cm for the MG996R,
+#: 1.8 kg.cm for the SG90 - converted to N.m. It is the most the servo gives,
+#: briefly; what it sustains is a fraction of it that catalogues for hobby
+#: servos do not state. Declared for the same reason as the masses: the models
+#: were not confirmed and the arm cannot be measured.
 SERVOS = {
-    "large": {"mass": 0.055, "size": (0.0407, 0.0197, 0.0429), "part": "MG996R"},
-    "small": {"mass": 0.009, "size": (0.0225, 0.0118, 0.0227), "part": "SG90"},
+    "large": {"mass": 0.055, "size": (0.0407, 0.0197, 0.0429), "part": "MG996R",
+              "stall_Nm": 0.92},
+    "small": {"mass": 0.009, "size": (0.0225, 0.0118, 0.0227), "part": "SG90",
+              "stall_Nm": 0.18},
 }
 
 #: Which servos sit in which link, and what each one drives. A servo that

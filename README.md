@@ -175,6 +175,7 @@ browser, with no ROS installed:
 | Notebook | | |
 |---|---|---|
 | **[Kinematics](docs/notebooks/01_kinematics.ipynb)** | Rotations and Rodrigues' formula, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, manipulability ellipsoids, damped least-squares inverse kinematics, and the arm drawing in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/01_kinematics.ipynb) |
+| **[Dynamics](docs/notebooks/02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix from kinetic energy, Coriolis terms from Christoffel symbols, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/02_dynamics.ipynb) |
 
 Each formula is implemented where it can be read and then checked against the
 model the repository runs, and every notebook is executed on each build, so their
@@ -194,6 +195,8 @@ model the repository runs, and every notebook is executed on each build, so thei
 | <img src="docs/figures/06_manipulability.png" width="420"/><br/>**Conditioning.** Condition number 21 to 36; nowhere near a singularity. | <img src="docs/figures/03_panel.png" width="420"/><br/>**Panel reachability.** The needle can be put perpendicular over 98.4% of the surface. |
 | <img src="docs/figures/19_frames.png" width="420"/><br/>**Frames.** The frame of every joint and of the needle tip, at a pose from the drawing. | <img src="docs/figures/20_manipulability.png" width="420"/><br/>**Manipulability.** Singular values over the drawing, and the tip's ellipsoid at nine points of it. |
 | <img src="docs/figures/22_ik_convergence.png" width="420"/><br/>**Inverse kinematics.** Damped least squares written out by hand, matching the repository's solver to 10⁻¹². | <img src="docs/figures/17_moveit_planning.png" width="420"/><br/>**MoveIt.** The planning scene against the corrected collision geometry: no link in collision. |
+| <img src="docs/figures/23_mass_matrix.png" width="420"/><br/>**Mass matrix.** Coupling between joints for both mass models, and how much of it reaches the wrist. | <img src="docs/figures/24_free_fall.png" width="420"/><br/>**Energy.** The arm falling freely: kinetic and potential trade places and the total stays flat. |
+| <img src="docs/figures/25_servo_torque.png" width="420"/><br/>**Servo torque.** Gravity and velocity torque while drawing, against each joint's servos. | <img src="docs/figures/21_arm_3d.gif" width="420"/><br/>**In 3D.** The arm's real meshes replaying the drawing. |
 | <img src="docs/figures/18_mass_model.png" width="420"/><br/>**Mass model.** The box approximation made the arm eight times too heavy; as built, the servos are most of it. | <img src="docs/figures/16_collision_after.png" width="420"/><br/>**Collision geometry.** The shape every collision query reads, after the double transform was removed. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
@@ -292,7 +295,7 @@ python3 docs/scripts/figures.py                # writes docs/figures/*.png
 python3 docs/scripts/export_trajectory.py      # trajectory for the draw node
 python3 docs/scripts/render_drawing.py         # the animation at the top
 python3 docs/scripts/check_docs.py             # certifies the documents against the data
-python3 docs/notebooks/build.py --export 01_kinematics   # the notebooks' figures
+python3 docs/notebooks/build.py --export 01_kinematics 02_dynamics   # the notebooks' figures
 ```
 
 The studies are independent of each other and can run in parallel; times are
