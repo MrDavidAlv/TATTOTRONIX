@@ -99,6 +99,7 @@ ros2 launch tattotronix_gazebo simulation.launch.py
 
 - [Description](#description)
 - [Analysis and Model](#analysis-and-model)
+- [Notebooks](#notebooks)
 - [Kinematics](#kinematics)
 - [Package Layout](#package-layout)
 - [Architecture](#architecture)
@@ -158,6 +159,28 @@ elevation, the panel face on. 557 s compressed into 24 —
 <a href="docs/figures/drawing.mp4">MP4</a>.</sub>
 </div>
 
+<div align="center">
+<img src="docs/figures/21_arm_3d.gif" width="70%"/>
+<br/>
+<sub>And in 3D, from the <a href="docs/notebooks/01_kinematics.ipynb">kinematics
+notebook</a>: the arm's real meshes, simplified for animation, replaying the same
+trajectory.</sub>
+</div>
+
+### Notebooks
+
+The robotics behind all of this, worked through step by step and runnable in the
+browser, with no ROS installed:
+
+| Notebook | | |
+|---|---|---|
+| **[Kinematics](docs/notebooks/01_kinematics.ipynb)** | Rotations and Rodrigues' formula, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, manipulability ellipsoids, damped least-squares inverse kinematics, and the arm drawing in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/01_kinematics.ipynb) |
+
+Each formula is implemented where it can be read and then checked against the
+model the repository runs, and every notebook is executed on each build, so their
+`assert` lines are part of the certification. See
+[docs/notebooks](docs/notebooks/).
+
 ### Figures
 
 | | |
@@ -169,6 +192,8 @@ elevation, the panel face on. 557 s compressed into 24 —
 | <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 3.2 mm to 347 µm at 40 rad/s; the recommended bandwidth takes the rest inside the line. |
 | <img src="docs/figures/13_resample.png" width="420"/><br/>**Resampling.** A finer path lowers the settled error, because the feedforward differentiates it; on the arm as built the worst case no longer follows. | <img src="docs/figures/14_rate.png" width="420"/><br/>**Controller rate.** The bandwidth ceiling was never the gains — it was the loop rate, 200 Hz at the time. |
 | <img src="docs/figures/06_manipulability.png" width="420"/><br/>**Conditioning.** Condition number 21 to 36; nowhere near a singularity. | <img src="docs/figures/03_panel.png" width="420"/><br/>**Panel reachability.** The needle can be put perpendicular over 98.4% of the surface. |
+| <img src="docs/figures/19_frames.png" width="420"/><br/>**Frames.** The frame of every joint and of the needle tip, at a pose from the drawing. | <img src="docs/figures/20_manipulability.png" width="420"/><br/>**Manipulability.** Singular values over the drawing, and the tip's ellipsoid at nine points of it. |
+| <img src="docs/figures/22_ik_convergence.png" width="420"/><br/>**Inverse kinematics.** Damped least squares written out by hand, matching the repository's solver to 10⁻¹². | <img src="docs/figures/17_moveit_planning.png" width="420"/><br/>**MoveIt.** The planning scene against the corrected collision geometry: no link in collision. |
 | <img src="docs/figures/18_mass_model.png" width="420"/><br/>**Mass model.** The box approximation made the arm eight times too heavy; as built, the servos are most of it. | <img src="docs/figures/16_collision_after.png" width="420"/><br/>**Collision geometry.** The shape every collision query reads, after the double transform was removed. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
@@ -267,6 +292,7 @@ python3 docs/scripts/figures.py                # writes docs/figures/*.png
 python3 docs/scripts/export_trajectory.py      # trajectory for the draw node
 python3 docs/scripts/render_drawing.py         # the animation at the top
 python3 docs/scripts/check_docs.py             # certifies the documents against the data
+python3 docs/notebooks/build.py --export 01_kinematics   # the notebooks' figures
 ```
 
 The studies are independent of each other and can run in parallel; times are

@@ -29,7 +29,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 
-LINTED = ['docs/scripts', 'tools', 'tests']
+LINTED = ['docs/scripts', 'docs/notebooks', 'tools', 'tests']
 
 
 def test_flake8(repo):

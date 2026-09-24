@@ -27,7 +27,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Rectangle
 
 import rospath as rp
@@ -37,29 +36,10 @@ DATA = Path(__file__).resolve().parents[1] / "data"
 FIG = Path(__file__).resolve().parents[1] / "figures"
 FIG.mkdir(exist_ok=True)
 
-SURFACE = "#fcfcfb"
-INK = "#0b0b0b"
-INK2 = "#52514e"
-MUTED = "#8a8984"
-GRID = "#e4e3df"
+from style import BLUES, C, GRID, INK, INK2, MUTED, SEQ, SURFACE  # noqa: E402,F401
+from style import apply as apply_style  # noqa: E402
 
-# categorical, fixed order
-C = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
-# sequential, one hue light -> dark
-BLUES = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
-SEQ = LinearSegmentedColormap.from_list("seq", BLUES)
-
-plt.rcParams.update({
-    "figure.facecolor": SURFACE, "axes.facecolor": SURFACE,
-    "savefig.facecolor": SURFACE, "savefig.dpi": 200, "figure.dpi": 200,
-    "font.family": "DejaVu Sans", "font.size": 9,
-    "text.color": INK, "axes.labelcolor": INK2, "axes.titlecolor": INK,
-    "xtick.color": INK2, "ytick.color": INK2,
-    "axes.edgecolor": GRID, "axes.linewidth": 0.8,
-    "grid.color": GRID, "grid.linewidth": 0.7,
-    "lines.linewidth": 1.6, "lines.solid_capstyle": "round",
-    "legend.frameon": False, "axes.spines.top": False, "axes.spines.right": False,
-})
+apply_style()
 
 
 def _wrap(text, width):

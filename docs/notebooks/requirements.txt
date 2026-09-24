@@ -1,0 +1,8 @@
+# What the notebooks need beyond docs/scripts/requirements.txt.
+#
+# Google Colab ships all three, so a reader there installs nothing. They are
+# listed so the container can run the notebooks too, which is how the build
+# certifies them: tests/test_notebooks.py executes every one, headless.
+sympy>=1.9
+plotly>=5.0
+nbformat>=5.1
