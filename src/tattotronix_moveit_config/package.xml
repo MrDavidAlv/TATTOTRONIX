@@ -7,7 +7,7 @@
   checking and free-space motion between strokes; the drawing itself is solved
   by the project's own 5x5 task inverse kinematics, because five joints cannot
   reach an arbitrary six-number pose.</description>
-  <maintainer email="davidalvarez33@hotmail.com">Mario David Alvarez Vallejo</maintainer>
+  <maintainer email="ing.marioalvarezvallejo@gmail.com">Mario David Alvarez Vallejo</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>moveit_ros_move_group</exec_depend>
