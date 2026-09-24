@@ -38,6 +38,7 @@ LAYERS = {
     'tattotronix_control': 1,       # controllers and the drawing application
     'tattotronix_moveit_config': 1,  # planning. Parallel to control, not above
     'tattotronix_gazebo': 2,        # the simulator, which assembles the rest
+    'tattotronix_hardware': 2,      # the real servos, assembled the same way
 }
 
 

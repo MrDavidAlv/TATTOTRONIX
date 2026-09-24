@@ -57,6 +57,7 @@ WORKDIR /ws
 COPY src/tattotronix_control/package.xml     src/tattotronix_control/package.xml
 COPY src/tattotronix_description/package.xml src/tattotronix_description/package.xml
 COPY src/tattotronix_gazebo/package.xml      src/tattotronix_gazebo/package.xml
+COPY src/tattotronix_hardware/package.xml    src/tattotronix_hardware/package.xml
 COPY src/tattotronix_moveit_config/package.xml src/tattotronix_moveit_config/package.xml
 RUN apt-get update \
     && rosdep update --rosdistro "${ROS_DISTRO}" \

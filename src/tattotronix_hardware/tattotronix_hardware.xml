@@ -1,0 +1,10 @@
+<library path="tattotronix_hardware">
+  <class name="tattotronix_hardware/Pca9685ServoSystem"
+         type="tattotronix_hardware::Pca9685ServoSystem"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      The TATTOTRONIX arm's hobby servos, driven through a PCA9685 PWM board over
+      Linux I2C. The state it reports is the position last sent, not a measurement.
+    </description>
+  </class>
+</library>
