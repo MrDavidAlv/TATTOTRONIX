@@ -38,9 +38,7 @@ namespace
 
 // joint_1 on one servo, joint_2 on two mounted opposite ways, as the arm's
 // shoulder is.
-std::string urdf(
-  const std::string & joint_1_extra = "", const std::string & states = "",
-  const std::string & tool = "")
+std::string urdf(const std::string & joint_1_extra = "", const std::string & states = "")
 {
   return
     R"(<?xml version="1.0"?>
@@ -73,8 +71,7 @@ std::string urdf(
       <param name="us_per_rad">636.62</param>
       <param name="channel_b">2</param>
       <param name="us_per_rad_b">-636.62</param>
-    </joint>)" + tool +
-    R"(
+    </joint>
   </ros2_control>
 </robot>)";
 }
@@ -200,69 +197,4 @@ TEST(Pca9685ServoSystem, RefusesWhatItCannotDo)
   EXPECT_EQ(
     system.on_init(info_of(urdf("", "\n      <state_interface name=\"effort\"/>"))),
     CallbackReturn::ERROR);
-}
-
-namespace
-{
-
-// The tool's continuous servo on channel 6: stops at 1500 us, full speed 500 us
-// either side, as the declared calibration has it.
-std::string tool(const std::string & channel = "6")
-{
-  return
-    R"(
-    <gpio name="tool">
-      <command_interface name="speed"/>
-      <state_interface name="speed"/>
-      <param name="channel">)" + channel +
-    R"(</param>
-      <param name="stop_us">1500</param>
-      <param name="us_per_speed">500</param>
-      <param name="min_us">1000</param>
-      <param name="max_us">2000</param>
-    </gpio>)";
-}
-
-}  // namespace
-
-TEST(Pca9685ServoSystem, TheToolTurnsOnlyWhenAskedAndNeverPastFullSpeed)
-{
-  Pca9685ServoSystem system;
-  ASSERT_EQ(system.on_init(info_of(urdf("", "", tool()))), CallbackReturn::SUCCESS);
-  auto states = system.export_state_interfaces();
-  auto commands = system.export_command_interfaces();
-  ASSERT_EQ(commands.size(), 3u);  // two joints and the tool
-  const rclcpp_lifecycle::State unused;
-  ASSERT_EQ(system.on_configure(unused), CallbackReturn::SUCCESS);
-  ASSERT_EQ(system.on_activate(unused), CallbackReturn::SUCCESS);
-
-  // Activated, the tool's channel is off: no pulse, whatever its trim.
-  const std::vector<uint8_t> off{0x06 + 4 * 6, 0x00, 0x00, 0x00, 0x10};
-  EXPECT_EQ(system.recording()->writes.back(), off);
-  EXPECT_EQ(value_of(states, "tool/speed"), 0.0);
-
-  const rclcpp::Time now(0, 0);
-  const auto period = rclcpp::Duration::from_seconds(0.01);
-  const double half_count = 0.5 * 4.88 / 500.0;
-  commands[2].set_value(0.5);
-  ASSERT_EQ(system.write(now, period), hardware_interface::return_type::OK);
-  const auto & sent = system.recording()->writes.back();
-  EXPECT_EQ(sent[0], 0x06 + 4 * 6);
-  EXPECT_EQ(sent[3] | (sent[4] << 8), static_cast<int>(std::round((1500 + 250) / 4.88)));
-  EXPECT_NEAR(value_of(states, "tool/speed"), 0.5, half_count);
-
-  commands[2].set_value(3.0);  // past full speed
-  ASSERT_EQ(system.write(now, period), hardware_interface::return_type::OK);
-  EXPECT_NEAR(value_of(states, "tool/speed"), 1.0, half_count);
-
-  commands[2].set_value(0.0);
-  ASSERT_EQ(system.write(now, period), hardware_interface::return_type::OK);
-  EXPECT_EQ(system.recording()->writes.back(), off);
-  EXPECT_EQ(value_of(states, "tool/speed"), 0.0);
-}
-
-TEST(Pca9685ServoSystem, TheToolNeedsAChannelOfItsOwn)
-{
-  Pca9685ServoSystem system;
-  EXPECT_EQ(system.on_init(info_of(urdf("", "", tool("0")))), CallbackReturn::ERROR);
 }

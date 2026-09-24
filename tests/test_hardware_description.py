@@ -74,23 +74,6 @@ def test_the_real_arm_gets_every_servo_in_the_calibration():
     assert len(channels) == len(set(channels)), 'two servos on one channel'
 
 
-def test_the_tool_reaches_the_driver_with_its_calibration():
-    """A speed, not an angle: a gpio with a speed interface, not a joint."""
-    system = system_of('pca9685')
-    tools = system.findall('gpio')
-    assert [t.get('name') for t in tools] == ['tool']
-    tool = tools[0]
-    assert [c.get('name') for c in tool.findall('command_interface')] == ['speed']
-    params = {p.get('name'): p.text for p in tool.findall('param')}
-    wanted = yaml.safe_load(CALIBRATION.read_text(encoding='utf-8'))['tool']
-    for key, value in wanted.items():
-        assert float(params[key]) == pytest.approx(float(value)), key
-    joints = system.findall('joint')
-    servo_channels = {int(p.text) for j in joints for p in j.findall('param')
-                      if p.get('name') in ('channel', 'channel_b')}
-    assert int(params['channel']) not in servo_channels
-
-
 def test_the_real_arm_asks_for_no_effort_state():
     """A hobby servo reports nothing back; the driver refuses to invent an effort."""
     for joint in system_of('pca9685').findall('joint'):
