@@ -77,7 +77,9 @@ RUN mkdir -p /usr/share/xml/ros \
          file:///usr/share/xml/ros/package_format3.xsd /etc/xml/catalog
 
 COPY docs/scripts/requirements.txt docs/scripts/requirements.txt
-RUN pip3 install --no-cache-dir -r docs/scripts/requirements.txt
+COPY docs/notebooks/requirements.txt docs/notebooks/requirements.txt
+RUN pip3 install --no-cache-dir -r docs/scripts/requirements.txt \
+        -r docs/notebooks/requirements.txt
 
 # ----------------------------------------------------------------- dev ------
 FROM base AS dev

@@ -3,6 +3,13 @@
 > Every origin and limit in this document is read from the URDF that `xacro`
 > emits. No frame is retyped into a script, so the model cannot disagree with
 > the robot `robot_state_publisher` is publishing.
+>
+> **Worked through step by step, in the browser:** the
+> [kinematics notebook](../notebooks/01_kinematics.ipynb)
+> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/01_kinematics.ipynb)
+> derives everything on this page — rotations, homogeneous transforms, the forward
+> kinematics symbolically, the product of exponentials, the Jacobians — and checks
+> each against the code, and the figures marked *from the notebook* are its output.
 
 ## 1. The chain
 
@@ -20,6 +27,14 @@ Five revolute joints and a fixed flange.
 
 <div align="center">
 <img src="../figures/01_chain.png" width="900"/>
+</div>
+
+<div align="center">
+<img src="../figures/19_frames.png" width="620"/>
+<br/>
+<sub>From the notebook: the frame of every joint and of the needle tip, at a pose from
+the drawing; x, y and z in red, green and blue. The tip's z points straight down,
+into the work.</sub>
 </div>
 
 ### Why there is no Denavit–Hartenberg table
@@ -121,6 +136,18 @@ are imposed by saturation: with ±1.57 rad on every axis and the panel well
 inside the envelope, saturation firing means the pose is genuinely unreachable,
 not that the solver needs help.
 
+<div align="center">
+<img src="../figures/22_ik_convergence.png" width="720"/>
+<br/>
+<sub>From the notebook: the solver written out by hand, from the start pose to five
+points on the panel, each converging to the same answer as the repository's
+<code>chain.ik</code> to 10⁻¹². The error rises on the first step — with damping this
+light, the first step overshoots — then falls by a near-constant factor per
+iteration. Along the drawing
+every solve is warm-started from the previous point and needs about a third as
+many.</sub>
+</div>
+
 **Result on the logo:** 100% convergence at all 16656 path points, worst residual
 $1.0 \times 10^{-6}$.
 
@@ -176,6 +203,18 @@ condition number in the thirties on a 200 mm panel.
 
 <div align="center">
 <img src="../figures/06_manipulability.png" width="900"/>
+</div>
+
+<div align="center">
+<img src="../figures/20_manipulability.png" width="900"/>
+<br/>
+<sub>From the notebook: the five singular values over the whole drawing, and the tip's
+manipulability ellipsoid at nine points of it. Each ellipsoid is the image of a unit
+ball of joint rates — long where the arm moves the tip easily, thin where it
+struggles. The long axis stays within about 4° of the vertical plane through the
+base, tilting from mostly radial at the start of the drawing to mostly vertical at
+its end: moving in, out, up and down is easy, and sideways — which only
+<code>joint_1</code> provides — is not.</sub>
 </div>
 
 | Measure | Value over the logo |
