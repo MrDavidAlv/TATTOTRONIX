@@ -102,6 +102,7 @@ ros2 launch tattotronix_gazebo simulation.launch.py
 - [What Is Real and What Is Placeholder](#what-is-real-and-what-is-placeholder)
 - [Known Issues](#known-issues)
 - [Usage](#usage)
+- [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 - [Contact](#contact)
 
@@ -570,6 +571,25 @@ ros2 launch tattotronix_gazebo simulation.launch.py headless:=true use_rviz:=fal
 # Check the description parses and the tree resolves
 xacro src/tattotronix_description/urdf/tattotronix.urdf.xacro hardware:=none | check_urdf /dev/stdin
 ```
+
+---
+
+## Contributing
+
+**[CONTRIBUTING.md](CONTRIBUTING.md)** has the whole of it: the develop → verify
+→ test → certify → document → push cycle, the commit-message convention, what is
+deliberately not versioned and why, and the two test suites.
+
+The short version, before you push anything:
+
+```bash
+docker compose run --rm ci              # what continuous integration runs
+python3 docs/scripts/check_docs.py      # published numbers still match the data
+```
+
+The `ci` service mounts nothing, which is the point — `dev` mounts the workspace
+over the image, so a file missing from the image is still there and a broken
+build passes. That has happened here.
 
 ---
 
