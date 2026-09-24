@@ -63,6 +63,19 @@ RUN apt-get update \
     && rosdep install --from-paths src --ignore-src -y --rosdistro "${ROS_DISTRO}" \
     && rm -rf /var/lib/apt/lists/*
 
+# ament_xmllint validates each package.xml against the schema its xml-model
+# line names, and fetches that schema from download.ros.org every time it runs.
+# So the test suite passed or failed on whether that server answered: one CI run
+# failed on it and the next passed with nothing changed. The schema is fetched
+# once here, while the image is built and the network is needed anyway, and
+# registered in the XML catalog so every later run resolves it locally.
+RUN mkdir -p /usr/share/xml/ros \
+    && curl -fsSL http://download.ros.org/schema/package_format3.xsd \
+         -o /usr/share/xml/ros/package_format3.xsd \
+    && (test -f /etc/xml/catalog || xmlcatalog --noout --create /etc/xml/catalog) \
+    && xmlcatalog --noout --add uri http://download.ros.org/schema/package_format3.xsd \
+         file:///usr/share/xml/ros/package_format3.xsd /etc/xml/catalog
+
 COPY docs/scripts/requirements.txt docs/scripts/requirements.txt
 RUN pip3 install --no-cache-dir -r docs/scripts/requirements.txt
 
