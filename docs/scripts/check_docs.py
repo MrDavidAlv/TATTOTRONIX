@@ -193,8 +193,16 @@ DECLARED = {
 }
 
 
+#: Data files that carry no figure in um or N.m, and so are not allowed to
+#: vouch for one. The membership test compares numbers, not units, and a mass
+#: file full of areas and volumes will contain something that rounds to almost
+#: any figure: upper_arm_link's 299.57 cm^2 of surface once "traced" the 300 um
+#: line width.
+NOT_MEASURED_IN_UM_OR_NM = {"mass_properties.json"}
+
+
 def _data_values():
-    """Every number in every data file, however deeply nested."""
+    """Every number in every data file that carries um or N.m figures."""
     found = []
 
     def walk(obj):
@@ -210,6 +218,8 @@ def _data_values():
                 walk(v)
 
     for f in sorted(DATA.glob("*.json")):
+        if f.name in NOT_MEASURED_IN_UM_OR_NM:
+            continue
         walk(json.loads(f.read_text(encoding="utf-8")))
     return found
 
@@ -285,6 +295,113 @@ def check_gains():
     return bad
 
 
+def check_shares():
+    """Percentages of the torque limit, which neither check above can see.
+
+    A share of the limit is a derived figure with no unit, so the
+    traceability check never reads it, and it moves every time the masses
+    do. Two are published. The planner's worst case comes from the header of
+    the generated joint_limits.yaml, which test_moveit_config already holds
+    to its generator. The drawing's is the recommended configuration's peak
+    torque over the effort limit, read from the description rather than
+    written here.
+    """
+    bad = []
+    limits = (ROOT / "src" / "tattotronix_moveit_config" / "config"
+              / "joint_limits.yaml").read_text(encoding="utf-8")
+    planner = re.search(r"Worst case across the arm is ([\d.]+)%", limits)
+    arm = (ROOT / "src" / "tattotronix_description" / "urdf"
+           / "arm_macro.xacro").read_text(encoding="utf-8")
+    effort = float(re.search(r'name="joint_effort" value="([\d.]+)"', arm).group(1))
+    final = json.loads((DATA / "control_final.json").read_text(encoding="utf-8"))
+    rec = min(final["configs"].values(), key=lambda c: c["marking_max_um"])
+    drawing = 100.0 * rec["tau_peak"] / effort
+
+    expect = [
+        (planner.group(1) + "% of the available", ["docs/moveit.md", "README.md"]),
+        (f"{drawing:.0f}% of the {effort:.0f} N·m",
+         ["docs/mathematical-model/control.md",
+          "docs/mathematical-model/parameters.md"]),
+    ]
+    for phrase, docs in expect:
+        for doc in docs:
+            text = re.sub(r"\s+", " ", (ROOT / doc).read_text(encoding="utf-8"))
+            # Anchored so that 1.6% is not found inside 11.6%.
+            if not re.search(r"(?<![\d.])" + re.escape(phrase), text):
+                bad.append(f"{doc}: expected '{phrase}'")
+    return bad
+
+
+def check_inertia_table():
+    """control.md's effective-against-diagonal table, and the factors it quotes.
+
+    The table is in kg m^2, which the traceability check does not read, and it
+    moves with every change to the masses. Each cell has to round from the
+    zero-pose value in summary.json, and the two factors the prose draws from
+    it - how far the diagonal overstates joints 2 and 3 - have to be the ratio
+    of the two columns.
+    """
+    s = json.loads((DATA / "summary.json").read_text(encoding="utf-8"))
+    if "J_eff_zero" not in s:
+        return ["summary.json has no zero-pose inertias; re-run analysis.py"]
+    text = (ROOT / "docs" / "mathematical-model" / "control.md").read_text(encoding="utf-8")
+    bad = []
+    for i in range(5):
+        row = re.search(r"\|\s*`joint_%d`\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|" % (i + 1), text)
+        if row is None:
+            bad.append(f"control.md: no inertia row for joint_{i + 1}")
+            continue
+        for written, value, what in ((row.group(1), s["J_eff_zero"][i], "effective"),
+                                     (row.group(2), s["M_diag_zero"][i], "diagonal")):
+            if not _traceable(written, [value]):
+                bad.append(f"control.md: joint_{i + 1} {what} inertia is written "
+                           f"{written}, the data says {value:.6g}")
+    factors = re.search(r"differ by a factor of ([\d.]+) on `joint_2` and ([\d.]+) on "
+                        r"`joint_3`", re.sub(r"\s+", " ", text))
+    if factors is None:
+        bad.append("control.md: the joint_2 and joint_3 factors are not stated")
+    else:
+        for written, j in ((factors.group(1), 1), (factors.group(2), 2)):
+            ratio = s["M_diag_zero"][j] / s["J_eff_zero"][j]
+            if not _traceable(written, [ratio]):
+                bad.append(f"control.md: joint_{j + 1} factor is written {written}, "
+                           f"the data gives {ratio:.3f}")
+    return bad
+
+
+def check_mass():
+    """mass.md against mass_properties.json: its table cell by cell, and the
+    headline figures it states in prose. None of them is in um or N.m, so the
+    traceability check never reads them.
+    """
+    f = DATA / "mass_properties.json"
+    doc = ROOT / "docs" / "mathematical-model" / "mass.md"
+    if not f.exists() or not doc.exists():
+        return [f"{f.name} or {doc.name} is missing"]
+    m = json.loads(f.read_text(encoding="utf-8"))
+    text = doc.read_text(encoding="utf-8")
+    flat = re.sub(r"\s+", " ", text)
+    bad = []
+    for name, v in m["links"].items():
+        row = re.search(r"\|\s*`%s`\s*\|([^\n]+)" % re.escape(name), text)
+        if row is None:
+            bad.append(f"mass.md: no row for {name}")
+            continue
+        cells = [re.sub(r"[^\d.]", "", c) for c in row.group(1).split("|")[:6]]
+        want = [v["volume_cm3"], v["box_mass_kg"] * 1000, v["box_implied_density_g_cm3"],
+                v["shell_kg"] * 1000, v["servos_kg"] * 1000, v["total_kg"] * 1000]
+        for label, c, w in zip(("volume", "box mass", "density", "shell", "servos", "total"),
+                               cells, want):
+            if not c or not _traceable(c, [w]):
+                bad.append(f"mass.md: {name} {label} is written {c}, the data says {w:.4g}")
+    for phrase in (f"{m['total_kg']:.3f} kg", f"{m['box_total_kg']:.3f} kg",
+                   f"{m['servo_share_pct']:.1f}%", f"{m['box_implied_density_g_cm3']:.2f} g/cm³",
+                   f"factor of {m['box_over_printed']:.1f}"):
+        if not re.search(r"(?<![\d.])" + re.escape(phrase), flat):
+            bad.append(f"mass.md: expected '{phrase}'")
+    return bad
+
+
 def check_paths():
     """Every path the scripts resolve must still point at something.
 
@@ -318,7 +435,10 @@ def main():
     nums, links, paths = check_numbers(), check_links(), check_paths()
     traced, checked, declared = check_traceability()
     gains = check_gains()
-    for b in nums + traced + gains + links + paths:
+    shares = check_shares()
+    inertia = check_inertia_table()
+    mass = check_mass()
+    for b in nums + traced + gains + shares + inertia + mass + links + paths:
         print("  FAIL", b)
     print(f"  {len(claims())} documented numbers, "
           f"{'all match' if not nums else str(len(nums)) + ' stale'}")
@@ -326,9 +446,15 @@ def main():
           + (f"all in the data ({declared} declared)" if not traced
              else f"{len(traced)} untraceable"))
     print(f"  published gains:   {'match the data' if not gains else str(len(gains)) + ' stale'}")
+    print("  torque shares:     "
+          + ("match the data" if not shares else f"{len(shares)} stale"))
+    print("  inertia table:     "
+          + ("matches the data" if not inertia else f"{len(inertia)} stale"))
+    print("  mass model:        "
+          + ("matches the data" if not mass else f"{len(mass)} stale"))
     print(f"  links and anchors: {'all resolve' if not links else str(len(links)) + ' broken'}")
     print(f"  script paths:      {'all resolve' if not paths else str(len(paths)) + ' broken'}")
-    return 1 if (nums or traced or gains or links or paths) else 0
+    return 1 if (nums or traced or gains or shares or inertia or mass or links or paths) else 0
 
 
 if __name__ == "__main__":

@@ -72,16 +72,28 @@ def test_inertia_is_symmetric_and_positive_definite(chain_and_model):
     assert np.linalg.eigvalsh(M).min() > 0, 'inertia matrix is not positive definite'
 
 
-def test_joint_two_and_three_carry_the_same_gravity_torque(chain_and_model):
+def test_joint_two_and_three_differ_by_the_upper_arm_alone(chain_and_model):
     """A result that looks like a bug and is not.
 
-    At the zero pose both axes sit at the same x, and so does the upper arm's
-    centre of mass, so the upper arm exerts no moment about joint_2 and the two
-    joints see identical lever arms for the rest of the chain.
+    At the zero pose the joint_2 and joint_3 axes are parallel and sit at the
+    same x. Everything beyond joint_3 therefore has the same lever arm about
+    both, and cancels out of the difference: the only load joint_2 carries
+    that joint_3 does not is the upper arm itself. So the two gravity torques
+    differ by exactly the upper arm's own moment, -g m x, with x its centre of
+    mass measured from the joint_2 axis.
+
+    This used to be written as "the two torques are equal", which was only
+    true because the box approximation put the upper arm's centre of mass
+    exactly over the axis. The version that holds for any mass model is the
+    difference, and it is checked against a hand computation rather than
+    against the torque routine a second time.
     """
     _, model = chain_and_model
     tau = model.gravity(np.zeros(5))
-    assert abs(tau[1] - tau[2]) < 1e-9, f'{tau[1]:.6f} vs {tau[2]:.6f} N m'
+    upper_arm = model.bodies[1]          # the body joint_2 moves
+    expected = -G * upper_arm['m'] * upper_arm['com'][0]
+    assert tau[1] - tau[2] == pytest.approx(expected, rel=1e-9, abs=1e-15), (
+        f'{tau[1]:.9f} - {tau[2]:.9f} N m, expected {expected:.3e}')
 
 
 def _summary():

@@ -1,0 +1,153 @@
+{
+  "declared": {
+    "pla_solid_kg_m3": 1240.0,
+    "printed_fraction": 0.35,
+    "printed_density_kg_m3": 434.0,
+    "servos": {
+      "large": {
+        "mass": 0.055,
+        "size": [
+          0.0407,
+          0.0197,
+          0.0429
+        ],
+        "part": "MG996R"
+      },
+      "small": {
+        "mass": 0.009,
+        "size": [
+          0.0225,
+          0.0118,
+          0.0227
+        ],
+        "part": "SG90"
+      }
+    }
+  },
+  "links": {
+    "base_link": {
+      "volume_cm3": 117.53848534994256,
+      "area_cm2": 757.030682432723,
+      "closure_residual": 5.451940913048891e-14,
+      "unpaired_edges_pct": 2.994181119710751,
+      "box_mass_kg": 1.5,
+      "box_implied_density_g_cm3": 12.761777519372577,
+      "shell_kg": 0.05101170264187507,
+      "servos_kg": 0.05499999999999999,
+      "total_kg": 0.10601170264187507,
+      "com_mm": [
+        -11.32163708954115,
+        -1.5236608571689392,
+        34.30055360854192
+      ],
+      "servos": [
+        "MG996R joint_1"
+      ]
+    },
+    "shoulder_link": {
+      "volume_cm3": 110.6611813990843,
+      "area_cm2": 453.47003835304713,
+      "closure_residual": 3.118721047031605e-11,
+      "unpaired_edges_pct": 3.851986654534425,
+      "box_mass_kg": 0.9,
+      "box_implied_density_g_cm3": 8.132933234774297,
+      "shell_kg": 0.04802695272720259,
+      "servos_kg": 0.10999999999999999,
+      "total_kg": 0.15802695272720257,
+      "com_mm": [
+        24.062075696311574,
+        -2.539299976689398,
+        39.294542352170424
+      ],
+      "servos": [
+        "MG996R joint_2",
+        "MG996R joint_2"
+      ]
+    },
+    "upper_arm_link": {
+      "volume_cm3": 64.65252132216044,
+      "area_cm2": 299.56990422967107,
+      "closure_residual": 8.328111269296666e-11,
+      "unpaired_edges_pct": 3.493202416918429,
+      "box_mass_kg": 0.6,
+      "box_implied_density_g_cm3": 9.280380528552453,
+      "shell_kg": 0.02805919425381763,
+      "servos_kg": 0.05500000000000001,
+      "total_kg": 0.08305919425381764,
+      "com_mm": [
+        0.002723908676006445,
+        17.045061984256,
+        96.82672187117765
+      ],
+      "servos": [
+        "MG996R joint_3"
+      ]
+    },
+    "forearm_link": {
+      "volume_cm3": 64.08758421907031,
+      "area_cm2": 314.2986323626481,
+      "closure_residual": 0.0008155309836519316,
+      "unpaired_edges_pct": 4.434993924665856,
+      "box_mass_kg": 0.45,
+      "box_implied_density_g_cm3": 7.021640860447587,
+      "shell_kg": 0.027814011551076514,
+      "servos_kg": 0.05499999999999999,
+      "total_kg": 0.08281401155107651,
+      "com_mm": [
+        -3.146029991709822,
+        -21.95274270702732,
+        31.27014157881422
+      ],
+      "servos": [
+        "MG996R joint_4"
+      ]
+    },
+    "wrist_link": {
+      "volume_cm3": 36.46403714719865,
+      "area_cm2": 351.0438631341473,
+      "closure_residual": 0.000528536878792483,
+      "unpaired_edges_pct": 5.223720830657247,
+      "box_mass_kg": 0.35,
+      "box_implied_density_g_cm3": 9.598498339257223,
+      "shell_kg": 0.015825392121884215,
+      "servos_kg": 0.008999999999999998,
+      "total_kg": 0.024825392121884213,
+      "com_mm": [
+        120.7202922598172,
+        4.25212475171206,
+        -1.773335824126468
+      ],
+      "servos": [
+        "SG90 joint_5"
+      ]
+    },
+    "tool_mount_link": {
+      "volume_cm3": 10.69780164905557,
+      "area_cm2": 61.98603061493903,
+      "closure_residual": 0.003174821624052938,
+      "unpaired_edges_pct": 4.966717869943676,
+      "box_mass_kg": 0.15,
+      "box_implied_density_g_cm3": 14.0215723679306,
+      "shell_kg": 0.004642845915690117,
+      "servos_kg": 0.009,
+      "total_kg": 0.013642845915690116,
+      "com_mm": [
+        8.633749811376907,
+        -11.39796962001455,
+        3.932182316452618
+      ],
+      "servos": [
+        "SG90 driving the tool"
+      ]
+    }
+  },
+  "total_kg": 0.46838009921154616,
+  "shells_kg": 0.17538009921154613,
+  "servos_kg": 0.29300000000000004,
+  "servo_share_pct": 62.55603098706061,
+  "box_total_kg": 3.95,
+  "box_over_printed": 8.433321583579842,
+  "box_implied_density_g_cm3": 9.77476924523908,
+  "volume_cm3": 404.10161108651187,
+  "worst_closure_residual": 0.003174821624052938
+}

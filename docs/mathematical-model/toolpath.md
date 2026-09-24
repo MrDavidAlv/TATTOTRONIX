@@ -175,7 +175,7 @@ call it twice the line width. That conflates the *spacing* of the points with
 the *error* they cause. The controller interpolates between them, so what the
 spacing costs is chord deviation — how far the straight run between two points
 departs from the curve they were sampled from — which goes as roughly
-$h^2/8R$, not as $h$. Measured on the traced contours it is **118 µm** at
+$h^2/8R$, not as $h$. Measured on the traced contours it is **149 µm** at
 0.6 mm, not 600.
 
 It still mattered, for a different reason. The reference velocity handed to the
@@ -184,19 +184,23 @@ that velocity a staircase and the feedforward injects as much as it corrects.
 
 | Step | Points | Chord error | Settled | Worst, marking | Peak torque |
 |---|---|---|---|---|---|
-| 0.60 mm | 4470 | 118.0 µm | 19.3 µm | 178.9 µm | 2.16 N·m |
-| 0.30 mm | 8568 | 73.4 µm | 24.3 µm | 189.0 µm | 1.94 N·m |
-| **0.15 mm** | 16 732 | below the mask | **7.9 µm** | **19.4 µm** | **1.68 N·m** |
+| 0.60 mm | 4468 | 148.9 µm | 53.3 µm | 456.2 µm | 0.34 N·m |
+| 0.30 mm | 8532 | 74.0 µm | 48.9 µm | 525.1 µm | 0.30 N·m |
+| **0.15 mm** | 16 656 | 45.1 µm | **43.3 µm** | 473.9 µm | 0.33 N·m |
 
-**Peak torque falls as the step is refined**, which is the giveaway: a finer path
-is not asking the arm for more, it is asking for something smoother. Inverse
-kinematics still converges at 100% of points and the whole cycle grows by 4%.
+**The settled mean improves as the step is refined**, 53.3 → 48.9 → 43.3 µm, and
+that is the part that follows from the argument above: a finer path hands the
+feedforward a smoother velocity. The worst case and the peak torque do not
+order at all at this bandwidth. On the box masses they did, and the drop was
+much larger; on the arm as built the wrist's coupling, not the reference,
+sets the worst moments at 40 rad/s. Inverse kinematics still converges at
+100% of points.
 
-Two honest notes. The 0.30 mm row is slightly *worse* than 0.60 on the dynamic
-figures — the trend is not monotonic at this resolution and the table says so
-rather than drawing a clean curve through it. And "below the mask" is not zero
-error: the traced contour is only known to the 0.25 mm mask pitch, so at 0.15 mm
-there is no finer detail left to depart from. Going below this buys nothing
+Two honest notes. None of these rows is inside the 0.3 mm line at their worst
+moment; that takes the bandwidth of the recommended configuration, not a
+finer step. And a chord error under the mask pitch is not zero error: the traced contour is only
+known to the 0.25 mm mask pitch, and at 0.15 mm the chord error, 45 µm, is
+already under it, so there is no finer detail left to depart from. Going below this buys nothing
 until the mask resolution goes with it.
 
 ### Time parameterisation

@@ -48,6 +48,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 MESHES = ROOT / "src" / "tattotronix_description" / "meshes" / "visual"
 XACRO_OUT = ROOT / "src" / "tattotronix_description" / "urdf" / "inertials_printed.xacro"
+DATA_OUT = ROOT / "docs" / "data" / "mass_properties.json"
 
 #: The URDF scales every mesh by this. The CAD was exported in centimetres.
 MESH_SCALE = 0.01
@@ -385,6 +386,71 @@ def render_xacro(built):
     return "\n".join(lines)
 
 
+def summary_data():
+    """Every figure the documentation quotes about the mass model.
+
+    Written to docs/data by `summarise`, so the documents can be checked
+    against it like any other result instead of quoting numbers that only ever
+    existed in a terminal. Kept separate from the writing so a test can
+    recompute it and compare.
+    """
+    built = build_printed()
+    links = {}
+    for name, declared in DECLARED.items():
+        tris = read_stl(MESHES / (name + ".stl"))
+        volume, _, _ = integrate(tris)
+        residual, area = closure_residual(tris)
+        _, n_edges, bad_edges = is_closed(tris)
+        mass, com, _, shell = built[name]
+        links[name] = {
+            "volume_cm3": volume * 1e6,
+            "area_cm2": area * 1e4,
+            "closure_residual": residual,
+            "unpaired_edges_pct": 100.0 * bad_edges / n_edges,
+            "box_mass_kg": declared,
+            "box_implied_density_g_cm3": declared / volume / 1000.0,
+            "shell_kg": shell,
+            "servos_kg": mass - shell,
+            "total_kg": mass,
+            "com_mm": (com * 1000).tolist(),
+            "servos": [SERVOS[k]["part"] + (" driving the tool" if w == "tool" else " " + w)
+                       for k, w in SERVO_LAYOUT.get(name, [])],
+        }
+    total = sum(v["total_kg"] for v in links.values())
+    shells = sum(v["shell_kg"] for v in links.values())
+    box = sum(DECLARED.values())
+    volume = sum(v["volume_cm3"] for v in links.values())
+    out = {
+        "declared": {
+            "pla_solid_kg_m3": PLA_SOLID,
+            "printed_fraction": PRINTED_FRACTION,
+            "printed_density_kg_m3": PLA_SOLID * PRINTED_FRACTION,
+            "servos": SERVOS,
+        },
+        "links": links,
+        "total_kg": total,
+        "shells_kg": shells,
+        "servos_kg": total - shells,
+        "servo_share_pct": 100.0 * (total - shells) / total,
+        "box_total_kg": box,
+        "box_over_printed": box / total,
+        # kg over cm^3: a thousand grams per kilogram. Written without it the
+        # first run reported 0.01 g/cm^3 for an arm said to be denser than steel.
+        "box_implied_density_g_cm3": box * 1000.0 / volume,
+        "volume_cm3": volume,
+        "worst_closure_residual": max(v["closure_residual"] for v in links.values()),
+    }
+    return out
+
+
+def summarise():
+    """Write summary_data() to docs/data/mass_properties.json."""
+    import json
+    out = summary_data()
+    DATA_OUT.write_text(json.dumps(out, indent=2), encoding="utf-8")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--density", type=float, default=None,
@@ -393,11 +459,18 @@ def main():
                     help="the arm as built: printed shells plus servos")
     ap.add_argument("--write-xacro", action="store_true",
                     help="write the built arm's inertials to the description")
+    ap.add_argument("--write-data", action="store_true",
+                    help="write the figures the documentation quotes to docs/data")
     args = ap.parse_args()
 
     if args.write_xacro:
         XACRO_OUT.write_text(render_xacro(build_printed()), encoding="utf-8")
         print("wrote %s" % XACRO_OUT.relative_to(ROOT))
+        return
+    if args.write_data:
+        out = summarise()
+        print("wrote %s: %.3f kg as built, %.3f kg in the box model"
+              % (DATA_OUT.relative_to(ROOT), out["total_kg"], out["box_total_kg"]))
         return
 
     print("Volumes integrated from the meshes, and the density each declared "

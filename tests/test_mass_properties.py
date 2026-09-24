@@ -381,9 +381,14 @@ def _elements(root):
     return ET.tostring(root, encoding='unicode')
 
 
-def test_the_default_mass_model_is_the_box():
-    """Adding the argument must not have moved the default by a single element."""
-    assert _elements(_expand()) == _elements(_expand('mass_model:=box'))
+def test_the_default_mass_model_is_the_arm_as_built():
+    """The description defaults to the printed arm, not the box approximation.
+
+    Every published number is computed from the default, so which model it is
+    is a claim the documents make; this is where it is held.
+    """
+    assert _elements(_expand()) == _elements(_expand('mass_model:=printed'))
+    assert _elements(_expand()) != _elements(_expand('mass_model:=box'))
 
 
 def test_the_printed_model_changes_inertia_and_nothing_else():
@@ -418,3 +423,27 @@ def test_an_unknown_mass_model_stops_the_build():
                          capture_output=True, text=True)
     assert out.returncode != 0
     assert 'mass_model' in out.stderr
+
+
+def test_the_published_mass_figures_are_what_the_script_computes(mp):
+    """docs/data/mass_properties.json is regenerated, never edited."""
+    import json
+
+    def flat(obj, prefix=''):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                yield from flat(v, f'{prefix}{k}.')
+        elif isinstance(obj, list):
+            for i, v in enumerate(obj):
+                yield from flat(v, f'{prefix}{i}.')
+        else:
+            yield prefix.rstrip('.'), obj
+
+    have = dict(flat(json.loads(mp.DATA_OUT.read_text(encoding='utf-8'))))
+    want = dict(flat(json.loads(json.dumps(mp.summary_data()))))
+    assert have.keys() == want.keys(), set(have) ^ set(want)
+    for key, value in want.items():
+        if isinstance(value, float):
+            assert have[key] == pytest.approx(value, rel=1e-12, abs=1e-15), key
+        else:
+            assert have[key] == value, key
