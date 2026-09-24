@@ -15,9 +15,9 @@ controller_manager:
     # the one place nothing checks, and every number in this one depends on the
     # arm's mass model.
     #
-    # Free in simulation. On hardware this is a requirement on the servo
-    # interface, not a preference: a bus that cannot sustain 1 kHz puts the
-    # bandwidth ceiling back where it was.
+    # Free in simulation. The real arm's hobby servos close their own loop, so
+    # there the controller manager only chooses positions, at 100 Hz:
+    # tattotronix_hardware/config/hardware.yaml lays that over this file.
     update_rate: 1000
     use_sim_time: true
 

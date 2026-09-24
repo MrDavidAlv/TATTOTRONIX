@@ -1,0 +1,23 @@
+# What differs on the real arm, laid over
+# tattotronix_control/config/tattotronix_controllers.yaml by arm.launch.py.
+# Everything not named here - the controllers, their joints, their tolerances -
+# is the simulation's, from the same file, so the two cannot drift apart.
+
+controller_manager:
+  ros__parameters:
+    # A hobby servo samples its pulse once every 20 ms and closes its own loop,
+    # so the 1 kHz the joint-loop studies need happens inside the servo, where
+    # nothing here reaches. 100 Hz gives the trajectory controller two updates
+    # per pulse frame and leaves a Raspberry Pi 3 time to spare. The driver
+    # only puts a channel on the bus when its count changes.
+    update_rate: 100
+    # There is no simulator, so no /clock to follow.
+    use_sim_time: false
+
+joint_state_broadcaster:
+  ros__parameters:
+    use_sim_time: false
+
+arm_controller:
+  ros__parameters:
+    use_sim_time: false
