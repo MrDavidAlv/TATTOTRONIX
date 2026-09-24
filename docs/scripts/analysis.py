@@ -144,10 +144,13 @@ def tune(model, q_ref, wn=None, zeta=1.0):
 
         Kd = 3 J wn,   Kp = 3 J wn^2,   Ki = J wn^3
 
-    which has no overshoot by construction. An earlier version used the
-    second-order PD rule with an integral term bolted on as a fraction of Kp;
-    that put the integral time at 0.33 s against a loop time constant of
-    0.05 s, and the step response overshot by 30 to 75 percent.
+    which places the poles - it does not make the response free of overshoot.
+    The integral term adds a zero at -wn/3, and a step overshoots by the amount
+    single_axis_overshoot() computes; this docstring once claimed otherwise.
+    An earlier version used the second-order PD rule with an integral term
+    bolted on as a fraction of Kp; that put the integral time at 0.33 s against
+    a loop time constant of 0.05 s, and the step response overshot by 30 to 75
+    percent.
 
     J is the *effective* inertia, 1 / (M^-1)_ii, not the diagonal of M. For
     joints 2 and 3 the two differ by a factor of two: the diagonal says how
@@ -164,6 +167,26 @@ def tune(model, q_ref, wn=None, zeta=1.0):
     Kd = 3.0 * J * wn
     Ki = J * wn ** 3
     return Kp, Ki, Kd
+
+
+def single_axis_overshoot(wn=None):
+    """Step overshoot, in percent, of one isolated axis under this tuning.
+
+    With the poles at -wn and the derivative acting on the measured velocity,
+    as simulate() implements it, the closed loop is
+
+        T(s) = (Kp s + Ki) / (J s^3 + Kd s^2 + Kp s + Ki)
+             = (3 wn^2 s + wn^3) / (s + wn)^3
+
+    J cancels, so the answer is the same for every joint. The numerator's zero
+    at -wn/3, slower than the poles, is what makes it overshoot: placing the
+    poles does not by itself make a response free of overshoot.
+    """
+    from scipy import signal
+    wn = TUNE_WN if wn is None else wn
+    t, y = signal.step(([3 * wn ** 2, wn ** 3], np.poly([-wn] * 3)),
+                       T=np.linspace(0, 20 / wn, 20001))
+    return float((y.max() - 1) * 100)
 
 
 def simulate(model, Kp, Ki, Kd, q_ref_fn, t_end, dt=1.0 / 1000, q0=None,
@@ -268,6 +291,9 @@ def main():
             t_end=0.8, q0=q_start, gravity_ff=gff)
         out |= {f"step_T_{tag}": T, f"step_Q_{tag}": Qs,
                 f"step_QR_{tag}": QR, f"step_TAU_{tag}": TAU}
+        # How far past the step each axis goes, as a percentage of the step.
+        out[f"step_overshoot_{tag}"] = ((Qs - q_start).max(axis=0) - step) / step * 100
+    out["step_overshoot_single_axis"] = single_axis_overshoot()
 
     print("tracking the logo...")
     # follow one dot: long enough to show steady-state tracking and the
@@ -343,6 +369,9 @@ def main():
                                      & (kind[:-1] == rp.KIND_TRAVEL))
                               + (kind[0] != rp.KIND_TRAVEL)),
     }
+    summary["step_overshoot_single_axis_pct"] = out["step_overshoot_single_axis"]
+    summary["step_overshoot_ff_pct"] = out["step_overshoot_ff"].tolist()
+    summary["step_overshoot_noff_pct"] = out["step_overshoot_noff"].tolist()
     import dynamics
     summary["gravity_check_Nm"] = [dynamics.gravity_check(model, q) for q in dynamics.CHECK_POSES]
     tracer = {}
