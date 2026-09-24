@@ -3,6 +3,14 @@
 > Everything here is measured against one tolerance: a tattoo needle lays a line
 > about **0.3 mm** wide, and a position error comparable to that is a different
 > drawing.
+>
+> **Worked through step by step, in the browser:** the
+> [dynamics notebook](../notebooks/02_dynamics.ipynb)
+> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/02_dynamics.ipynb)
+> rebuilds the equations of motion — inertia tensors, the mass matrix from kinetic
+> energy, Coriolis terms from Christoffel symbols, gravity from potential energy —
+> and checks each against the Newton–Euler model below by a route that shares none
+> of its code.
 
 ## 1. The dynamic model
 
@@ -35,6 +43,17 @@ potential energy, $G_i = \partial U / \partial q_i$, at three poses:
 
 Two independent routes — a rigid body recursion against the derivative of a
 scalar — agreeing to machine precision.
+
+<div align="center">
+<img src="../figures/24_free_fall.png" width="900"/>
+<br/>
+<sub>From the dynamics notebook: the arm falling with no torque applied, integrated
+with fourth-order Runge–Kutta. Kinetic and potential energy trade half a joule back
+and forth and the total stays flat, which it can only do if the mass matrix,
+Coriolis and gravity terms are mutually consistent. The model has no joint limits
+or collisions, so the arm swings through poses the real one could not reach; the
+two wrist joints, the lightest, reach the highest speeds.</sub>
+</div>
 
 ### A result that looked like a bug and was not
 
@@ -298,6 +317,17 @@ There is no cliff in that column any more. There used to be one between 40 and
    coupling, which is what computed torque is, gains from that; one that only
    feeds each joint its own velocity does not. That is consistent with the
    numbers, and has not been isolated experimentally.
+
+   <div align="center">
+   <img src="../figures/23_mass_matrix.png" width="900"/>
+   <br/>
+   <sub>From the dynamics notebook: the mass matrix at the tuning pose, normalised,
+   for the box approximation and the arm as built, and the coupling each joint
+   receives relative to its own effective inertia. Concentrating the mass in the
+   servos shifts the coupling toward the wrist — joint_1 to joint_4 goes from 0.07
+   to 0.36 — and relative to what it carries itself, joint_4 receives about eight
+   times as much.</sub>
+   </div>
 
    The same effect is why every structure at this bandwidth tracks worse than
    it did on the box masses. Pole placement normalises each joint by its own

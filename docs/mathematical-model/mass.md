@@ -85,8 +85,9 @@ replaces the first two.
 - The gains fell by roughly the same factor as the inertia, because every gain
   is pole placement on it. See [parameters](./parameters.md#control).
 - The recommended configuration still draws inside the line; lower bandwidths
-  got worse, because the wrist now carries more coupling relative to its own
-  inertia. See [control](./control.md#5-what-actually-helps).
+  got worse, which is consistent with the wrist now carrying more coupling
+  relative to its own inertia, though that has not been isolated. See
+  [control](./control.md#5-what-actually-helps).
 - The planner's acceleration limits cost far less torque. See
   [MoveIt](../moveit.md).
 - **Gazebo did not change.** Drawing the logo headless on each model gives the
@@ -96,3 +97,23 @@ replaces the first two.
 
 The description keeps both: `mass_model:=printed` is the default and
 `mass_model:=box` the comparison.
+
+## 6. What the servos have to supply
+
+<div align="center">
+<img src="../figures/25_servo_torque.png" width="780"/>
+<br/>
+<sub>From the <a href="../notebooks/02_dynamics.ipynb">dynamics notebook</a>: the
+gravity and velocity torque each joint needs while drawing the logo, against the
+catalogue stall torque of the servos that joint carried.</sub>
+</div>
+
+The torque that holds the arm against gravity and carries it along the path,
+$G(q) + C(q,\dot q)\dot q$, is the floor of what the servos must give, and it is
+set by the masses alone. The shoulder, which carries two MG996R, needs about a
+sixth of their combined stall torque; every other joint needs a tenth of its own
+or less. Two things keep this from being a margin. The feedback that corrects
+errors adds torque on top, and the reference changes velocity instantly at every
+corner of the path, which a real controller has to spread out. And a hobby servo
+sustains only a fraction of its stall torque, a figure its catalogue does not
+state. Sizing the actuators properly is the next piece of work.

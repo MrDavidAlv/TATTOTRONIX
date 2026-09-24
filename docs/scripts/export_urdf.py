@@ -31,24 +31,29 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 XACRO = ROOT / "src" / "tattotronix_description" / "urdf" / "tattotronix.urdf.xacro"
-OUT = ROOT / "docs" / "notebooks" / "tattotronix.urdf"
+NOTEBOOKS = ROOT / "docs" / "notebooks"
 
-#: The arguments the studies use: the pen mounted, no ros2_control block, and
-#: the description's default mass model.
+#: The arguments the studies use - the pen mounted, no ros2_control block - and
+#: the file each mass model is written to. The default model is the one every
+#: study runs; the box is kept so the notebooks can show what changed.
 ARGS = ["tool:=tattoo", "hardware:=none"]
+FILES = {None: NOTEBOOKS / "tattotronix.urdf",
+         "box": NOTEBOOKS / "tattotronix_box.urdf"}
 
 
-def expand():
-    """The URDF text, exactly as xacro emits it for ARGS."""
-    out = subprocess.run(["xacro", str(XACRO), *ARGS], capture_output=True, text=True)
+def expand(mass_model=None):
+    """The URDF text, exactly as xacro emits it for ARGS and the mass model."""
+    extra = [] if mass_model is None else ["mass_model:=" + mass_model]
+    out = subprocess.run(["xacro", str(XACRO), *ARGS, *extra], capture_output=True, text=True)
     if out.returncode != 0:                                   # pragma: no cover
         sys.exit("xacro failed:\n" + out.stderr)
     return out.stdout
 
 
 def main():
-    OUT.write_text(expand(), encoding="utf-8")
-    print("wrote", OUT.relative_to(ROOT))
+    for model, path in FILES.items():
+        path.write_text(expand(model), encoding="utf-8")
+        print("wrote", path.relative_to(ROOT))
 
 
 if __name__ == "__main__":

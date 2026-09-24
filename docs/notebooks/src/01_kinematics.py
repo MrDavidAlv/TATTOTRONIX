@@ -286,9 +286,9 @@ for j, s in enumerate(chain.actuated):
 M = chain.fk(np.zeros(5))
 
 print("Screw axes, one column per joint (rows: ωx ωy ωz vx vy vz):")
-nb.display(sp.Matrix(np.round(S, 4)))
+nb.display(nb.matrix(S))
 print("M, the tip at the zero pose:")
-nb.display(sp.Matrix(np.round(M, 4)))
+nb.display(nb.matrix(M))
 
 
 def exp_twist(Sj, t):
@@ -372,7 +372,7 @@ print(f"tip Jacobian against central differences: worst {np.abs(J_fd - Jg[:3]).m
 assert np.abs(J_fd - Jg[:3]).max() < 1e-8
 
 print("Geometric Jacobian at the tip, at a pose from the drawing (6 × 5):")
-nb.display(sp.Matrix(np.round(Jg, 4)))
+nb.display(nb.matrix(Jg))
 
 # %% [markdown]
 # ### The task Jacobian: why five axes are enough
@@ -400,7 +400,7 @@ dz = np.column_stack([(chain.tool_axis(q_draw + h * e) - chain.tool_axis(q_draw 
                       for e in np.eye(5)])
 assert np.abs(Jt[3] - u @ dz).max() < 1e-8 and np.abs(Jt[4] - v @ dz).max() < 1e-8
 print("Task Jacobian (5 × 5), determinant", f"{np.linalg.det(Jt):.3e}:")
-nb.display(sp.Matrix(np.round(Jt, 4)))
+nb.display(nb.matrix(Jt))
 
 # %% [markdown]
 # ## 6 · Singularities and manipulability

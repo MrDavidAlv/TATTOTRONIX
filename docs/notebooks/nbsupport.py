@@ -71,19 +71,23 @@ def in_notebook():
 
 # ---- the arm -----------------------------------------------------------------
 
-def urdf_text():
-    return URDF.read_text(encoding="utf-8")
+def urdf_text(mass_model=None):
+    """The expanded description; mass_model="box" gives the earlier approximation."""
+    path = URDF if mass_model is None else URDF.with_name(f"tattotronix_{mass_model}.urdf")
+    return path.read_text(encoding="utf-8")
 
 
-def arm():
+def arm(mass_model=None):
     """The kinematic chain and the dynamic model, from the expanded URDF.
 
     Built by docs/scripts/kinematics.py and dynamics.py - the same code as
-    every study - from the same description robot_state_publisher loads.
+    every study - from the same description robot_state_publisher loads. The
+    default is the arm as built; mass_model="box" loads the bounding-box
+    approximation the project used before it, for comparison.
     """
     import dynamics
     import kinematics
-    text = urdf_text()
+    text = urdf_text(mass_model)
     chain = kinematics.Chain(text)
     return chain, dynamics.Model(chain, dynamics.parse_inertials(text))
 
@@ -232,6 +236,15 @@ def display(*objs):
     else:
         for o in objs:
             print(o)
+
+
+def matrix(M, digits=4):
+    """A numeric array as a SymPy matrix rounded to a few significant figures.
+
+    Rendered as LaTeX in a notebook, and short enough to read in plain text.
+    """
+    import sympy as sp
+    return sp.Matrix(np.asarray(M, float)).evalf(digits)
 
 
 def table(headers, rows):

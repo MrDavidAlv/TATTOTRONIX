@@ -38,12 +38,13 @@ import build  # noqa: E402
 SOURCES = build.sources()
 
 
-def test_the_expanded_urdf_is_current():
-    """The URDF the notebooks read has to be the description as it stands."""
+def test_the_expanded_urdfs_are_current():
+    """The URDFs the notebooks read have to be the description as it stands."""
     sys.path.insert(0, str(REPO / "docs" / "scripts"))
     import export_urdf
-    assert (NB / "tattotronix.urdf").read_text(encoding="utf-8") == export_urdf.expand(), (
-        "docs/notebooks/tattotronix.urdf is stale. Run: python3 docs/scripts/export_urdf.py")
+    for model, path in export_urdf.FILES.items():
+        assert path.read_text(encoding="utf-8") == export_urdf.expand(model), (
+            f"{path.name} is stale. Run: python3 docs/scripts/export_urdf.py")
 
 
 def test_there_are_notebooks():
