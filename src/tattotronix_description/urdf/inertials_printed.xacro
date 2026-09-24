@@ -7,7 +7,8 @@
 
   Each link is its printed shell - the mesh volume at 434 kg/m^3, which is
   35% of solid PLA - plus the servos mounted in it, each a box of
-  catalogue size at the origin of the joint it drives. The volumes are
+  catalogue size at the origin of the joint it drives, or on the tool
+  axis for the one that drives the tool. The volumes are
   measured. The printed fraction and the servo figures are declarations
   about an arm that cannot be weighed, and are named in the script.
 
@@ -66,13 +67,13 @@
     </inertial>
   </xacro:macro>
 
-  <!-- tool_mount_link: shell 0.0046 kg, no servo -->
+  <!-- tool_mount_link: shell 0.0046 kg, SG90 driving the tool -->
   <xacro:macro name="printed_inertial_tool_mount_link">
     <inertial>
-      <origin xyz="0.008634 -0.010107 0.000914" rpy="0 0 0"/>
-      <mass value="0.00464284592"/>
-      <inertia ixx="4.141313e-07" ixy="5.591683e-08" ixz="-6.548634e-08"
-               iyy="6.964300e-07" iyz="6.213871e-09" izz="5.366602e-07"/>
+      <origin xyz="0.008634 -0.011398 0.003932" rpy="0 0 0"/>
+      <mass value="0.0136428459"/>
+      <inertia ixx="9.808574e-07" ixy="5.591683e-08" ixz="-6.548634e-08"
+               iyy="1.526682e-06" iyz="3.363561e-08" izz="1.032509e-06"/>
     </inertial>
   </xacro:macro>
 

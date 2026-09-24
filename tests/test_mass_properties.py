@@ -225,14 +225,78 @@ def test_the_built_arm_conserves_mass(mp):
         assert np.all(np.linalg.eigvalsh(tensor) > 0), f'{name} is not physical'
 
 
-def test_every_joint_drives_exactly_one_set_of_servos(mp):
-    """Six servos over five joints, and no joint left unactuated."""
-    driven = [j for servos in mp.SERVO_LAYOUT.values() for _, j in servos]
-    assert len(driven) == 6, f'expected six servos, the layout has {len(driven)}'
-    assert set(driven) == {f'joint_{i}' for i in range(1, 6)}
+def test_the_servo_inventory_is_the_arm_s(mp):
+    """Five large and two small: every joint driven, and the tool servo too.
+
+    The count comes from the builder, not from the meshes: the shoulder
+    carries two large servos, one SG90 turns joint_5 and a second,
+    continuous-rotation SG90 sits in the tool mount's clamp and drives the
+    tool rather than any joint.
+    """
+    servos = [s for layout in mp.SERVO_LAYOUT.values() for s in layout]
+    kinds = [k for k, _ in servos]
+    assert kinds.count('large') == 5, kinds
+    assert kinds.count('small') == 2, kinds
+    driven = {w for _, w in servos if w.startswith('joint_')}
+    assert driven == {f'joint_{i}' for i in range(1, 6)}
+    assert ('small', 'tool') in mp.SERVO_LAYOUT['tool_mount_link']
     origins = mp.joint_origins()
-    for joint in driven:
-        assert joint in origins, f'{joint} is not a joint in the description'
+    for _, where in servos:
+        if where.startswith('joint_'):
+            assert where in origins, f'{where} is not a joint in the description'
+    assert mp.TOOL_SERVO['axis_from'] in origins
+
+
+def test_the_tool_servo_sits_on_the_measured_tool_axis(mp):
+    """Its y and z are tool0's, which the description records from the mesh."""
+    origins = mp.joint_origins()
+    axis = origins[mp.TOOL_SERVO['axis_from']]
+    at = mp.servo_position('tool', np.array([0.0086, 0.0, 0.0]), origins)
+    assert at[1] == pytest.approx(axis[1]) and at[2] == pytest.approx(axis[2])
+    assert at[1] == pytest.approx(-0.012064, abs=1e-6)
+    assert at[2] == pytest.approx(0.005489, abs=1e-6)
+
+
+def test_the_unmeasured_tool_servo_coordinate_barely_matters():
+    """Where along the bracket the tool servo sits is a declaration.
+
+    So its consequence is measured rather than assumed: moving it 5 mm either
+    way must change no joint's effective inertia at the tuning pose by more
+    than 5%. It measures 1.0 to 3.4%. The link's own inertia about joint_5
+    moves by far more, -20 to +36%, but joint_5 is dominated by the pen, so
+    that reaches the gains diluted.
+    """
+    import json
+    import subprocess
+
+    import dynamics
+    import mass_properties as mp
+    from kinematics import URDF_XACRO
+
+    chain, _ = dynamics.load('printed')
+    urdf = subprocess.run(['xacro', str(URDF_XACRO), 'tool:=tattoo', 'hardware:=none',
+                           'mass_model:=printed'], capture_output=True, text=True,
+                          check=True).stdout
+    table = dynamics.parse_inertials(urdf)
+    q_ref = np.array(json.loads((REPO / 'docs' / 'data' / 'summary.json')
+                                .read_text(encoding='utf-8'))['q_ref_tune'])
+    origins = mp.joint_origins()
+    volume, centroid, covariance = mp.integrate(
+        mp.read_stl(mp.MESHES / 'tool_mount_link.stl'))
+
+    def effective(dx):
+        m, com, inertia, _ = mp.printed_link('tool_mount_link', volume, centroid,
+                                             covariance, origins,
+                                             tool_along=centroid[0] + dx)
+        variant = dict(table)
+        variant['tool_mount_link'] = (m, com, inertia)
+        M = dynamics.Model(chain, variant).inertia(q_ref)
+        return 1.0 / np.diag(np.linalg.inv(M))
+
+    base = effective(0.0)
+    for dx in (-0.005, 0.005):
+        change = np.abs(effective(dx) - base) / base
+        assert change.max() < 0.05, f'{dx * 1000:+.0f} mm moves J_eff by {change}'
 
 
 XACRO = REPO / 'src' / 'tattotronix_description' / 'urdf' / 'inertials_printed.xacro'
