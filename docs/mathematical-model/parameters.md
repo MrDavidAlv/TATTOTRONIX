@@ -90,9 +90,9 @@ rows that bound what this model can honestly claim.
 | Simulation integration | 1 kHz, explicit Euler | Chosen |
 | Recommended bandwidth $\omega_n$ | 160 rad/s | **Derived** — usable up to about a quarter of the loop rate |
 | Damping $\zeta$ | 1.0 | Chosen — critical |
-| $K_p$ | `32.24, 19.43, 5.84, 0.252, 0.096` | **Derived** at $\omega_n$ = 20 |
-| $K_i$ | `214.9, 129.5, 38.9, 1.68, 0.637` | **Derived** at $\omega_n$ = 20 |
-| $K_d$ | `1.612, 0.971, 0.292, 0.0126, 0.0048` | **Derived** at $\omega_n$ = 20 |
+| $K_p$ | `32.66, 19.41, 5.794, 0.2527, 0.0956` | **Derived** at $\omega_n$ = 20 |
+| $K_i$ | `217.7, 129.4, 38.63, 1.685, 0.6375` | **Derived** at $\omega_n$ = 20 |
+| $K_d$ | `1.633, 0.9703, 0.2897, 0.01263, 0.00478` | **Derived** at $\omega_n$ = 20 |
 | Feedforward | gravity + velocity | **Derived** — see [control](./control.md#6-recommended-configuration) |
 
 ## Performance, on the hardest stretch

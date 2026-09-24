@@ -160,9 +160,12 @@ TRACED = [ROOT / "README.md", ROOT / "docs" / "moveit.md"] + sorted(
     (ROOT / "docs" / "mathematical-model").glob("*.md"))
 
 # Digit groups may be separated by a space, thin space or narrow no-break
-# space, as in "30 037 um"; read as one number, not as "037".
+# space, as in "30 037 um"; read as one number, not as "037". A leading minus,
+# ASCII or typographic, is part of the figure when it is not glued to a word:
+# "-0.5424 N.m" is a signed value, "10-20 um" is a range.
 _FIGURE = re.compile(
-    r"(?<![\w.])(\d{1,3}(?:[ \u2009\u202f]\d{3})+|\d+(?:\.\d+)?)\s?(µm|N·m)")
+    r"(?<![\w.])([\u2212-]?)"
+    r"(\d{1,3}(?:[ \u2009\u202f]\d{3})+|\d+(?:\.\d+)?)\s?(µm|N·m)")
 
 #: Figures the documents may state without a data file behind them, keyed by
 #: file and by the figure exactly as written, each with its reason. The key is
@@ -174,9 +177,6 @@ DECLARED = {
         "the tattoo line width, a specification; and the worked example "
         "e = v / wn at the marking feed and the analysis bandwidth, which "
         "happens to equal it - that coincidence is the point being made",
-    ("docs/mathematical-model/control.md", "0.5424 N·m"):
-        "gravity torque at the zero pose, computed by dynamics.py and not yet "
-        "stored in any data file; analysis.py records it from the next run",
     ("docs/mathematical-model/control.md", "164.5 µm"):
         "history: the torque split validated on the stand-in artwork, which "
         "the repository no longer carries",
@@ -214,13 +214,20 @@ def _data_values():
     return found
 
 
-def _traceable(written, data):
-    """Whether a figure, as written, rounds from some value in the data."""
+def _traceable(written, data, sign=""):
+    """Whether a figure, as written, rounds from some value in the data.
+
+    With a sign written, the signed value has to match. Without one, the
+    figure is read as a magnitude, which is how documents quote a peak torque
+    or an error whatever direction it had in the data.
+    """
     digits = re.sub(r"[ \u2009\u202f]", "", written)
     decimals = len(digits.split(".")[1]) if "." in digits else 0
     value = float(digits)
     half = 0.5 * 10 ** -decimals + 1e-9
-    return any(abs(v - value) <= half for v in data)
+    if sign:
+        return any(abs(v + value) <= half for v in data)
+    return any(abs(abs(v) - value) <= half for v in data)
 
 
 def check_traceability():
@@ -232,15 +239,50 @@ def check_traceability():
         for n, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
             for m in _FIGURE.finditer(line):
                 checked += 1
-                figure = f"{m.group(1)} {m.group(2)}"
+                sign, number, unit = m.group(1), m.group(2), m.group(3)
+                figure = f"{sign}{number} {unit}"
+                ok = _traceable(number, data, sign)
                 if (rel, figure) in DECLARED:
                     used.add((rel, figure))
+                    if ok:
+                        bad.append(f"{rel}:{n}: {figure} is exempt but is now in "
+                                   "the data; remove its DECLARED entry")
                     continue
-                if not _traceable(m.group(1), data):
+                if not ok:
                     bad.append(f"{rel}:{n}: {figure} is in no data file")
     for key in sorted(set(DECLARED) - used):
         bad.append(f"DECLARED entry matches nothing any more: {key[0]}: {key[1]}")
     return bad, checked, len(used)
+
+
+def check_gains():
+    """The gains parameters.md publishes are the ones summary.json holds.
+
+    They carry no unit, so the traceability check never sees them, and they
+    had drifted: the table gave Kp = 32.24 against 32.66 in the data, from a
+    tuning two revisions old. Each written gain has to round, at the precision
+    it is written to, from the value in the same position in the data.
+    """
+    summary = json.loads((DATA / "summary.json").read_text(encoding="utf-8"))
+    doc = ROOT / "docs" / "mathematical-model" / "parameters.md"
+    text = doc.read_text(encoding="utf-8")
+    bad = []
+    for key, symbol in (("Kp", "K_p"), ("Ki", "K_i"), ("Kd", "K_d")):
+        row = re.search(r"\|\s*\$" + symbol + r"\$\s*\|\s*`([^`]+)`", text)
+        if row is None:
+            bad.append(f"parameters.md: no {symbol} row")
+            continue
+        written = [w.strip() for w in row.group(1).split(",")]
+        data = summary[key]
+        if len(written) != len(data):
+            bad.append(f"parameters.md: {symbol} lists {len(written)} gains, "
+                       f"the data has {len(data)}")
+            continue
+        for i, (w, v) in enumerate(zip(written, data), 1):
+            if not _traceable(w, [v]):
+                bad.append(f"parameters.md: {symbol} joint {i} is written {w}, "
+                           f"the data says {v}")
+    return bad
 
 
 def check_paths():
@@ -275,16 +317,18 @@ def check_paths():
 def main():
     nums, links, paths = check_numbers(), check_links(), check_paths()
     traced, checked, declared = check_traceability()
-    for b in nums + traced + links + paths:
+    gains = check_gains()
+    for b in nums + traced + gains + links + paths:
         print("  FAIL", b)
     print(f"  {len(claims())} documented numbers, "
           f"{'all match' if not nums else str(len(nums)) + ' stale'}")
     print(f"  {checked} measured figures, "
           + (f"all in the data ({declared} declared)" if not traced
              else f"{len(traced)} untraceable"))
+    print(f"  published gains:   {'match the data' if not gains else str(len(gains)) + ' stale'}")
     print(f"  links and anchors: {'all resolve' if not links else str(len(links)) + ' broken'}")
     print(f"  script paths:      {'all resolve' if not paths else str(len(paths)) + ' broken'}")
-    return 1 if (nums or traced or links or paths) else 0
+    return 1 if (nums or traced or gains or links or paths) else 0
 
 
 if __name__ == "__main__":
