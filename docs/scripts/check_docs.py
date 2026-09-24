@@ -6,7 +6,10 @@ errors, and the document is now wrong in exactly the way that is hardest to
 notice.
 
 This checks the headline claims of docs/mathematical-model/ and the README
-against docs/data/*.json, and fails if any of them no longer matches. It also
+against docs/data/*.json, and fails if any of them no longer matches. Beyond
+those, every figure in micrometres or newton-metres anywhere in the published
+documents has to be found in the data at the precision it is written to, or be
+listed in DECLARED with the reason it is allowed not to be. It also
 checks that every local link and image reference resolves, that every heading
 anchor a document links to exists, and that the paths the scripts compute for
 themselves still land inside the repository.
@@ -137,6 +140,109 @@ def check_links():
     return bad
 
 
+# ---------------------------------------------------------------------------
+# Traceability: every measured figure has to come from somewhere.
+#
+# The claims above certify a dozen headline numbers by name. The documents
+# carry well over a hundred more, in tables and in prose, and naming each one
+# would never keep up. So this checks them by membership instead: every figure
+# written in um or N.m must equal some value in docs/data/*.json at the
+# precision it is written to. It is a necessary condition, not a sufficient
+# one - a stale number can coincide with an unrelated value - but a figure that
+# matches nothing in the data cannot have come from it, and that is the failure
+# that matters: when the model changes, almost every old number stops existing.
+#
+# It found, on its first run, a subsection that contradicted the table above it
+# on three counts and a caption that had rounded 94.67 to 94.
+# ---------------------------------------------------------------------------
+
+TRACED = [ROOT / "README.md", ROOT / "docs" / "moveit.md"] + sorted(
+    (ROOT / "docs" / "mathematical-model").glob("*.md"))
+
+# Digit groups may be separated by a space, thin space or narrow no-break
+# space, as in "30 037 um"; read as one number, not as "037".
+_FIGURE = re.compile(
+    r"(?<![\w.])(\d{1,3}(?:[ \u2009\u202f]\d{3})+|\d+(?:\.\d+)?)\s?(µm|N·m)")
+
+#: Figures the documents may state without a data file behind them, keyed by
+#: file and by the figure exactly as written, each with its reason. The key is
+#: that narrow on purpose: an entry excuses one figure in one document, not the
+#: same number wherever it turns up. An entry that no longer matches anything
+#: is itself a failure, so this list cannot only ever grow.
+DECLARED = {
+    ("docs/mathematical-model/control.md", "300 µm"):
+        "the tattoo line width, a specification; and the worked example "
+        "e = v / wn at the marking feed and the analysis bandwidth, which "
+        "happens to equal it - that coincidence is the point being made",
+    ("docs/mathematical-model/control.md", "0.5424 N·m"):
+        "gravity torque at the zero pose, computed by dynamics.py and not yet "
+        "stored in any data file; analysis.py records it from the next run",
+    ("docs/mathematical-model/control.md", "164.5 µm"):
+        "history: the torque split validated on the stand-in artwork, which "
+        "the repository no longer carries",
+    ("docs/mathematical-model/control.md", "165 µm"):
+        "history: the same validation, from control_study.py on the stand-in",
+    ("docs/mathematical-model/control.md", "2717 µm"):
+        "history: the first attempt at letting the loop settle after an "
+        "entry, kept because it is the attempt that did not work",
+    ("docs/mathematical-model/control.md", "22.5 µm"):
+        "history: first row of 'How this number moved', the stand-in artwork",
+    ("docs/mathematical-model/control.md", "272 µm"):
+        "history: the worst case on that same stand-in row, superseded when "
+        "the drawing moved to the real logo",
+}
+
+
+def _data_values():
+    """Every number in every data file, however deeply nested."""
+    found = []
+
+    def walk(obj):
+        if isinstance(obj, bool):
+            return
+        if isinstance(obj, (int, float)):
+            found.append(float(obj))
+        elif isinstance(obj, dict):
+            for v in obj.values():
+                walk(v)
+        elif isinstance(obj, list):
+            for v in obj:
+                walk(v)
+
+    for f in sorted(DATA.glob("*.json")):
+        walk(json.loads(f.read_text(encoding="utf-8")))
+    return found
+
+
+def _traceable(written, data):
+    """Whether a figure, as written, rounds from some value in the data."""
+    digits = re.sub(r"[ \u2009\u202f]", "", written)
+    decimals = len(digits.split(".")[1]) if "." in digits else 0
+    value = float(digits)
+    half = 0.5 * 10 ** -decimals + 1e-9
+    return any(abs(v - value) <= half for v in data)
+
+
+def check_traceability():
+    """Every um and N.m figure in the documents, looked up in the data."""
+    data = _data_values()
+    bad, checked, used = [], 0, set()
+    for doc in TRACED:
+        rel = str(doc.relative_to(ROOT))
+        for n, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+            for m in _FIGURE.finditer(line):
+                checked += 1
+                figure = f"{m.group(1)} {m.group(2)}"
+                if (rel, figure) in DECLARED:
+                    used.add((rel, figure))
+                    continue
+                if not _traceable(m.group(1), data):
+                    bad.append(f"{rel}:{n}: {figure} is in no data file")
+    for key in sorted(set(DECLARED) - used):
+        bad.append(f"DECLARED entry matches nothing any more: {key[0]}: {key[1]}")
+    return bad, checked, len(used)
+
+
 def check_paths():
     """Every path the scripts resolve must still point at something.
 
@@ -168,13 +274,17 @@ def check_paths():
 
 def main():
     nums, links, paths = check_numbers(), check_links(), check_paths()
-    for b in nums + links + paths:
+    traced, checked, declared = check_traceability()
+    for b in nums + traced + links + paths:
         print("  FAIL", b)
     print(f"  {len(claims())} documented numbers, "
           f"{'all match' if not nums else str(len(nums)) + ' stale'}")
+    print(f"  {checked} measured figures, "
+          + (f"all in the data ({declared} declared)" if not traced
+             else f"{len(traced)} untraceable"))
     print(f"  links and anchors: {'all resolve' if not links else str(len(links)) + ' broken'}")
     print(f"  script paths:      {'all resolve' if not paths else str(len(paths)) + ' broken'}")
-    return 1 if (nums or links or paths) else 0
+    return 1 if (nums or traced or links or paths) else 0
 
 
 if __name__ == "__main__":
