@@ -49,14 +49,12 @@ def _potential(model, q):
 
 @pytest.mark.parametrize('q', POSES, ids=['zero', 'pose_a', 'pose_b'])
 def test_gravity_matches_the_potential_gradient(chain_and_model, q):
+    import dynamics
     _, model = chain_and_model
-    analytic = model.gravity(q)
-    step = 1e-6
-    numeric = np.array([
-        (_potential(model, q + np.eye(5)[i] * step)
-         - _potential(model, q - np.eye(5)[i] * step)) / (2 * step)
-        for i in range(5)])
-    worst = np.abs(analytic - numeric).max()
+    ours = _potential(model, q)
+    assert dynamics.potential(model, q) == pytest.approx(ours, rel=1e-12, abs=1e-15), (
+        'dynamics.potential and the test disagree on the potential energy')
+    worst = dynamics.gravity_check(model, q)
     assert worst < 1e-8, f'gravity disagrees with dU/dq by {worst:.2e} N m'
 
 

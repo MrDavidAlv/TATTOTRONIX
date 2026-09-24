@@ -39,7 +39,7 @@ rows that bound what this model can honestly claim.
 | Path resampling | 0.15 mm | **Derived** — swept in `resample_study.py`; the reference the velocity feedforward differentiates |
 | Plunge depth | 1.5 mm below surface | **Estimated** — depends on tissue |
 | Clearance height | 8 mm | Chosen — clears the panel with margin |
-| Slow approach | 4 mm | **Derived** — swept in `approach_study.py`; where the worst needle entry falls under the line width |
+| Slow approach | 4 mm | **Derived** — swept in `approach_study.py`; removes most of the entry transient, and at the recommended bandwidth the worst entry is inside the line |
 | Marking feed | 6 mm/s | **Estimated** — the order of a tattooist's hand |
 | Travel feed | 60 mm/s | Chosen — limited by the arm, not the process |
 
@@ -61,8 +61,8 @@ rows that bound what this model can honestly claim.
 
 | Quantity | Value over the path |
 |---|---|
-| $\sigma_1$ | 1.7486 … 1.7573 |
-| $\sigma_5$ | 0.0484 … 0.0846 |
+| $\sigma_1$ | 1.7485 … 1.7573 |
+| $\sigma_5$ | 0.0483 … 0.0846 |
 | Condition number | 21 … 36 |
 | Manipulability | 6.21 × 10⁻⁴ … 3.66 × 10⁻³ |
 
@@ -76,7 +76,7 @@ rows that bound what this model can honestly claim.
 | Link masses and inertia tensors | `inertials_printed.xacro` | **Derived** — each printed shell plus the servos mounted in it; see [mass properties](./mass.md) |
 | Peak gravity torque on the path | 0.31 N·m | **Derived** from the mass model above |
 | Peak commanded torque | 0.12 N·m | **Derived** |
-| Joint effort limit | 20 N·m, all axes | **Estimated** — one number for every axis |
+| Joint effort limit | 20 N·m, all axes | **Placeholder** — far above the servos the arm carried: an MG996R is rated at roughly 1 N·m and an SG90 at roughly 0.2 N·m |
 | Joint velocity limit | 1.5 rad/s, all axes | **Estimated** — one number for every axis |
 
 > The structure of the model is verified to machine precision
@@ -107,7 +107,11 @@ rows that bound what this model can honestly claim.
 | Worst marking error | 46.8 µm | 0.16× |
 | Peak torque | 0.35 N·m | 2% of the 20 N·m limit |
 
-Both are well inside the line width. Before the slow approach was added they
+Both are well inside the line width. The torque share is against the
+description's 20 N·m placeholder, not against the servos the arm carried, which
+are rated at roughly 1 N·m for the MG996R and 0.2 N·m for the SG90; measured
+against those, the same peak is a substantial fraction of what the motors can
+give, and sizing the actuators properly is the next piece of work. Before the slow approach was added they
 were 284.9 µm and 3221 µm, the second of them 11 times the line; before the
 loop rate was raised, 26.6 µm and 338.0 µm.
 

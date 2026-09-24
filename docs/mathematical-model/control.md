@@ -29,9 +29,9 @@ potential energy, $G_i = \partial U / \partial q_i$, at three poses:
 
 | Pose | Worst error |
 |---|---|
-| Zero pose | 6.7 × 10⁻¹¹ N·m |
-| `q = [0.3, −0.5, 0.7, 0.2, −0.4]` | 7.6 × 10⁻¹¹ N·m |
-| `q = [−0.8, 1.0, −0.6, 0.9, 1.1]` | 9.4 × 10⁻¹¹ N·m |
+| Zero pose | 3.0 × 10⁻¹¹ N·m |
+| `q = [0.3, −0.5, 0.7, 0.2, −0.4]` | 6.3 × 10⁻¹¹ N·m |
+| `q = [−0.8, 1.0, −0.6, 0.9, 1.1]` | 2.0 × 10⁻¹¹ N·m |
 
 Two independent routes — a rigid body recursion against the derivative of a
 scalar — agreeing to machine precision.
@@ -69,16 +69,24 @@ so. The version that holds for any mass model is the difference.
 
 ## 2. Control structure
 
-Independent joint control, which is what `ros2_control` offers through
-`joint_trajectory_controller` and the position interface the description
-exposes:
+Independent joint control: one PID per axis, on joint torque, with
+feedforward terms added on top:
 
 $$\tau = K_p e + K_i \textstyle\int e \, dt + K_d \dot e + \text{(feedforward)}$$
 
-The loop closes at **1 kHz**, the `controller_manager` rate in
-`tattotronix_controllers.yaml`. The plant in simulation is the full non-linear
-dynamics, integrated at 1 kHz — 4 kHz in the rate study below, where the two
-have to be told apart.
+**Where this loop lives matters, so it is stated plainly.** It is the loop each
+joint's servo has to close on the real arm, and this page studies it against the
+full non-linear dynamics in `docs/scripts`. It is *not* the loop the running
+simulation executes. There, `joint_trajectory_controller` sends joint
+*positions*, and Gazebo's plugin drives each joint to its setpoint directly — so
+directly that swapping the mass model changes the simulated tracking error in
+the fourth decimal. The running system shows the chain works end to end; this
+study shows what the actuators must achieve for the drawing to be right.
+
+The studied loop runs at **1 kHz**, the rate `controller_manager` is configured
+for in `tattotronix_controllers.yaml`, on the assumption that the servo
+interface on hardware sustains the same. The plant is integrated at 1 kHz — 4 kHz
+in the rate study below, where the two have to be told apart.
 
 That rate is not a free choice: it is what sets the achievable bandwidth, and it
 used to be 200 Hz. See [the ceiling](#7-the-rate-is-the-ceiling).
@@ -106,8 +114,8 @@ And $J$ is the **effective** inertia, $1/(M^{-1})_{ii}$, not the diagonal of $M$
 The two are not the same: the diagonal says how much inertia the axis carries
 *if every other axis is frozen*, and nothing freezes them. At the zero pose they
 differ by a factor of 2.2 on `joint_2` and 3.7 on
-`joint_3`, so using the
-diagonal detunes those two axes by that factor.
+`joint_3`, and by 2.5 on `joint_5`, so using the diagonal detunes those axes
+by those factors.
 
 | Axis | $1/(M^{-1})_{ii}$ | $\mathrm{diag}(M)$ |
 |---|---|---|
@@ -187,7 +195,7 @@ lasted around 0.8 s, four times what second order predicts, because the
 reference stopped dead and the integrator arrived wound up.
 
 And with the real logo it was not a footnote. The stand-in artwork lifted the
-needle twice; the logo lifts it **98 times**, because every fill pass that meets
+needle twice; the logo lifts it **117 times**, because every fill pass that meets
 the counter of the R or the O has to exit and re-enter.
 
 ### The fix
@@ -315,7 +323,10 @@ rate. Same hard window:
 
 **The whole drawing sits inside the line, worst case included**, at about a
 sixth of its width: 46.8 µm against 300 µm, with a settled mean of 6.5 µm, at
-2% of the 20 N·m torque limit. On the box masses the worst case was
+2% of the 20 N·m torque limit - a limit the description declares as a
+placeholder, far above the roughly 1 N·m an MG996R is rated at, so this share
+says the loop is not torque-bound in the model, not that the real servos would
+have margin. On the box masses the worst case was
 somewhat smaller; the arm as built costs a little accuracy at this bandwidth
 and almost nothing in settled mean, because 160 rad/s is enough to
 overpower the extra coupling that dominates at 20.
@@ -342,7 +353,7 @@ Rows two to five are recomputed on the arm as built; the first is the only
 measurement of the stand-in artwork, which the repository no longer carries.
 
 The middle row is the one worth keeping in view. The first row was not wrong; it
-was measured on a stretch of drawing with no needle lifts, and the logo has 98.
+was measured on a stretch of drawing with no needle lifts, and the logo has 117.
 Finding that out cost nothing but measuring the right thing.
 
 ---

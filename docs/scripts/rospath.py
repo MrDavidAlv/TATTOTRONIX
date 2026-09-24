@@ -1,3 +1,17 @@
+# Copyright 2026 Mario David Alvarez Vallejo
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Artwork to tattoo toolpath.
 
 The pipeline is mask driven on purpose. Anything that can be turned into a
@@ -475,7 +489,7 @@ def _shape(kind, res=0.25, half=20.0):
     return m, (xs, ys)
 
 
-def selftest(verbose=True):
+def selftest(verbose=True, report=None):
     """Certify the contour tracer against shapes whose topology is known.
 
     Three properties, because a tracer can fail any of them on its own:
@@ -520,10 +534,17 @@ def selftest(verbose=True):
     segs = _boundary_loops(lab == 1, xs, ys)
     per = [float(np.linalg.norm(np.diff(s, axis=0), axis=1).sum()) for s in segs]
     truth = [2 * np.pi * 15.0, 2 * np.pi * 8.0]
+    # Signed, not absolute: the outer loop comes out short and the inner one
+    # long, because the trace runs through the centres of the boundary pixels,
+    # half a pixel inside the region. An absolute value hid that, and the
+    # documents once explained the error as a staircase being longer.
+    if report is not None:
+        report["annulus_perimeters_mm"] = sorted(per, reverse=True)
+        report["annulus_geometry_mm"] = truth
     if verbose:
         for got, want in zip(sorted(per, reverse=True), truth):
             print(f"  perimeter  {got:7.2f} mm   geometry {want:7.2f} mm   "
-                  f"{abs(got - want) / want * 100:+.1f}%")
+                  f"{(got - want) / want * 100:+.1f}%")
     ok &= all(abs(g - w) / w < 0.02 for g, w in zip(sorted(per, reverse=True), truth))
 
     # The official mark, when it has been fetched. Its topology is known by
@@ -539,6 +560,9 @@ def selftest(verbose=True):
         holes = sorted(len(_loops(b)) - 1 for b in regions)
         good = len(regions) == 12 and holes == [0] * 10 + [1] * 2
         ok &= good
+        if report is not None:
+            report["logo_regions"] = len(regions)
+            report["logo_counters"] = int(sum(holes))
         if verbose:
             print(f"  ros logo   {len(regions):>2} regions, "
                   f"{sum(holes)} counters  {'ok' if good else 'FAIL'}")

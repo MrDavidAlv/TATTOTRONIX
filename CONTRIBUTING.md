@@ -1,7 +1,8 @@
 # Contributing
 
 This repository documents a robot. Every number in it comes from a script that
-can be run again, and every change is expected to arrive the same way: measured,
+can be run again, and a check fails the build when a document stops agreeing
+with the data. Every change is expected to arrive the same way: measured,
 tested, and small enough to review.
 
 ---
@@ -58,9 +59,15 @@ Documentation has its own gate, which continuous integration also runs:
 python3 docs/scripts/check_docs.py
 ```
 
-It fails if a number published in the documentation no longer matches the data
-file it came from, if a local link or image is missing, if a heading anchor does
-not resolve, or if a path a script computes no longer exists.
+It fails if a headline number no longer matches the data file it came from; if
+any figure in µm or N·m anywhere in the documents is absent from the data,
+unless it is listed as a declaration with its reason; if the published gains,
+torque shares, inertia table, mass table or kinematic figures disagree with
+their data files; if a local link or image is missing; if a heading anchor does
+not resolve; or if a path a script computes no longer exists.
+
+What it cannot see is a claim with no number in it. A sentence that interprets
+a table has to be re-read against the data by hand whenever the data changes.
 
 ---
 
@@ -68,7 +75,8 @@ not resolve, or if a path a script computes no longer exists.
 
 Write what a senior engineer would want to read six months later: what changed,
 why it changed, and what was measured. The subject line is a sentence in the
-imperative, under about 72 characters, with no trailing period.
+imperative, under about 72 characters, with no trailing period. An example from
+this repository's history, with the figures it had at the time:
 
 ```
 Raise the control loop to 1 kHz
@@ -127,7 +135,7 @@ carries that reason next to the rule. The short version:
   rather than vendoring it. A personal photograph and two organisations' logos
   are likewise absent; the trajectories derived from them are published, since
   those are the only copy of that work.
-- **One large reproducible trajectory** — `ingeniero.npz`, 3.9 MB, rebuilt by
+- **One large reproducible trajectory** — `ingeniero.npz`, about 4 MB, rebuilt by
   `export_trajectory.py` from an image the repository does carry.
 
 If you add something regenerable, ignore it and write the regeneration command
@@ -144,7 +152,9 @@ exception in it carries the reason it exists. There are no exceptions under
 where import order is forced by the matplotlib backend and where `I` is the
 inertia tensor rather than a bad variable name.
 
-New files need the Apache-2.0 header, or `test_copyright` will say so.
+New files need the Apache-2.0 header. Inside a ROS package `test_copyright`
+checks it; under `docs/scripts`, `tools` and `tests`,
+`test_repo_style.py::test_every_script_carries_the_licence_header` does.
 
 ---
 
@@ -153,7 +163,7 @@ New files need the Apache-2.0 header, or `test_copyright` will say so.
 | Suite | Runs | Covers |
 |-------|------|--------|
 | `colcon test` | Inside the workspace | Linters per package, trajectory contents, launch-file contents |
-| `pytest tests/` | From the repository root | `docs/scripts` — kinematics, dynamics, toolpath, documentation, repository style |
+| `pytest tests/` | From the repository root | `docs/scripts` and the repository as a whole — kinematics, dynamics, toolpath, mass properties, collision meshes, the MoveIt configuration, the package architecture, documentation, repository style |
 
 `colcon` never reaches `docs/scripts`, which is why the second suite exists.
 A change to the analysis scripts that only runs `colcon test` is untested.

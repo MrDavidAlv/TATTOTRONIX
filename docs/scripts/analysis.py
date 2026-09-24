@@ -1,3 +1,17 @@
+# Copyright 2026 Mario David Alvarez Vallejo
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Everything DEVELOPMENT.md quotes, computed once and cached.
 
 Run this, then `figures.py`. Every number in the document comes out of the npz
@@ -107,10 +121,10 @@ def solve_path(chain, P):
 #
 # The smallest singular value of the task Jacobian along the path turns out to
 # depend only on how far the arm reaches in +x, which is dx + width/2: 120 mm
-# centred and 150 mm offset by 15 give the same 0.0484 because both reach
-# 75 mm. It falls as the drawing moves out, so the mark stays centred, and 150
-# on a 200 mm panel is the largest size that keeps the condition number in the
-# thirties.
+# centred and 150 mm offset by 15 give the same value, to within 0.3%, because
+# both reach 75 mm (kinematics_study.py). It falls as the drawing moves out,
+# so the mark stays centred, and 150 on a 200 mm panel is the largest size that
+# keeps the condition number in the thirties.
 ARTWORK_WIDTH_MM = 150.0
 
 TUNE_WN = 20.0      # loop bandwidth the cached run is tuned at, rad/s
@@ -323,7 +337,17 @@ def main():
         "J_eff_zero": (1.0 / np.diag(np.linalg.inv(model.inertia(np.zeros(chain.n))))).tolist(),
         "M_diag_zero": np.diag(model.inertia(np.zeros(chain.n))).tolist(),
         "moving_mass_kg": float(sum(b["m"] for b in model.bodies)),
+        # Counted from the path, so no document has to carry the count by hand:
+        # the documents said 98 for a long time after the path had 117.
+        "needle_entries": int(np.sum((kind[1:] != rp.KIND_TRAVEL)
+                                     & (kind[:-1] == rp.KIND_TRAVEL))
+                              + (kind[0] != rp.KIND_TRAVEL)),
     }
+    import dynamics
+    summary["gravity_check_Nm"] = [dynamics.gravity_check(model, q) for q in dynamics.CHECK_POSES]
+    tracer = {}
+    rp.selftest(verbose=False, report=tracer)
+    summary |= {"tracer_" + k: v for k, v in tracer.items()}
     (OUT / "summary.json").write_text(json.dumps(summary, indent=2))
     print("\nwrote", OUT / "analysis.npz", "and summary.json")
     return summary

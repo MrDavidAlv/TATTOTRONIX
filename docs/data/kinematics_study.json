@@ -1,0 +1,107 @@
+{
+  "zero_pose": {
+    "tool0_mm": [
+      213.96,
+      -9.443999999999997,
+      245.5775
+    ],
+    "tcp_mm": [
+      258.96000000000004,
+      -9.443999999999997,
+      245.5775
+    ],
+    "wrist_axis_z_mm": 242.08849999999998,
+    "highest_mm": 291.69320428466796
+  },
+  "path": {
+    "points": 16656,
+    "ik_converged_pct": 100.0,
+    "ik_worst_residual": 9.99652624178637e-07,
+    "sigma1_min": 1.7485360945634933,
+    "sigma1_max": 1.7572715411909574,
+    "sigma5_min": 0.048315085364214125,
+    "sigma5_max": 0.0846471511461693,
+    "cond_min": 20.692170720567624,
+    "cond_max": 36.37107391913102,
+    "worst_point_mm": [
+      74.75000000000001,
+      -9.25
+    ],
+    "worst_weakest_direction": [
+      0.005846861838798089,
+      -0.47951022432754076,
+      0.8108068168087526,
+      -0.0004787597108212745,
+      -0.33560070854750407
+    ],
+    "joint4_min": -9.21064904690434e-08,
+    "joint4_max": 1.068298464337421e-07,
+    "joint4_column_norm_at_worst": 0.8167836151292891
+  },
+  "placements": [
+    {
+      "width_mm": 120,
+      "offset_mm": 0,
+      "reach_mm": 60.0,
+      "sigma5_min": 0.05896918197142229,
+      "cond_max": 29.784186002448042,
+      "ik_converged_pct": 100.0
+    },
+    {
+      "width_mm": 150,
+      "offset_mm": 0,
+      "reach_mm": 75.0,
+      "sigma5_min": 0.048315085364214125,
+      "cond_max": 36.37107391913102,
+      "ik_converged_pct": 100.0
+    },
+    {
+      "width_mm": 120,
+      "offset_mm": 15,
+      "reach_mm": 75.0,
+      "sigma5_min": 0.04836651044004668,
+      "cond_max": 36.33232634881409,
+      "ik_converged_pct": 100.0
+    },
+    {
+      "width_mm": 100,
+      "offset_mm": 30,
+      "reach_mm": 80.0,
+      "sigma5_min": 0.04406639215653545,
+      "cond_max": 39.88419854544336,
+      "ik_converged_pct": 100.0
+    },
+    {
+      "width_mm": 150,
+      "offset_mm": 15,
+      "reach_mm": 90.0,
+      "sigma5_min": 0.033245028403354665,
+      "cond_max": 52.88173511454763,
+      "ik_converged_pct": 100.0
+    },
+    {
+      "width_mm": 120,
+      "offset_mm": 30,
+      "reach_mm": 90.0,
+      "sigma5_min": 0.033321452954925314,
+      "cond_max": 52.76037347535201,
+      "ik_converged_pct": 100.0
+    },
+    {
+      "width_mm": 150,
+      "offset_mm": 30,
+      "reach_mm": 105.0,
+      "sigma5_min": 0.005540645393314286,
+      "cond_max": 317.23936090151443,
+      "ik_converged_pct": 98.16282420749279
+    },
+    {
+      "width_mm": 150,
+      "offset_mm": 45,
+      "reach_mm": 120.0,
+      "sigma5_min": 0.005567912508485108,
+      "cond_max": 315.7337885577591,
+      "ik_converged_pct": 84.87031700288185
+    }
+  ]
+}

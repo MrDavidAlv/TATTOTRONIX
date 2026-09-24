@@ -62,7 +62,10 @@ with ROS, robotics and simulation.
 The 2020 work was the description and the beginnings of a control stack, on
 ROS 1. What exists now is a ROS 2 Humble port of that description plus the whole
 chain that was missing: artwork to ink mask to toolpath, inverse kinematics,
-rigid body dynamics, joint control, and an error budget that ties them together.
+rigid body dynamics, joint control, and an error budget that ties them together;
+collision checking with MoveIt; and a mass model of the arm as it was actually
+built, printed shells and the seven servos in them, reconstructed from the meshes
+and from what the builder remembers, because the arm itself was lost.
 The [mathematical model](./mathematical-model/) documents that chain, and
 [Migration Notes](../README.md#migration-notes) covers what the port itself
 involved.

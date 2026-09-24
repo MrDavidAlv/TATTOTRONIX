@@ -78,5 +78,21 @@
     9.539040331464024e-06,
     5.982221032092603e-05
   ],
-  "moving_mass_kg": 0.3823683969
+  "moving_mass_kg": 0.3823683969,
+  "needle_entries": 117,
+  "gravity_check_Nm": [
+    2.988403968728903e-11,
+    6.312865508117937e-11,
+    1.995180409775088e-11
+  ],
+  "tracer_annulus_perimeters_mm": [
+    93.71920807452628,
+    50.98063585482632
+  ],
+  "tracer_annulus_geometry_mm": [
+    94.24777960769379,
+    50.26548245743669
+  ],
+  "tracer_logo_regions": 12,
+  "tracer_logo_counters": 2
 }

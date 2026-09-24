@@ -1,0 +1,36 @@
+{
+  "plan": {
+    "success": true,
+    "waypoints": 7,
+    "duration_s": 0.529537633,
+    "planning_time_s": 0.01039051
+  },
+  "panel_ik": {
+    "success": true,
+    "q": [
+      0.041555608361554766,
+      0.4770523644267416,
+      0.7483218187068328,
+      -0.030476784610353348,
+      -0.27656227676381656
+    ]
+  },
+  "validity": {
+    "home": {
+      "valid": true,
+      "contacts": []
+    },
+    "joint_2 -0.5": {
+      "valid": true,
+      "contacts": []
+    },
+    "joint_2 +0.5": {
+      "valid": true,
+      "contacts": []
+    },
+    "j2 0.5, j3 -0.8": {
+      "valid": true,
+      "contacts": []
+    }
+  }
+}

@@ -99,3 +99,31 @@ def test_the_architecture_record_lists_every_package():
     doc = (REPO / 'docs' / 'architecture.md').read_text(encoding='utf-8')
     for name in LAYERS:
         assert name in doc, f'{name} is not in docs/architecture.md'
+
+
+def test_the_runtime_never_imports_the_design_toolchain():
+    """src/ must not depend on docs/scripts, the arrow never reverses.
+
+    docs/architecture.md and the README both state this rule, and the README
+    said a test enforced it before one existed. This is that test: no module
+    under src/ may import a design-time script by name, or reach for
+    docs/scripts on the import path.
+    """
+    import ast
+    design = {p.stem for p in (REPO / 'docs' / 'scripts').glob('*.py')}
+    offenders = []
+    for path in SRC.rglob('*.py'):
+        tree = ast.parse(path.read_text(encoding='utf-8'))
+        for node in ast.walk(tree):
+            names = []
+            if isinstance(node, ast.Import):
+                names = [a.name.split('.')[0] for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module.split('.')[0]]
+            for name in names:
+                if name in design:
+                    offenders.append(f'{path.relative_to(REPO)} imports {name}')
+        if 'docs/scripts' in path.read_text(encoding='utf-8').replace('\\\\', '/') and \
+                'sys.path' in path.read_text(encoding='utf-8'):
+            offenders.append(f'{path.relative_to(REPO)} puts docs/scripts on sys.path')
+    assert not offenders, offenders
