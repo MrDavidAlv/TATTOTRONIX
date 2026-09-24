@@ -39,6 +39,7 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -49,6 +50,14 @@ if(BUILD_TESTING)
   target_link_libraries(test_pca9685 ${PROJECT_NAME})
   ament_add_gtest(test_pca9685_servo_system test/test_pca9685_servo_system.cpp)
   target_link_libraries(test_pca9685_servo_system ${PROJECT_NAME})
+
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(test_launch_files test/test_launch_files.py)
+
+  # The whole bring-up, with the board simulated: ros2_control_node, the
+  # plugin, the controllers and a trajectory.
+  find_package(launch_testing_ament_cmake REQUIRED)
+  add_launch_test(test/test_arm_dry_run.py TIMEOUT 240)
 endif()
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)

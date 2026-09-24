@@ -60,7 +60,7 @@ other are one package that has been split for no reason.
 | 1 | `tattotronix_control` | `ament_python` | The controller set and the drawing application: `tattotronix_controllers.yaml`, the exported trajectories, `draw.py` | Geometry. It reads the description's |
 | 1 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF, kinematics and planner configuration, the `move_group` launch | Controller gains, which belong to layer 1's other half |
 | 2 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers | Anything that would also be true on hardware |
-| 2 | `tattotronix_hardware` | `ament_cmake` | The real arm: the `ros2_control` driver for its hobby servos through a PCA9685 board | Controller configuration, which it takes from layer 1 unchanged |
+| 2 | `tattotronix_hardware` | `ament_cmake` | The real arm: the `ros2_control` driver for its hobby servos through a PCA9685, and the launch file that assembles description, driver and controllers on a Raspberry Pi | Controller configuration, which it takes from layer 1 unchanged |
 
 ```
   tattotronix_gazebo   tattotronix_hardware   layer 2   assembles: simulated, real
@@ -79,9 +79,10 @@ Gazebo, `ros2_control` or this project's task, which is exactly what
 
 `tattotronix_control` names no simulator. The same YAML is loaded whether the
 hardware interface is `gz_ros2_control`, `mock_components` or the real servos'
-driver in `tattotronix_hardware`. If the simulation and the hardware could carry
-different controller configurations, they would, and the difference would be
-discovered on the hardware.
+driver in `tattotronix_hardware`, which lays only what the hardware has to
+change over it: no simulator clock, and a 100 Hz controller manager. If the
+simulation and the hardware could carry different controller configurations,
+they would, and the difference would be discovered on the hardware.
 
 ---
 
@@ -136,11 +137,13 @@ It stays merged, and this paragraph is the reason, so the next person does not
 have to guess whether it was considered.
 
 **2. `draw.launch.py` lives in `tattotronix_gazebo`.** It is the application
-entry point, and it currently starts a simulator, which is why it is there. The
-moment hardware exists that becomes wrong, because the same application will
-need to launch against a real bus. The fix at that point is a `_bringup`
-package that takes the backend as an argument; not before, because until then it
-would be an indirection with one implementation behind it.
+entry point, and it starts a simulator, which is why it is there. Hardware now
+exists, and the same drawing launches against it from `tattotronix_hardware`:
+`arm.launch.py draw:=true`. Each backend's package carries its own entry point,
+and both are thin — the node, the controllers and the trajectories are shared.
+A `_bringup` package taking the backend as an argument would replace the two
+with one; it has not been made yet, because the real arm has not yet run, and
+what its launch really needs will be known once it has.
 
 **3. The dependency graph is already acyclic and correctly layered.** It was
 checked rather than assumed. `tests/test_architecture.py` now fails the build
