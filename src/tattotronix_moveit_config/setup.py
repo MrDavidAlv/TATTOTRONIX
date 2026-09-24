@@ -34,7 +34,7 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Mario David Alvarez Vallejo',
-    maintainer_email='davidalvarez33@hotmail.com',
+    maintainer_email='ing.marioalvarezvallejo@gmail.com',
     description='MoveIt planning configuration for the TATTOTRONIX arm.',
     license='Apache-2.0',
     tests_require=['pytest'],
