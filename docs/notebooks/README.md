@@ -9,6 +9,7 @@ build, so a notebook that disagreed with the robot could not have been published
 |---|---|---|
 | **[Kinematics](01_kinematics.ipynb)** | Rotation matrices and Rodrigues' formula, the URDF's roll–pitch–yaw, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, singular values and manipulability ellipsoids, the workspace, damped least-squares inverse kinematics, and the arm drawing the ROS logo in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Lmc4HzBdJf-z6v3CmRNt6g5lY85Nq4Dd?usp=sharing) |
 | **[Dynamics](02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix rebuilt from kinetic energy, Coriolis terms from Christoffel symbols and the skew-symmetry of Ṁ − 2C, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply while drawing | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing) |
+| **[Control](03_control.ipynb)** | Pole placement derived symbolically, the zeros that make a step overshoot and what feedforward does to them, the following error in closed form, the modes the joints' coupling splits the arm's loop into, the sampled loop and the exact boundary on its rate, and the non-linear arm past that boundary | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/03_control.ipynb) |
 
 <div align="center">
 <img src="../figures/21_arm_3d.gif" width="70%"/>
@@ -56,11 +57,13 @@ jupyter lab docs/notebooks/
 
 ```bash
 python3 docs/notebooks/build.py                          # rebuild from the sources
-python3 docs/notebooks/build.py --export 01_kinematics 02_dynamics   # run and write figures
+python3 docs/notebooks/build.py --export 01_kinematics 02_dynamics 03_control   # run and write figures
 ```
 
-The badges open copies of the notebooks shared from Google Drive: anyone with the
-link can open and run them, and *File → Save a copy in Drive* keeps your changes.
-Their first cell clones the `humble` branch, the one this repository publishes, so
-the model a copy runs is always the current one. The notebook text is a snapshot;
-if a copy and the notebook here ever differ, the one here is the reference.
+The kinematics and dynamics badges open copies shared from Google Drive: anyone
+with the link can open and run them, and *File → Save a copy in Drive* keeps your
+changes. The control badge opens the notebook from this repository directly.
+Every notebook's first cell clones the `humble` branch, the one this repository
+publishes, so the model a shared copy runs is always the current one; its text is
+a snapshot, and if a copy and the notebook here ever differ, the one here is the
+reference.

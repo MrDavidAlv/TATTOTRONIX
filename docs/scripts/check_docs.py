@@ -70,6 +70,7 @@ def claims():
     # thing it exists to prevent.
     rec = min(cf["configs"].values(), key=lambda c: c["marking_max_um"])
     pid_g = cs["modes"]["pid+g"]
+    lo, hi = s["sampled_boundary_band_wnT"]
 
     mv = json.loads((DATA / "moveit_check.json").read_text(encoding="utf-8"))
     MM = "docs/mathematical-model/"
@@ -114,6 +115,18 @@ def claims():
          [MM + "control.md"]),
         ("joint_5 step overshoot", {f'by {s["step_overshoot_ff_pct"][4]:.0f}%'},
          [MM + "control.md"]),
+        ("coupled modes, gain range",
+         {f'from {s["modal_gain"][-1]:.2f} to {s["modal_gain"][0]:.2f}'}, [MM + "control.md"]),
+        ("stiffest mode's gain", {f'{s["modal_gain"][0]:.2f} times its designed gain'},
+         [MM + "control.md"]),
+        ("softest mode's damping", {f'damping ratio of {s["coupled_zeta_min"]:.2f}'},
+         [MM + "control.md"]),
+        ("sampled boundary, tuning pose",
+         {f'{s["sampled_boundary_wnT"]:.3f} at the tuning pose'},
+         [MM + "control.md", MM + "parameters.md"]),
+        ("sampled boundary, along the drawing",
+         {f'between {lo:.3f} and {hi:.3f}', f'{lo:.3f} to {hi:.3f}'},
+         [MM + "control.md", MM + "parameters.md"]),
         ("drawing animation length", {f'{s["path_time_s"]:.0f} s compressed into 24'},
          [MM + "toolpath.md", "README.md"]),
         ("moveit plan waypoints", {f'{mv["plan"]["waypoints"]} waypoints over '
@@ -137,7 +150,9 @@ def check_numbers():
         for name in where:
             # Anchored on both sides: as a bare substring "98" was found inside
             # "98.4%", and the entry count passed in a document that said 117.
-            body = text.get(name, "")
+            # Whitespace is normalised, because markdown wraps its lines wherever
+            # they happen to run out, and a claim is still the claim across a break.
+            body = re.sub(r"\s+", " ", text.get(name, ""))
             if not any(re.search(r"(?<![\d.])" + re.escape(w) + r"(?![\d])", body)
                        for w in want):
                 bad.append(f"{name}: {label} should read one of "
