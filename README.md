@@ -389,20 +389,25 @@ torque, in line with the 12% the drawing uses.
 
 ### What it found immediately
 
-`move_group` loads the model, reports `Using position only ik`, and solves
-inverse kinematics onto the panel. Joint-space planning fails, and not because
-of the planner: **the arm is in self-collision at the home pose.**
+`move_group` loads the model, reports `Using position only ik`, solves inverse
+kinematics onto the panel, and plans a joint-space motion in 11 ms.
 
-The collision DAEs are transformed twice. `tools/align_collision_meshes.py`
+It did not at first. Planning failed, and not because of the planner: **the arm
+was in self-collision at the home pose** - the very pose every measured number
+here is taken from.
+
+The collision DAEs were transformed twice. `tools/align_collision_meshes.py`
 baked the STL-to-DAE rotation into the vertices but left the COLLADA
-`<node><matrix>` in place, and assimp applies it again. For `wrist_link` the
-leftover 90 degrees about Y sends its 170 mm length down through the shoulder -
-exactly the pair MoveIt reports. RViz and Gazebo draw the STL, so the arm has
+`<node><matrix>` in place, and a loader applies it again. For `wrist_link` the
+leftover 90 degrees about Y sent its 170 mm length down through the shoulder -
+exactly the pair MoveIt reported. RViz and Gazebo draw the STL, so the arm had
 always looked correct; nothing had ever read the collision geometry until now.
 
-The fix is understood and deliberately not applied yet: it changes the geometry
-every published number rests on, so it gets its own cycle with the clearances
-re-measured afterwards. See [docs/moveit.md](docs/moveit.md#the-cause-the-collision-meshes-are-transformed-twice).
+The tool now does both halves of the job, five files were corrected, and no
+published number moved - collision meshes feed neither the kinematics nor the
+dynamics. `tests/test_meshes.py` compares the geometry a loader actually sees,
+node transform included, and was checked by putting the defect back. See
+[docs/moveit.md](docs/moveit.md#the-cause-the-collision-meshes-are-transformed-twice).
 
 ---
 

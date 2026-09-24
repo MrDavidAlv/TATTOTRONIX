@@ -75,17 +75,19 @@ Run against the live description, `move_group` loads the model, reports
 and `/get_planning_scene`. Position-only inverse kinematics onto the middle of
 the panel solves.
 
-Joint-space planning does **not** yet succeed, and the reason is not the
-planner. OMPL reports `Skipping invalid start state`: the arm is in
-self-collision at the pose it starts from. Asked directly through
-`/check_state_validity`, MoveIt names the pairs:
+Joint-space planning now succeeds: 7 waypoints over 0.53 s, found in 11 ms.
 
-| Pose | Result |
-|---|---|
-| Home, all joints zero | **In collision**: `shoulder_link ↔ wrist_link`, `upper_arm_link ↔ wrist_link` |
-| `joint_2 = ±0.5` | In collision, same pairs |
-| `j2 = 0.5, j3 = -0.8` | Valid |
-| A pose taken from the drawing | Valid |
+It did not at first, and the reason was not the planner. OMPL reported
+`Skipping invalid start state` — the arm was in self-collision at the pose it
+starts from. Asked directly through `/check_state_validity`, MoveIt named the
+pairs, and that is what exposed a real defect in the description:
+
+| Pose | Before | After |
+|---|---|---|
+| Home, all joints zero | **In collision**: `shoulder_link ↔ wrist_link`, `upper_arm_link ↔ wrist_link` | Valid |
+| `joint_2 = ±0.5` | In collision, same pairs | Valid |
+| `j2 = 0.5, j3 = -0.8` | Valid | Valid |
+| A pose taken from the drawing | Valid | Valid |
 
 ### The cause: the collision meshes are transformed twice
 
@@ -119,15 +121,25 @@ to roughly z = 72 mm, straight through the shoulder, which occupies z ∈ [51,
 RViz and Gazebo draw the STL, so the arm has always *looked* right. Only a
 collision check reads the DAE, and until now nothing did.
 
-**The fix** is to set the geometry node's matrix to identity in the five
-affected DAEs, since the vertices are already in the link frame, leaving the
-camera and light nodes alone. It is not applied yet: it changes the geometry
-every published number depends on, so it is a cycle of its own, with the
-pen-tip and panel clearances re-measured afterwards.
+### The fix, and what it cost
 
-Until it is, the honest statement is that **collision checking is configured and
-working — it is the collision geometry that is wrong**, and MoveIt is what
-found it.
+`tools/align_collision_meshes.py` now does both halves of its job: it bakes the
+vertex transform as before, and it clears the `<matrix>` on the node that holds
+the geometry, leaving the `Camera` and `Light` nodes that CAD exports alone.
+Applying it cleared five files and reported `base_link` as already correct,
+and running it again reports every link aligned, which is the idempotence the
+tool claims about itself.
+
+No published number moved. Collision geometry feeds neither the kinematics nor
+the dynamics — those read joint origins and inertias — so all twelve certified
+numbers still match their data files. What changed is that collision queries now
+answer about the arm that is actually drawn.
+
+`tests/test_meshes.py` is what should have caught this originally and now does.
+It compares the geometry **a loader actually sees**, node transform included,
+against the visual STL, because the raw vertices were already identical while
+the shapes were not. It was verified by putting the defect back: with
+`wrist_link`'s old matrix restored, it fails with an 18 mm discrepancy.
 
 ---
 
