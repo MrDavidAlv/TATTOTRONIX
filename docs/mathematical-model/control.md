@@ -540,8 +540,13 @@ until the torque limit; inside it, it dies away at the predicted rate.</sub>
 In simulation, nothing: `update_rate: 1000` in
 `tattotronix_controllers.yaml` and the ceiling moves.
 
-On hardware it is a requirement on the servo interface rather than a preference.
-A bus that cannot sustain 1 kHz puts the ceiling back where it was, and with it
-the 322 µm worst case. That makes the interface rate a specification for the
-hardware this model is meant to describe, which is the kind of number worth
-knowing before buying anything.
+On hardware it is a requirement on whatever closes the joint loop. With the
+hobby servos the arm was built with, that is the servo itself: it takes a
+position, not a torque, and closes its own loop at a rate its catalogue does not
+state, so on the real arm the controller manager runs at 100 Hz and only chooses
+the positions — see [running the real arm](../hardware.md). With actuators whose
+loop this page's controller closes, the rate is a specification: at the
+recommended 160 rad/s the loop has to run above 530 Hz on this arm. Slower than
+that, the bandwidth has to come down, and the worst case goes up with it: 145.4 µm
+at 500 Hz and 80 rad/s, 322.0 µm at 200 Hz and 40, in the table above. That is the
+kind of number worth knowing before buying anything.

@@ -96,6 +96,19 @@ ros2 launch tattotronix_description display.launch.py
 ros2 launch tattotronix_gazebo simulation.launch.py
 ```
 
+### On the real arm
+
+A Raspberry Pi 3 runs the same controllers against the arm's servos, through a
+PCA9685 board. [Running the real arm](docs/hardware.md) has the wiring, the
+setup on the Pi and the calibration, which comes before anything moves. The
+servos report nothing back, so the real arm runs open loop: what it reports is
+what it was told, and the guide says what that costs.
+
+```bash
+ros2 launch tattotronix_hardware arm.launch.py dry_run:=true   # everything but the board
+ros2 launch tattotronix_hardware arm.launch.py draw:=true      # the arm draws
+```
+
 ---
 
 ## Table of Contents
@@ -384,6 +397,7 @@ src/
   tattotronix_control/         controller YAML, spawners, the draw node and its trajectories
   tattotronix_moveit_config/   SRDF, kinematics and planner config, move_group launch
   tattotronix_gazebo/          Gazebo Sim world, the simulation and draw launches
+  tattotronix_hardware/        the real arm: PCA9685 servo driver for ros2_control, its launch
 docs/scripts/                  the design toolchain: models, studies, figures, certification
 tools/
   align_collision_meshes.py    puts each collision DAE in its visual's frame
@@ -395,6 +409,7 @@ tools/
 | `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart, and the drawing application with its trajectories |
 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF and joint limits generated from the description, position-only IK, OMPL, the `move_group` launch |
 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers, and run the drawing |
+| `tattotronix_hardware` | `ament_cmake` | The real arm: a `ros2_control` driver for its hobby servos through a PCA9685 board on a Raspberry Pi, and the launch that runs the same controllers on it. See [running the real arm](docs/hardware.md) |
 
 ---
 
@@ -492,15 +507,18 @@ from the planner's side.*
 
 ## Description Arguments
 
-`tattotronix.urdf.xacro` takes five arguments:
+`tattotronix.urdf.xacro` takes these arguments:
 
 | Argument | Values | Default | Effect |
 |----------|--------|---------|--------|
-| `hardware` | `none`, `mock`, `gz` | `none` | `none` omits ros2_control entirely, which is what RViz wants. `mock` loads `mock_components/GenericSystem` for testing controllers with no simulator. `gz` loads the Gazebo Sim plugin |
+| `hardware` | `none`, `mock`, `gz`, `pca9685` | `none` | `none` omits ros2_control entirely, which is what RViz wants. `mock` loads `mock_components/GenericSystem` for testing controllers with no simulator. `gz` loads the Gazebo Sim plugin. `pca9685` loads the real arm's servo driver. Anything else stops the build |
 | `tool` | `tattoo`, `none` | `tattoo` | Whether the pen is mounted on `tool0` |
 | `controllers_file` | path | empty | Controller manager YAML, read by the Gazebo plugin. Only consulted when `hardware:=gz` |
 | `use_world_link` | `true`, `false` | `true` | Bolts `base_link` to a `world` link. Set false when the arm is embedded in a larger cell |
 | `mass_model` | `printed`, `box` | `printed` | `printed` is the arm as built, shells plus servos, from `inertials_printed.xacro`; `box` is the earlier bounding-box approximation, kept for comparison. Anything else stops the build |
+| `i2c_device`, `i2c_address` | path, number | `/dev/i2c-1`, `64` | Where the PCA9685 is. Only with `hardware:=pca9685` |
+| `dry_run` | `true`, `false` | `false` | Runs the real arm's stack with the board simulated, sending nothing. Only with `hardware:=pca9685` |
+| `servo_calibration` | path | `config/servo_calibration.yaml` | Which channel drives each joint and how its pulse maps to the angle. Only with `hardware:=pca9685` |
 
 ```bash
 # the exported CAD with no tool and no control stack
@@ -678,6 +696,7 @@ is Apache-2.0. Run `docs/scripts/fetch_artwork.sh`.
 | Link inertias | Each link's printed shell, its volume integrated from the mesh, plus the servos mounted in it - five large, two SG90 - at catalogue masses. The volumes are measured; the print density (0.35 of solid PLA) and the servo figures are declared | Weighing the parts once the arm is rebuilt |
 | Joint effort and velocity limits | 20 Nm, 1.5 rad/s on every axis — far above the roughly 1 N·m and 0.2 N·m of the servos the arm carried | Limits from the servos actually fitted, per axis |
 | The tattoo pen | One 45 mm x 3 mm cylinder on the tool axis | The pen, once it is built |
+| Servo calibration | The catalogue convention for every servo: 1500 µs at zero, 636.62 µs per radian, the second shoulder servo mirrored | Each servo measured on the arm — see [running the real arm](docs/hardware.md#5-calibration) |
 | `tool0` offset | x from the far +x face of the bracket mesh, y and z from the middle hole of the outer face and the bearing seat behind it | A CAD datum |
 | Work surface | A rigid panel | A compliant tissue model, which is its own project |
 | Plunge depth and marking feed | 1.5 mm below the surface at 6 mm/s | Whatever real tissue turns out to need |
