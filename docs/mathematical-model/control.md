@@ -120,7 +120,22 @@ Placing **all three poles at $-\omega_n$** gives $(s + \omega_n)^3$, and therefo
 
 $$K_p = 3 J \omega_n^2, \qquad K_d = 3 J \omega_n, \qquad K_i = J \omega_n^3$$
 
-which has no overshoot by construction.
+That places the poles. It does not make the response free of overshoot, and an
+earlier version of this page said it did. The integral term puts a **zero** in the
+closed loop: with the derivative acting on the measured velocity, as the
+simulations implement it,
+
+$$T(s) = \frac{K_p s + K_i}{J s^3 + K_d s^2 + K_p s + K_i}
+       = \frac{3\omega_n^2 s + \omega_n^3}{(s + \omega_n)^3},$$
+
+a zero at $-\omega_n/3$, slower than the poles. A single axis on its own overshoots
+a step by **25%**, whatever its inertia, because $J$ cancels. On the arm the
+coupling between joints adds to it. Stepping every axis at once with gravity
+feedforward, `joint_1` — the least coupled — overshoots by 27%, close to the
+single-axis figure, and `joint_5` by 210%: the more a joint is pushed by the
+others relative to its own inertia, the further it goes. The drawing never asks
+for a step, and feedforward carries most of what it does ask for, but a step is
+how a loop is judged, and the claim was wrong.
 
 **Two details that are not cosmetic.**
 
@@ -157,10 +172,19 @@ the gains recomputed themselves, and nothing had to be retuned by hand.
 
 ## 3. The velocity lag
 
-For a second order loop of bandwidth $\omega_n$ following a constant feed $v$,
-the steady state error is
+With the derivative acting on the measured velocity, the reference velocity is
+never fed through: the loop has to produce every change of velocity out of the
+error. After the feed changes by $v$, the following error is
 
-$$e_{\text{lag}} \approx v / \omega_n$$
+$$E(s) = v\,\frac{s + 3\omega_n}{(s + \omega_n)^3}, \qquad
+  e(t) = v\,t\,(1 + \omega_n t)\,e^{-\omega_n t},$$
+
+which peaks at $0.84\,v/\omega_n$ and is walked back out by the integral over a
+few $1/\omega_n$. It is not a steady-state error — an earlier version of this page
+called it one — but the drawing changes direction constantly, so the loop lives in
+that transient, and the error is of order
+
+$$e_{\text{lag}} \sim v / \omega_n .$$
 
 At 6 mm/s and 20 rad/s that is 300 µm — the whole line width. **The error does
 not depend on how well the loop is tuned, but on being asked to produce the

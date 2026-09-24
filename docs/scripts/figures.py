@@ -308,8 +308,10 @@ def fig_step():
     axes[0].set_ylabel("displacement  [deg]")
     axes[1].legend(ncol=2, fontsize=8, loc="lower right")
     finish(fig, "08_step.png", "Five degree step, every axis at once",
-           "Gains are critically damped by construction. Without the gravity term the loaded "
-           "axes settle to an offset the integrator has to walk out.")
+           "Each axis's poles sit at -wn, but the integral term adds a zero, so even an isolated "
+           "axis overshoots; stepping every axis at once, the coupling pushes the wrist much "
+           "further. Without the gravity term the loaded axes settle to an offset the "
+           "integrator has to walk out.")
 
 
 # --- 9. tracking -------------------------------------------------------------

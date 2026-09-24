@@ -108,6 +108,12 @@ def claims():
         ("tracer inner perimeter",
          {f'{s["tracer_annulus_perimeters_mm"][1]:.2f} mm'}, [MM + "toolpath.md"]),
         ("logo regions", {f'{s["tracer_logo_regions"]} regions'}, [MM + "toolpath.md"]),
+        ("single-axis step overshoot", {f'{s["step_overshoot_single_axis_pct"]:.0f}%'},
+         [MM + "control.md"]),
+        ("joint_1 step overshoot", {f'by {s["step_overshoot_ff_pct"][0]:.0f}%'},
+         [MM + "control.md"]),
+        ("joint_5 step overshoot", {f'by {s["step_overshoot_ff_pct"][4]:.0f}%'},
+         [MM + "control.md"]),
         ("drawing animation length", {f'{s["path_time_s"]:.0f} s compressed into 24'},
          [MM + "toolpath.md", "README.md"]),
         ("moveit plan waypoints", {f'{mv["plan"]["waypoints"]} waypoints over '
