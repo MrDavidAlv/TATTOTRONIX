@@ -94,6 +94,7 @@ ros2 launch tattotronix_gazebo simulation.launch.py
 - [Analysis and Model](#analysis-and-model)
 - [Kinematics](#kinematics)
 - [Package Layout](#package-layout)
+- [Architecture](#architecture)
 - [Description Arguments](#description-arguments)
 - [Visualization](#visualization)
 - [Simulation](#simulation)
@@ -331,6 +332,35 @@ tools/
 | `tattotronix_description` | `ament_cmake` | The robot. Geometry, kinematics, ros2_control and Gazebo tags, all behind arguments so one file serves RViz, mock hardware and simulation |
 | `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart |
 | `tattotronix_gazebo` | `ament_python` | The studio world and the launch file that assembles simulator, description, spawn, clock bridge and controllers |
+
+---
+
+## Architecture
+
+**[docs/architecture.md](docs/architecture.md)** is the full record: the layering,
+the reasoning behind each boundary, what the review found and chose not to
+change, and where MoveIt fits.
+
+The short version is one line — **design time and run time are separate, and the
+arrow never reverses.** `docs/scripts/` is the design toolchain: kinematics,
+dynamics, the contour tracer, the control studies. It runs on a workstation
+before the robot moves and its output is data. `src/` is the runtime. Nothing
+under `src/` imports `docs/scripts/`, and a test fails the build if that changes.
+
+Inside `src/`, packages depend strictly downwards:
+
+```
+        tattotronix_gazebo            layer 2   assembles
+           /            \
+tattotronix_control   tattotronix_moveit_config   layer 1   commands
+           \            /
+        tattotronix_description       layer 0   describes
+```
+
+Layer 0 depends on nothing here, which is what lets a tool that knows nothing
+about Gazebo or `ros2_control` read the robot's geometry — exactly what
+`docs/scripts/kinematics.py` does. `tests/test_architecture.py` reads the
+manifests and fails on any edge that points the wrong way.
 
 ---
 
@@ -583,6 +613,7 @@ deliberately not versioned and why, and the two test suites.
 The short version, before you push anything:
 
 ```bash
+docker compose build ci                 # the ci service mounts nothing: build first
 docker compose run --rm ci              # what continuous integration runs
 python3 docs/scripts/check_docs.py      # published numbers still match the data
 ```

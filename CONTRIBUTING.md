@@ -15,7 +15,7 @@ finished when it has been through all six steps.
 |------|---------------|-----|
 | Develop | One thing at a time, small enough to describe in a commit subject | |
 | Verify | Does it behave? | Run it, read the output |
-| Test | Does it still behave for everyone else? | `docker compose run --rm ci` |
+| Test | Does it still behave for everyone else? | `docker compose build ci && docker compose run --rm ci` |
 | Certify | Do the published numbers still match the data? | `python3 docs/scripts/check_docs.py` |
 | Document | The README for what it does, `docs/mathematical-model/` for why | |
 | Push | One change, one commit | |
@@ -31,10 +31,16 @@ supposed to sit in a half-measured state.
 Run the test suite the way continuous integration runs it:
 
 ```bash
-docker compose run --rm ci
+docker compose build ci && docker compose run --rm ci
 ```
 
-The `ci` service mounts **nothing**. That matters. The `dev` service mounts the
+**Build it first, every time.** The `ci` service mounts **nothing**, so it runs
+the copy of the code that is inside the image. Skip the build and you are
+testing whatever you last built — a new test file will not even be collected,
+and the run goes green without it. Continuous integration builds the image on
+every push, so it never has this problem; only local runs do.
+
+That the service mounts nothing is the whole point. The `dev` service mounts the
 workspace over the image, so a file that is missing from the image is still
 present in the container, because the mount put it back. A missing file has
 passed locally for days that way and failed on the first continuous integration
