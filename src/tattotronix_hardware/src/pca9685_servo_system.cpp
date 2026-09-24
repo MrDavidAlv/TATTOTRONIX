@@ -35,6 +35,8 @@ namespace
 
 using Params = std::unordered_map<std::string, std::string>;
 
+constexpr char kSpeed[] = "speed";
+
 rclcpp::Logger logger()
 {
   return rclcpp::get_logger("Pca9685ServoSystem");
@@ -195,6 +197,57 @@ Pca9685ServoSystem::CallbackReturn Pca9685ServoSystem::on_init(
     joint.previous = joint.position;
     joints_.push_back(joint);
   }
+
+  tools_.clear();
+  tools_.reserve(info.gpios.size());
+  for (const auto & component : info.gpios) {
+    Tool tool;
+    tool.name = component.name;
+    const char * name = tool.name.c_str();
+    if (component.command_interfaces.size() != 1 ||
+      component.command_interfaces[0].name != kSpeed)
+    {
+      RCLCPP_ERROR(
+        logger(), "'%s' must have one command interface, speed: a continuous servo "
+        "takes nothing else", name);
+      return CallbackReturn::ERROR;
+    }
+    for (const auto & state : component.state_interfaces) {
+      if (state.name != kSpeed) {
+        RCLCPP_ERROR(
+          logger(), "'%s' asks for a '%s' state; a continuous servo has only its speed",
+          name, state.name.c_str());
+        return CallbackReturn::ERROR;
+      }
+      tool.has_state = true;
+    }
+    if (!component.parameters.count("channel")) {
+      RCLCPP_ERROR(logger(), "'%s' names no PCA9685 channel", name);
+      return CallbackReturn::ERROR;
+    }
+    double channel = -1.0;
+    if (!optional_number(component.parameters, "channel", channel) ||
+      !optional_number(component.parameters, "stop_us", tool.servo.zero_us) ||
+      !optional_number(component.parameters, "us_per_speed", tool.servo.us_per_rad) ||
+      !optional_number(component.parameters, "min_us", tool.servo.min_us) ||
+      !optional_number(component.parameters, "max_us", tool.servo.max_us))
+    {
+      RCLCPP_ERROR(logger(), "'%s' has a servo parameter that is not a number", name);
+      return CallbackReturn::ERROR;
+    }
+    tool.servo.channel = static_cast<int>(channel);
+    if (*tool.servo.problem()) {
+      RCLCPP_ERROR(logger(), "'%s': %s", name, tool.servo.problem());
+      return CallbackReturn::ERROR;
+    }
+    if (std::find(used.begin(), used.end(), tool.servo.channel) != used.end()) {
+      RCLCPP_ERROR(
+        logger(), "'%s': channel %d already drives another servo", name, tool.servo.channel);
+      return CallbackReturn::ERROR;
+    }
+    used.push_back(tool.servo.channel);
+    tools_.push_back(tool);
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -231,6 +284,11 @@ Pca9685ServoSystem::CallbackReturn Pca9685ServoSystem::on_activate(
       joint.command = joint.position;
       std::fill(joint.sent.begin(), joint.sent.end(), -1);
       send(joint);
+    }
+    for (auto & tool : tools_) {
+      tool.command = 0.0;
+      tool.sent = -1;
+      send(tool);
     }
   } catch (const std::exception & error) {
     RCLCPP_ERROR(logger(), "cannot command the servos: %s", error.what());
@@ -273,6 +331,11 @@ std::vector<hardware_interface::StateInterface> Pca9685ServoSystem::export_state
       interfaces.emplace_back(joint.name, hardware_interface::HW_IF_VELOCITY, &joint.velocity);
     }
   }
+  for (auto & tool : tools_) {
+    if (tool.has_state) {
+      interfaces.emplace_back(tool.name, kSpeed, &tool.speed);
+    }
+  }
   return interfaces;
 }
 
@@ -282,6 +345,9 @@ Pca9685ServoSystem::export_command_interfaces()
   std::vector<hardware_interface::CommandInterface> interfaces;
   for (auto & joint : joints_) {
     interfaces.emplace_back(joint.name, hardware_interface::HW_IF_POSITION, &joint.command);
+  }
+  for (auto & tool : tools_) {
+    interfaces.emplace_back(tool.name, kSpeed, &tool.command);
   }
   return interfaces;
 }
@@ -308,6 +374,9 @@ hardware_interface::return_type Pca9685ServoSystem::write(
       if (!std::isnan(joint.command)) {
         send(joint);
       }
+    }
+    for (auto & tool : tools_) {
+      send(tool);
     }
   } catch (const std::exception & error) {
     RCLCPP_ERROR(logger(), "lost the PCA9685: %s", error.what());
@@ -337,6 +406,25 @@ void Pca9685ServoSystem::send(Joint & joint)
   joint.position = joint.servos[0].angle(joint.sent[0] * board_->count_us());
 }
 
+void Pca9685ServoSystem::send(Tool & tool)
+{
+  const double speed = std::isnan(tool.command) ? 0.0 : std::clamp(tool.command, -1.0, 1.0);
+  if (speed == 0.0) {
+    if (tool.sent != kOff) {
+      board_->set_off(tool.servo.channel);
+      tool.sent = kOff;
+    }
+    tool.speed = 0.0;
+    return;
+  }
+  const int counts = board_->counts_for(tool.servo.pulse_us(speed));
+  if (counts != tool.sent) {
+    board_->set_counts(tool.servo.channel, static_cast<uint16_t>(counts));
+    tool.sent = counts;
+  }
+  tool.speed = tool.servo.angle(counts * board_->count_us());
+}
+
 void Pca9685ServoSystem::stop()
 {
   if (!board_) {
@@ -349,6 +437,10 @@ void Pca9685ServoSystem::stop()
   }
   for (auto & joint : joints_) {
     std::fill(joint.sent.begin(), joint.sent.end(), -1);
+  }
+  for (auto & tool : tools_) {
+    tool.sent = -1;
+    tool.speed = 0.0;
   }
 }
 

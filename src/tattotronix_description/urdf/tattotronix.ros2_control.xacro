@@ -86,6 +86,25 @@
       <xacro:controlled_joint name="joint_4" initial_position="0.0"/>
       <xacro:controlled_joint name="joint_5" initial_position="0.0"/>
 
+      <!-- The tool's continuous servo, on the real arm, once the calibration
+           gives its stop pulse. A speed rather than an angle, so a gpio
+           rather than a joint, and nothing robot_state_publisher needs. -->
+      <xacro:if value="${hardware == 'pca9685' and 'tool' in calibration and 'stop_us' in calibration['tool']}">
+        <xacro:property name="tool_servo" value="${calibration['tool']}"/>
+        <gpio name="tool">
+          <command_interface name="speed">
+            <param name="min">-1</param>
+            <param name="max">1</param>
+          </command_interface>
+          <state_interface name="speed"/>
+          <param name="channel">${tool_servo['channel']}</param>
+          <param name="stop_us">${tool_servo['stop_us']}</param>
+          <param name="us_per_speed">${tool_servo['us_per_speed']}</param>
+          <param name="min_us">${tool_servo['min_us']}</param>
+          <param name="max_us">${tool_servo['max_us']}</param>
+        </gpio>
+      </xacro:if>
+
     </ros2_control>
 
   </xacro:macro>
