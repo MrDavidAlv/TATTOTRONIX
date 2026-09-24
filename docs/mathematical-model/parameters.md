@@ -108,7 +108,10 @@ rows that bound what this model can honestly claim.
 | Worst marking error | 46.8 µm | 0.16× |
 | Peak torque | 0.35 N·m | 2% of the 20 N·m limit |
 
-Both are well inside the line width. The torque share is against the
+Both are well inside the line width — for the joint loop this models. The servos
+the arm was built with cannot hold a line this fine at all: their dead band alone
+leaves the needle up to 3.80 mm off it; see [actuators](./actuators.md). The
+torque share is against the
 description's 20 N·m placeholder, not against the servos the arm carried, which
 are rated at roughly 1 N·m for the MG996R and 0.2 N·m for the SG90; measured
 against those, the same peak is a substantial fraction of what the motors can
@@ -118,15 +121,27 @@ loop rate was raised, 26.6 µm and 338.0 µm.
 
 ---
 
+## Actuators
+
+| Parameter | Value | Source |
+|---|---|---|
+| Dead band, MG996R | 5 µs | **Declared** — catalogue |
+| Dead band, SG90 | 10 µs | **Declared** — catalogue |
+| Pulse per degree | 11.1 µs | **Declared** — the 500 to 2500 µs convention for a 180° servo; measure it |
+| Command step, PCA9685 at 50 Hz | 4.88 µs | **Derived** — a 20 ms frame in 4096 counts |
+| Command step, Arduino `Servo` | 1 µs | **Derived** — whole microseconds |
+| Bus servo resolution | 0.088° | **Declared** — one count of a 12-bit encoder |
+| Joint resolution a 0.3 mm line needs | 0.037° | **Derived** — see [actuators](./actuators.md#5-what-the-drawing-needs) |
+
 ## What this model cannot tell you
 
-Three things are not modelled at all, and they are what stop this from being a
-credible accuracy figure rather than a credible *control* figure:
+Two things are not modelled at all, and with the servo resolution above they are
+what stop this from being a credible accuracy figure rather than a credible
+*control* figure:
 
 | Missing | Why it matters | What it needs |
 |---|---|---|
-| Servo resolution | Sets the smallest commandable motion | The encoder |
-| Backlash and flexure | A printed bracket and an SG90 have both | Measuring the hardware |
+| Backlash and flexure | A printed bracket and an SG90 have both; each 0.1° of play costs up to 0.81 mm | Measuring the hardware |
 | Tissue deformation | The panel is rigid; skin is not | A separate project |
 
 The model says what the control does. It does not say what an SG90 with backlash

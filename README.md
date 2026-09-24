@@ -151,7 +151,7 @@ away from the robot. The full write-up lives in
 |---|---|
 | **[Kinematics](docs/mathematical-model/kinematics.md)** — the chain, forward kinematics verified against live TF, the 5×5 task Jacobian, and why five axes are exactly enough | **[Toolpath](docs/mathematical-model/toolpath.md)** — artwork to ink mask to contour and fill, Moore neighbour tracing, and what the stand-in artwork was hiding |
 | **[Control](docs/mathematical-model/control.md)** — Newton–Euler dynamics, tuning by pole placement, the velocity lag and why the stability cliff was set by the loop rate | **[Parameters](docs/mathematical-model/parameters.md)** — every value with its source, and what the model cannot tell you |
-| **[Mass properties](docs/mathematical-model/mass.md)** — volumes integrated from the meshes, and the arm as built: printed shells plus five large servos and two SG90s | |
+| **[Mass properties](docs/mathematical-model/mass.md)** — volumes integrated from the meshes, and the arm as built: printed shells plus five large servos and two SG90s | **[Actuators](docs/mathematical-model/actuators.md)** — what hobby servos let any controller do, and why they, not the control, now set the floor under the error |
 
 <div align="center">
 <img src="docs/figures/drawing.gif" width="88%"/>
@@ -204,6 +204,7 @@ model the repository runs, and every notebook is executed on each build, so thei
 | <img src="docs/figures/26_loop_structures.png" width="420"/><br/>**Loop structures.** One PID, three places for the reference to enter: the overshoot and the lag each one leaves. | <img src="docs/figures/27_coupled_modes.png" width="420"/><br/>**Coupled modes.** The arm splits the per-joint loops into five modes; none of them is the loop that was designed. |
 | <img src="docs/figures/28_rate_ceiling.png" width="420"/><br/>**The rate ceiling.** Stable while ωnT < 2/(3λmax): the rule that sorts all nine runs of the rate study. | <img src="docs/figures/29_past_the_ceiling.png" width="420"/><br/>**Past the ceiling.** The non-linear arm grows at the rate the sampled loop predicts, until the torque limit. |
 | <img src="docs/figures/18_mass_model.png" width="420"/><br/>**Mass model.** The box approximation made the arm eight times too heavy; as built, the servos are most of it. | <img src="docs/figures/16_collision_after.png" width="420"/><br/>**Collision geometry.** The shape every collision query reads, after the double transform was removed. |
+| <img src="docs/figures/30_actuators.png" width="420"/><br/>**Actuators.** The servos' dead band puts the needle up to 3.80 mm off a 0.3 mm line, whatever the controller does. | |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
 ### Watching it draw
@@ -295,6 +296,7 @@ python3 docs/scripts/control_study.py          # 15 min
 python3 docs/scripts/approach_study.py         # 6 min
 python3 docs/scripts/resample_study.py         # 3.5 min
 python3 docs/scripts/rate_study.py             # 33 min
+python3 docs/scripts/actuator_study.py         # seconds; what the servos' resolution allows
 python3 docs/scripts/make_moveit_config.py     # SRDF and joint limits
 docs/scripts/moveit_check.sh                   # asks move_group what docs/moveit.md claims
 python3 docs/scripts/figures.py                # writes docs/figures/*.png
@@ -683,12 +685,18 @@ is Apache-2.0. Run `docs/scripts/fetch_artwork.sh`.
 **Where the model stands.** With gravity and velocity feedforward at
 `wn = 160 rad/s` on a 1 kHz loop, a 4 mm slow approach into the work and the path
 resampled at 0.15 mm, the tip holds 6.5 µm while marking and 46.8 µm at the worst
-moment of the drawing, against a 0.3 mm tattoo line. Every modelled error term
-is inside the line width. What stops this from being an accuracy claim is four
-things: actuator torque, modelled only against a 20 N·m placeholder rather than
-the servos the arm carried, and servo resolution, backlash and tissue, which are
-not modelled at all. See
+moment of the drawing, against a 0.3 mm tattoo line. Everything the controller
+owns is inside the line width. See
 [control](docs/mathematical-model/control.md#6-recommended-configuration).
+
+The servos the arm was built with are not. A hobby servo takes a position and
+closes its own loop, and it does not move for a change of command smaller than
+its dead band; through the arm's geometry that alone can put the needle 3.80 mm
+off the line with a PCA9685 driving it, or 2.39 mm with an Arduino. Bus servos
+with encoders on the base, shoulder and elbow bring it to 1.54 mm, and on every
+joint to 0.71 mm. What limits the drawing now is the hardware — see
+[actuators](docs/mathematical-model/actuators.md). Still unmodelled: actuator
+torque, checked only against a 20 N·m placeholder, backlash, and tissue.
 
 ---
 

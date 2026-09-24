@@ -102,11 +102,17 @@ PRINTED_FRACTION = 0.35
 #: briefly; what it sustains is a fraction of it that catalogues for hobby
 #: servos do not state. Declared for the same reason as the masses: the models
 #: were not confirmed and the arm cannot be measured.
+#:
+#: The dead band is the catalogue "dead band width" - 5 us for the MG996R,
+#: 10 us for the SG90: a change of command narrower than this does not move the
+#: servo at all. It is not a mass property; it lives here so that everything
+#: the repository assumes about these two parts is in one place.
+#: actuator_study.py reads it.
 SERVOS = {
     "large": {"mass": 0.055, "size": (0.0407, 0.0197, 0.0429), "part": "MG996R",
-              "stall_Nm": 0.92},
+              "stall_Nm": 0.92, "deadband_us": 5.0},
     "small": {"mass": 0.009, "size": (0.0225, 0.0118, 0.0227), "part": "SG90",
-              "stall_Nm": 0.18},
+              "stall_Nm": 0.18, "deadband_us": 10.0},
 }
 
 #: Which servos sit in which link, and what each one drives. A servo that
