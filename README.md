@@ -403,11 +403,26 @@ leftover 90 degrees about Y sent its 170 mm length down through the shoulder -
 exactly the pair MoveIt reported. RViz and Gazebo draw the STL, so the arm had
 always looked correct; nothing had ever read the collision geometry until now.
 
+The two pictures below are the same RViz view of the **collision geometry
+alone**, at the home pose, before and after. Nothing else changed between them.
+
+| Before: the shape every collision query was reading | After: the shape the arm actually has |
+|---|---|
+| ![Collision geometry, transformed twice](docs/figures/15_collision_before.png) | ![Collision geometry, corrected](docs/figures/16_collision_after.png) |
+| The wrist stands straight up as a bare cylinder, the links collapse into the base, and the tool mount with the pen floats detached in mid air. This is what the planner had been asked to reason about | The same query now returns the arm that is drawn, extended forward with the needle at the end |
+
 The tool now does both halves of the job, five files were corrected, and no
 published number moved - collision meshes feed neither the kinematics nor the
 dynamics. `tests/test_meshes.py` compares the geometry a loader actually sees,
 node transform included, and was checked by putting the defect back. See
 [docs/moveit.md](docs/moveit.md#the-cause-the-collision-meshes-are-transformed-twice).
+
+![MoveIt planning against the corrected arm](docs/figures/17_moveit_planning.png)
+
+*`move_group` with the corrected geometry. Every link is the goal-state colour;
+MoveIt paints a colliding link red, and there are none. With the old meshes this
+same view came up red from the base to the pen, which is the defect above seen
+from the planner's side.*
 
 ---
 
