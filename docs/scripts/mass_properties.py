@@ -101,21 +101,36 @@ SERVOS = {
     "small": {"mass": 0.009, "size": (0.0225, 0.0118, 0.0227), "part": "SG90"},
 }
 
-#: Which servos sit in which link, and which joint each one drives. A servo is
-#: mounted on the link *before* the joint it turns, so its mass is placed at
-#: that joint's origin, which the URDF gives exactly.
+#: Which servos sit in which link, and what each one drives. A servo that
+#: turns a joint is mounted on the link *before* that joint, so its mass is
+#: placed at the joint's origin, which the URDF gives exactly.
 #:
-#: Six servos across five joints: the shoulder carries two, which is where a
-#: printed arm doubles them because it is the joint with the most gravity load.
-#: The small one is last, since joint_5 turns nothing but the pen.
+#: Seven servos: five large and two SG90s. The shoulder carries two large ones,
+#: which is where a printed arm doubles them because it has the most gravity
+#: load. One SG90 turns joint_5. The other is continuous-rotation and does not
+#: turn a joint at all: it is the one clamped in the tool mount, between two
+#: arms 12.0 mm apart - an SG90's body width, measured off the bracket mesh -
+#: and it drives the tool. It still weighs 9 g, on the lightest link of the
+#: arm, so it is modelled; "tool" places it on the tool axis (TOOL_SERVO below).
 SERVO_LAYOUT = {
     "base_link": [("large", "joint_1")],
     "shoulder_link": [("large", "joint_2"), ("large", "joint_2")],
     "upper_arm_link": [("large", "joint_3")],
     "forearm_link": [("large", "joint_4")],
     "wrist_link": [("small", "joint_5")],
-    "tool_mount_link": [],
+    "tool_mount_link": [("small", "tool")],
 }
+
+#: Where the tool servo sits in tool_mount_link. Two of its three coordinates
+#: are measurements the description already records: the tool axis runs at
+#: y = -12.064 mm, z = +5.489 mm, which is tool0's origin and also the clamp's
+#: mid plane, so they are read from the tool_mount_to_tool0 joint rather than
+#: written here. The third, how far along the bracket the servo body sits, is
+#: not measured; it is taken as the bracket's own centroid, since the servo
+#: fills the bracket between its clamp arms. That is a declaration. Moving it
+#: 5 mm either way changes the effective inertia of every joint by 1.0 to
+#: 3.4%, most at joints 5 and 3 - small, not zero, and pinned by a test.
+TOOL_SERVO = {"axis_from": "tool_mount_to_tool0", "along": "shell centroid"}
 
 #: The covariance of the canonical tetrahedron with vertices at the origin and
 #: the three unit axes. Every tetrahedron's contribution is this, mapped through
@@ -257,7 +272,22 @@ def shift(tensor, mass, offset):
     return tensor + mass * (np.dot(offset, offset) * np.eye(3) - np.outer(offset, offset))
 
 
-def printed_link(name, volume, centroid, covariance, origins):
+def servo_position(where, shell_centroid, origins, along=None):
+    """Where a servo's centre sits in its link's frame.
+
+    A joint name puts it at that joint's origin. "tool" puts it on the tool
+    axis, whose y and z come from the description, at a position along the
+    bracket that defaults to the shell's centroid; `along` overrides that x,
+    which is how its sensitivity is measured.
+    """
+    if where == "tool":
+        axis = origins[TOOL_SERVO["axis_from"]]
+        x = shell_centroid[0] if along is None else along
+        return np.array([x, axis[1], axis[2]])
+    return origins[where]
+
+
+def printed_link(name, volume, centroid, covariance, origins, tool_along=None):
     """Mass, centre of mass and inertia of one link as built.
 
     The shell is the mesh at the printed density. Each servo is a box of
@@ -273,10 +303,10 @@ def printed_link(name, volume, centroid, covariance, origins):
     masses = [shell_mass]
     centres = [centroid]
     inertias = [shell_inertia]
-    for kind, joint in SERVO_LAYOUT.get(name, []):
+    for kind, where in SERVO_LAYOUT.get(name, []):
         spec = SERVOS[kind]
         masses.append(spec["mass"])
-        centres.append(origins[joint])
+        centres.append(servo_position(where, centroid, origins, along=tool_along))
         inertias.append(box_inertia(spec["mass"], spec["size"]))
 
     mass = sum(masses)
@@ -319,7 +349,8 @@ def render_xacro(built):
         % (PLA_SOLID * PRINTED_FRACTION),
         "  %.0f%% of solid PLA - plus the servos mounted in it, each a box of"
         % (100 * PRINTED_FRACTION),
-        "  catalogue size at the origin of the joint it drives. The volumes are",
+        "  catalogue size at the origin of the joint it drives, or on the tool",
+        "  axis for the one that drives the tool. The volumes are",
         "  measured. The printed fraction and the servo figures are declarations",
         "  about an arm that cannot be weighed, and are named in the script.",
         "",
@@ -330,7 +361,9 @@ def render_xacro(built):
     ]
     for name, (mass, com, tensor, shell) in built.items():
         servos = SERVO_LAYOUT.get(name, [])
-        what = (", ".join("%s %s" % (SERVOS[k]["part"], j) for k, j in servos)
+        what = (", ".join("%s %s" % (SERVOS[k]["part"],
+                                     "driving the tool" if w == "tool" else w)
+                          for k, w in servos)
                 or "no servo")
         lines += [
             "",
