@@ -6,12 +6,12 @@
 >
 > **Worked through step by step, in the browser:** the
 > [dynamics notebook](../notebooks/02_dynamics.ipynb)
-> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing)
+> <a href="https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing" target="_blank" rel="noopener noreferrer"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"/></a>
 > rebuilds the equations of motion — inertia tensors, the mass matrix from kinetic
 > energy, Coriolis terms from Christoffel symbols, gravity from potential energy —
 > and checks each against the Newton–Euler model below by a route that shares none
 > of its code. The [control notebook](../notebooks/03_control.ipynb)
-> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/03_control.ipynb)
+> <a href="https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/03_control.ipynb" target="_blank" rel="noopener noreferrer"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"/></a>
 > derives the controller: the gains from pole placement, the overshoot and the lag
 > in closed form, the modes the coupling splits the arm's loop into, and the rate
 > ceiling as an exact boundary. Figures marked *from the control notebook* are its
