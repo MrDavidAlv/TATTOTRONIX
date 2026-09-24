@@ -8,12 +8,20 @@
       gz    -> gz_ros2_control/GazeboSimSystem, driven by Gazebo Sim (Fortress)
       mock  -> mock_components/GenericSystem, for testing controllers and
                MoveIt with no simulator and no hardware attached
-    The real driver is not written yet. The launch files validate the argument
-    before they call xacro, so an unknown backend is rejected there rather than
-    producing a description that silently controls nothing.
+      pca9685 -> tattotronix_hardware/Pca9685ServoSystem, the arm as built:
+               hobby servos driven through a PCA9685 board. Each joint gets
+               its channel and calibration from servo_calibration.
+    tattotronix.urdf.xacro rejects any other backend, so an unknown one fails
+    at expansion rather than producing a description that controls nothing.
+
+    The pca9685 joints have no effort state. A hobby servo reports nothing, so
+    the driver refuses to invent one, and its position and velocity states are
+    the command it last sent rather than a measurement.
   -->
 
-  <xacro:macro name="tattotronix_ros2_control" params="name hardware">
+  <xacro:macro name="tattotronix_ros2_control"
+               params="name hardware i2c_device:=/dev/i2c-1 i2c_address:=64 dry_run:=false
+                       servo_calibration:=''">
 
     <ros2_control name="${name}" type="system">
 
@@ -31,6 +39,18 @@
         </hardware>
       </xacro:if>
 
+      <xacro:if value="${hardware == 'pca9685'}">
+        <xacro:property name="calibration" value="${xacro.load_yaml(servo_calibration)}"/>
+        <hardware>
+          <plugin>tattotronix_hardware/Pca9685ServoSystem</plugin>
+          <param name="i2c_device">${i2c_device}</param>
+          <param name="i2c_address">${i2c_address}</param>
+          <param name="frame_rate_hz">50</param>
+          <param name="oscillator_hz">25000000</param>
+          <param name="dry_run">${dry_run}</param>
+        </hardware>
+      </xacro:if>
+
       <xacro:macro name="controlled_joint" params="name initial_position">
         <joint name="${name}">
           <command_interface name="position">
@@ -41,7 +61,22 @@
             <param name="initial_value">${initial_position}</param>
           </state_interface>
           <state_interface name="velocity"/>
-          <state_interface name="effort"/>
+          <xacro:unless value="${hardware == 'pca9685'}">
+            <state_interface name="effort"/>
+          </xacro:unless>
+          <xacro:if value="${hardware == 'pca9685'}">
+            <xacro:property name="servo" value="${calibration['servos'][name]}"/>
+            <param name="channel">${servo['channel']}</param>
+            <param name="zero_us">${servo['zero_us']}</param>
+            <param name="us_per_rad">${servo['us_per_rad']}</param>
+            <param name="min_us">${servo['min_us']}</param>
+            <param name="max_us">${servo['max_us']}</param>
+            <xacro:if value="${'channel_b' in servo}">
+              <param name="channel_b">${servo['channel_b']}</param>
+              <param name="zero_us_b">${servo['zero_us_b']}</param>
+              <param name="us_per_rad_b">${servo['us_per_rad_b']}</param>
+            </xacro:if>
+          </xacro:if>
         </joint>
       </xacro:macro>
 

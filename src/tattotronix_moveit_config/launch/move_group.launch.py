@@ -67,7 +67,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'hardware',
             default_value='gz',
-            choices=['gz', 'mock'],
+            choices=['gz', 'mock', 'pca9685'],
             description=(
                 'Which hardware interface the description is built with. It '
                 'must match the one the running system was started with, or '
@@ -78,8 +78,8 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description=(
-                'Follow /clock. True whenever Gazebo is the one running, which '
-                'is every case today'
+                'Follow /clock. True whenever Gazebo is the one running; false '
+                'with the real arm, hardware:=pca9685, which has no /clock'
             ),
         ),
     ]

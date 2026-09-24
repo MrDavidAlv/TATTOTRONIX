@@ -11,10 +11,20 @@
     Swap the tool argument and the same arm carries a different end effector.
 
     Arguments
-      hardware          gz | mock | none
+      hardware          gz | mock | pca9685 | none
                         'none' leaves ros2_control out entirely, which is what
                         display.launch.py wants: a description RViz can render
                         with joint_state_publisher_gui and no controller stack.
+                        'pca9685' is the arm as built: its hobby servos driven
+                        through a PCA9685 board by tattotronix_hardware.
+      i2c_device        pca9685 only: the Linux I2C bus the board is on.
+      i2c_address       pca9685 only: the board's address; 64 is 0x40, the
+                        address with no jumpers soldered.
+      dry_run           pca9685 only: true runs the whole stack with the board
+                        simulated, sending nothing. For a first run, and for CI.
+      servo_calibration pca9685 only: which channel drives each joint and how
+                        its pulse maps to the angle. The default is declared,
+                        not measured; see config/servo_calibration.yaml.
       tool              tattoo | none
                         The pen in tattoo_tool.xacro is primitives sized to a
                         catalogue rotary machine, not measured hardware. It is
@@ -129,9 +139,15 @@
       gz    -> gz_ros2_control/GazeboSimSystem, driven by Gazebo Sim (Fortress)
       mock  -> mock_components/GenericSystem, for testing controllers and
                MoveIt with no simulator and no hardware attached
-    The real driver is not written yet. The launch files validate the argument
-    before they call xacro, so an unknown backend is rejected there rather than
-    producing a description that silently controls nothing.
+      pca9685 -> tattotronix_hardware/Pca9685ServoSystem, the arm as built:
+               hobby servos driven through a PCA9685 board. Each joint gets
+               its channel and calibration from servo_calibration.
+    tattotronix.urdf.xacro rejects any other backend, so an unknown one fails
+    at expansion rather than producing a description that controls nothing.
+
+    The pca9685 joints have no effort state. A hobby servo reports nothing, so
+    the driver refuses to invent one, and its position and velocity states are
+    the command it last sent rather than a measurement.
   -->
   <!--
     Gazebo Sim (Fortress) specifics: the ros2_control system plugin and the
