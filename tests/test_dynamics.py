@@ -82,3 +82,47 @@ def test_joint_two_and_three_carry_the_same_gravity_torque(chain_and_model):
     _, model = chain_and_model
     tau = model.gravity(np.zeros(5))
     assert abs(tau[1] - tau[2]) < 1e-9, f'{tau[1]:.6f} vs {tau[2]:.6f} N m'
+
+
+def _summary():
+    import json
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[1] / 'docs' / 'data' / 'summary.json'
+    return json.loads(path.read_text(encoding='utf-8'))
+
+
+def test_the_published_gains_belong_to_this_description(chain_and_model):
+    """The gains in the documents were tuned against the arm as it stands.
+
+    Every gain is pole placement on an effective inertia, and that inertia
+    comes from the description's masses. Change the masses without re-running
+    the analysis and the documents go on quoting gains, torques and tracking
+    errors for a robot that no longer exists - with every other check green,
+    because the documents still agree with the data files. They just no longer
+    agree with the robot. This is the check that closes that gap.
+    """
+    s = _summary()
+    _, model = chain_and_model
+    q_ref = np.array(s['q_ref_tune'])
+    now = 1.0 / np.diag(np.linalg.inv(model.inertia(q_ref)))
+    assert np.allclose(now, s['J_eff'], rtol=1e-9), (
+        'the description\'s inertia no longer matches the one the published '
+        'gains were tuned against. Re-run docs/scripts/analysis.py and the '
+        f'studies after it.\n  tuned against {np.array(s["J_eff"])}\n  now {now}'
+    )
+
+
+def test_the_published_gains_follow_from_the_published_inertia():
+    """Kp = 3 J wn^2, Kd = 3 J wn, Ki = J wn^3, to the rounding they are written at."""
+    s = _summary()
+    J, wn = np.array(s['J_eff']), s['tune_wn']
+    assert np.allclose(s['Kp'], 3 * J * wn ** 2, rtol=0, atol=0.5e-4 + 1e-12)
+    assert np.allclose(s['Kd'], 3 * J * wn, rtol=0, atol=0.5e-5 + 1e-12)
+    assert np.allclose(s['Ki'], J * wn ** 3, rtol=0, atol=0.5e-4 + 1e-12)
+
+
+def test_the_published_zero_pose_gravity_is_this_description_s(chain_and_model):
+    """control.md quotes it; the value it quotes has to be the arm's."""
+    _, model = chain_and_model
+    assert np.allclose(model.gravity(np.zeros(5)), _summary()['grav_zero_Nm'],
+                       rtol=1e-9, atol=1e-12)

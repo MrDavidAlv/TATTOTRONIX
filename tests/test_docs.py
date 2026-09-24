@@ -42,9 +42,9 @@ def test_a_grouped_figure_is_read_as_one_number():
     import check_docs
     for text in ('30 037 µm', '30 037 µm', '30 037 µm'):
         m = check_docs._FIGURE.search(text)
-        assert m is not None and m.group(2) == 'µm', text
-        assert check_docs._traceable(m.group(1), [30036.68]), text
-        assert not check_docs._traceable(m.group(1), [37.4]), text
+        assert m is not None and m.group(3) == 'µm', text
+        assert check_docs._traceable(m.group(2), [30036.68]), text
+        assert not check_docs._traceable(m.group(2), [37.4]), text
 
 
 def test_a_figure_has_to_round_from_the_data_not_merely_resemble_it():
@@ -62,3 +62,15 @@ def test_every_declared_figure_says_why():
     import check_docs
     for (doc, figure), reason in check_docs.DECLARED.items():
         assert len(reason.split()) >= 5, f'{doc}: {figure} has no real reason'
+
+
+def test_a_written_sign_has_to_match_and_a_missing_one_means_magnitude():
+    """-0.5424 N.m must be negative in the data; 2.40 N.m may be either."""
+    import check_docs
+    m = check_docs._FIGURE.search('torque, \u22120.5424 N·m, even though')
+    assert m.group(1) == '\u2212' and m.group(2) == '0.5424'
+    assert check_docs._traceable('0.5424', [-0.54236], sign=m.group(1))
+    assert not check_docs._traceable('0.5424', [0.54236], sign=m.group(1))
+    assert check_docs._traceable('2.40', [-2.401])
+    ranged = check_docs._FIGURE.search('between 10-20 µm')
+    assert ranged.group(1) == '' and ranged.group(2) == '20', 'a range is not a sign'

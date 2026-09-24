@@ -310,6 +310,15 @@ def main():
         "cart_err_travel_max_um": float(err[~down].max() * 1e6),
         "tau_peak_Nm": float(np.abs(TAU).max()),
         "grav_peak_Nm": float(np.abs(out["path_grav"]).max()),
+        # What the gains were tuned against, at full precision. With these a
+        # test can recompute the effective inertia from the description as it
+        # stands and say whether the published gains still belong to it -
+        # which is the question that matters the moment the masses change.
+        "q_ref_tune": q_ref.tolist(),
+        "tune_wn": float(TUNE_WN),
+        "J_eff": (1.0 / np.diag(np.linalg.inv(model.inertia(q_ref)))).tolist(),
+        "grav_zero_Nm": model.gravity(np.zeros(chain.n)).tolist(),
+        "moving_mass_kg": float(sum(b["m"] for b in model.bodies)),
     }
     (OUT / "summary.json").write_text(json.dumps(summary, indent=2))
     print("\nwrote", OUT / "analysis.npz", "and summary.json")
