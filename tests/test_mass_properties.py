@@ -297,3 +297,60 @@ def test_every_tensor_is_one_a_real_body_can_have(built):
         assert p[0] > 0, f'{name} has a non-positive principal moment'
         assert p[0] + p[1] >= p[2] * (1 - 1e-9), (
             f'{name}: principal moments {p} break the triangle inequality')
+
+
+ROOT_XACRO = REPO / 'src' / 'tattotronix_description' / 'urdf' / 'tattotronix.urdf.xacro'
+ARM_LINKS = ('base_link', 'shoulder_link', 'upper_arm_link',
+             'forearm_link', 'wrist_link', 'tool_mount_link')
+
+
+def _expand(*args):
+    import subprocess
+    import xml.etree.ElementTree as ET
+    out = subprocess.run(['xacro', str(ROOT_XACRO), *args], capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    return ET.fromstring(out.stdout)
+
+
+def _elements(root):
+    import xml.etree.ElementTree as ET
+    return ET.tostring(root, encoding='unicode')
+
+
+def test_the_default_mass_model_is_the_box():
+    """Adding the argument must not have moved the default by a single element."""
+    assert _elements(_expand()) == _elements(_expand('mass_model:=box'))
+
+
+def test_the_printed_model_changes_inertia_and_nothing_else():
+    """Same joints, same geometry; only the inertial blocks differ.
+
+    If switching the mass model moved a joint, every kinematic number in the
+    repository would move with it, and the switch would be two changes
+    pretending to be one.
+    """
+    box, printed = _expand(), _expand('mass_model:=printed')
+    for root in (box, printed):
+        for link in root.findall('link'):
+            for inertial in link.findall('inertial'):
+                link.remove(inertial)
+    assert _elements(box) == _elements(printed)
+
+
+def test_the_printed_model_carries_the_generated_inertials(built):
+    """What the description receives is what the generator computed."""
+    root = _expand('mass_model:=printed')
+    for name in ARM_LINKS:
+        mass, com, _, _ = built[name]
+        inertial = root.find(f"link[@name='{name}']/inertial")
+        assert inertial is not None, f'{name} has no inertial under printed'
+        assert float(inertial.find('mass').get('value')) == pytest.approx(mass, rel=1e-8)
+
+
+def test_an_unknown_mass_model_stops_the_build():
+    """A typo must fail, not produce a robot with massless links."""
+    import subprocess
+    out = subprocess.run(['xacro', str(ROOT_XACRO), 'mass_model:=prnited'],
+                         capture_output=True, text=True)
+    assert out.returncode != 0
+    assert 'mass_model' in out.stderr

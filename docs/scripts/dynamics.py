@@ -160,11 +160,19 @@ class Model:
         return np.linalg.solve(M, tau - bias)
 
 
-def load():
+def load(mass_model=None):
+    """The chain and its dynamic model, from the live description.
+
+    `mass_model` picks the description's inertia source, box or printed. None
+    takes the description's own default, which is what every published number
+    was computed with; naming it explicitly is for comparing the two.
+    """
     from kinematics import Chain, URDF_XACRO
     import subprocess
-    out = subprocess.run(["xacro", str(URDF_XACRO), "tool:=tattoo", "hardware:=none"],
-                         capture_output=True, text=True, check=True)
+    args = ["xacro", str(URDF_XACRO), "tool:=tattoo", "hardware:=none"]
+    if mass_model is not None:
+        args.append("mass_model:=" + mass_model)
+    out = subprocess.run(args, capture_output=True, text=True, check=True)
     chain = Chain(out.stdout)
     return chain, Model(chain, parse_inertials(out.stdout))
 
