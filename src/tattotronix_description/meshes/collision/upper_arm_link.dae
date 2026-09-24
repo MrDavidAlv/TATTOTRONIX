@@ -113,7 +113,7 @@
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
       <node id="Part3_Centro" name="Part3 Centro" type="NODE">
-        <matrix sid="transform">1 0 0 1.22925e-5 0 -4.37114e-8 -1 -8.0932e-4 0 1 -4.37114e-8 5.57645e-5 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
         <instance_geometry url="#Part3_Centro_001-mesh" name="Part3 Centro" />
       </node>
       <node id="Camera" name="Camera" type="NODE">

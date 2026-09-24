@@ -17,6 +17,15 @@ The meshes themselves are sound: each DAE has exactly the same triangle count
 and the same surface area as its STL, so the two differ by a rigid transform
 and nothing else. This script finds that transform and bakes it into the DAE.
 
+There is a second half, and leaving it out is what made the first half wrong.
+A COLLADA file does not only carry vertices: the node that instantiates the
+geometry carries a <matrix>, and a loader applies it on top. Baking the
+transform into the vertices without clearing that matrix applies it twice. The
+arm still looks right, because RViz and Gazebo draw the STL, and the collision
+shape is somewhere else entirely - which is exactly what happened here, and
+was only caught when MoveIt refused to plan out of a self-collision at the
+home pose. So both halves run, and either can be the one that needs doing.
+
 How it works
 ------------
 For each link, the 48 signed axis permutations are tried. A candidate has to
@@ -25,8 +34,9 @@ centroids on top of the STL ones, checked through a spatial hash at 0.2 mm.
 Only a transform that matches every sampled triangle is applied, so a mesh that
 is not simply misoriented is reported and left alone rather than mangled.
 
-Run from the repository root. It is idempotent: a DAE already in its STL frame
-resolves to the identity and is skipped.
+Run from the repository root. It is idempotent: a DAE whose vertices are
+already in the STL frame and whose node matrix is already the identity is
+reported as aligned and left untouched.
 """
 
 import argparse
@@ -173,6 +183,34 @@ def solve(stl_triangles, dae_triangles):
     return None
 
 
+#: A 4x4 COLLADA node transform that changes nothing, row major.
+IDENTITY_4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+
+
+def geometry_node_matrix(root):
+    """The <matrix> on the node that instantiates the mesh, and its values.
+
+    Only that node. A DAE exported from CAD usually carries a Camera and a
+    Light as well, each with a transform of its own that means nothing to a
+    collision check, and rewriting those would be vandalism rather than a fix.
+    """
+    for scene in root.iter('{%s}visual_scene' % COLLADA_NS):
+        for node in scene.iter('{%s}node' % COLLADA_NS):
+            if node.find('{%s}instance_geometry' % COLLADA_NS) is None:
+                continue
+            element = node.find('{%s}matrix' % COLLADA_NS)
+            if element is None:
+                continue
+            return element, [float(x) for x in element.text.split()]
+    return None, None
+
+
+def node_transform_is_identity(values):
+    """Whether a loader applying this node transform would change anything."""
+    return values is not None and all(
+        abs(v - i) < 1e-6 for v, i in zip(values, IDENTITY_4))
+
+
 def transform_array(array, matrix, translation):
     values = [float(x) for x in array.text.split()]
     out = []
@@ -209,19 +247,35 @@ def main():
             continue
 
         matrix, translation = solution
-        identity = describe(matrix) == '(+x, +y, +z)' and all(
+        vertices_aligned = describe(matrix) == '(+x, +y, +z)' and all(
             abs(t) < 1e-4 for t in translation)
-        if identity:
+
+        element, values = geometry_node_matrix(tree.getroot())
+        node_stale = element is not None and not node_transform_is_identity(values)
+
+        if vertices_aligned and not node_stale:
             print('%-22s already aligned' % name)
             continue
 
-        print('%-22s %s + (%.3f, %.3f, %.3f) cm%s'
-              % (name, describe(matrix), *translation,
-                 '' if args.apply else '   [dry run]'))
+        jobs = []
+        if not vertices_aligned:
+            jobs.append('vertices %s + (%.3f, %.3f, %.3f) cm'
+                        % (describe(matrix), *translation))
+        if node_stale:
+            jobs.append('node transform cleared')
+        print('%-22s %s%s' % (name, '; '.join(jobs),
+                              '' if args.apply else '   [dry run]'))
+
         if args.apply:
-            transform_array(positions, matrix, translation)
-            if normals is not None:
-                transform_array(normals, matrix, [0.0, 0.0, 0.0])
+            if not vertices_aligned:
+                transform_array(positions, matrix, translation)
+                if normals is not None:
+                    transform_array(normals, matrix, [0.0, 0.0, 0.0])
+            if node_stale:
+                # The vertices are in the link frame by this point, so any
+                # transform left on the node is applied on top of an answer
+                # that is already correct.
+                element.text = ' '.join(str(v) for v in IDENTITY_4)
             tree.write(dae_path, encoding='utf-8', xml_declaration=True)
 
 

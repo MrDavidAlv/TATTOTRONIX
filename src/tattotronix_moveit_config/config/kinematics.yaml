@@ -1,0 +1,20 @@
+# Inverse kinematics for the arm group.
+#
+# position_only_ik is not a simplification, it is the only well-posed choice
+# here. A full pose is six numbers and this arm has five joints, so a solver
+# asked for one reports failure on almost every goal. Asking only for the tip
+# position leaves three constraints against five joints, which is solvable with
+# two degrees of freedom to spare.
+#
+# This solver is for travel: lifting clear, crossing to the next stroke,
+# approaching and retracting. It is NOT what draws. Drawing needs the pen axis
+# controlled as well as the tip, and that is solved offline by the 5x5 task
+# Jacobian in docs/scripts/kinematics.py, which takes three position rows and
+# two pen-axis rows and projects out the spin about the needle, because a body
+# of revolution does not care how it is rolled. See docs/architecture.md.
+
+arm:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 0.05
+  position_only_ik: true

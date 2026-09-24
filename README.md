@@ -95,6 +95,7 @@ ros2 launch tattotronix_gazebo simulation.launch.py
 - [Kinematics](#kinematics)
 - [Package Layout](#package-layout)
 - [Architecture](#architecture)
+- [Planning with MoveIt](#planning-with-moveit)
 - [Description Arguments](#description-arguments)
 - [Visualization](#visualization)
 - [Simulation](#simulation)
@@ -361,6 +362,52 @@ Layer 0 depends on nothing here, which is what lets a tool that knows nothing
 about Gazebo or `ros2_control` read the robot's geometry — exactly what
 `docs/scripts/kinematics.py` does. `tests/test_architecture.py` reads the
 manifests and fails on any edge that points the wrong way.
+
+---
+
+## Planning with MoveIt
+
+**[docs/moveit.md](docs/moveit.md)** is the full account. MoveIt is here for
+**collision checking and free-space travel between strokes**, not for inverse
+kinematics: five joints cannot reach an arbitrary six-number pose, so the stock
+solver fails on nearly every full-pose goal, while the drawing is already solved
+offline by this project's 5x5 task Jacobian.
+
+```bash
+ros2 launch tattotronix_gazebo simulation.launch.py
+ros2 launch tattotronix_moveit_config move_group.launch.py
+```
+
+The SRDF and the joint limits are **generated**, not written:
+`docs/scripts/make_moveit_config.py` reads the URDF and the measured dynamics,
+and a test regenerates and compares them, so the description and its semantic
+copy cannot drift. Six of twenty-one link pairs are disabled, and only pairs
+rigidly attached to each other - a disable that has not been proved is not a
+faster planner, it is an arm allowed to pass through itself. The acceleration
+limit is derived from the effective inertia and costs 10.6% of the available
+torque, in line with the 12% the drawing uses.
+
+### What it found immediately
+
+`move_group` loads the model, reports `Using position only ik`, solves inverse
+kinematics onto the panel, and plans a joint-space motion in 11 ms.
+
+It did not at first. Planning failed, and not because of the planner: **the arm
+was in self-collision at the home pose** - the very pose every measured number
+here is taken from.
+
+The collision DAEs were transformed twice. `tools/align_collision_meshes.py`
+baked the STL-to-DAE rotation into the vertices but left the COLLADA
+`<node><matrix>` in place, and a loader applies it again. For `wrist_link` the
+leftover 90 degrees about Y sent its 170 mm length down through the shoulder -
+exactly the pair MoveIt reported. RViz and Gazebo draw the STL, so the arm had
+always looked correct; nothing had ever read the collision geometry until now.
+
+The tool now does both halves of the job, five files were corrected, and no
+published number moved - collision meshes feed neither the kinematics nor the
+dynamics. `tests/test_meshes.py` compares the geometry a loader actually sees,
+node transform included, and was checked by putting the defect back. See
+[docs/moveit.md](docs/moveit.md#the-cause-the-collision-meshes-are-transformed-twice).
 
 ---
 
