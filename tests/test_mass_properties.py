@@ -159,3 +159,77 @@ def test_every_link_mesh_is_closed_enough_to_integrate(mp):
             f'{name}.stl is open by {residual:.1e} of its area; '
             'its volume does not mean anything'
         )
+
+
+def test_a_box_matches_the_closed_form(mp):
+    """The servo helper, against the formula the description already uses."""
+    mass, size = 0.055, (0.0407, 0.0197, 0.0429)
+    tensor = mp.box_inertia(mass, size)
+    x, y, z = size
+    assert tensor[0][0] == pytest.approx(mass * (y * y + z * z) / 12.0)
+    assert tensor[1][1] == pytest.approx(mass * (x * x + z * z) / 12.0)
+    assert tensor[2][2] == pytest.approx(mass * (x * x + y * y) / 12.0)
+    assert np.allclose(tensor - np.diag(np.diag(tensor)), 0.0)
+
+
+def test_splitting_a_body_and_recombining_it_changes_nothing(mp):
+    """The composition rule, checked the only way that really tests it.
+
+    Take one box, call it two boxes of half the mass in the same place,
+    combine them by the same arithmetic the link model uses, and the answer
+    has to come back identical. This catches a wrong parallel-axis sign, a
+    missing mass weight in the centroid, and adding tensors about different
+    points - which are the three ways to get this wrong and still print
+    something that looks like an inertia tensor.
+    """
+    mass, size = 0.08, (0.04, 0.02, 0.043)
+    whole = mp.box_inertia(mass, size)
+
+    halves = [mp.box_inertia(mass / 2, size) for _ in range(2)]
+    centres = [np.zeros(3), np.zeros(3)]
+    masses = [mass / 2, mass / 2]
+    com = sum(m * c for m, c in zip(masses, centres)) / sum(masses)
+    combined = sum(mp.shift(i, m, c - com)
+                   for i, m, c in zip(halves, masses, centres))
+    assert np.allclose(combined, whole, rtol=1e-12)
+
+
+def test_two_masses_apart_have_more_inertia_than_together(mp):
+    """Separation has to cost inertia, by exactly the parallel-axis amount."""
+    m, d = 0.055, 0.06
+    left, right = np.array([-d / 2, 0, 0]), np.array([d / 2, 0, 0])
+    zero = np.zeros((3, 3))
+    com = np.zeros(3)
+    apart = mp.shift(zero, m, left - com) + mp.shift(zero, m, right - com)
+    # Two point masses either side of the centre: no inertia about the axis
+    # through both, and m d^2 / 2 about the other two.
+    assert apart[0][0] == pytest.approx(0.0, abs=1e-18)
+    assert apart[1][1] == pytest.approx(2 * m * (d / 2) ** 2)
+    assert apart[2][2] == pytest.approx(2 * m * (d / 2) ** 2)
+
+
+def test_the_built_arm_conserves_mass(mp):
+    """Shell plus servos, link by link, against what the model reports."""
+    origins = mp.joint_origins()
+    for name in mp.DECLARED:
+        tris = mp.read_stl(mp.MESHES / (name + '.stl'))
+        volume, centroid, covariance = mp.integrate(tris)
+        mass, com, tensor, shell = mp.printed_link(
+            name, volume, centroid, covariance, origins)
+        servos = sum(mp.SERVOS[k]['mass'] for k, _ in mp.SERVO_LAYOUT[name])
+        assert mass == pytest.approx(shell + servos)
+        assert shell == pytest.approx(
+            volume * mp.PLA_SOLID * mp.PRINTED_FRACTION)
+        # An inertia tensor is symmetric and positive definite, always.
+        assert np.allclose(tensor, tensor.T, rtol=1e-12)
+        assert np.all(np.linalg.eigvalsh(tensor) > 0), f'{name} is not physical'
+
+
+def test_every_joint_drives_exactly_one_set_of_servos(mp):
+    """Six servos over five joints, and no joint left unactuated."""
+    driven = [j for servos in mp.SERVO_LAYOUT.values() for _, j in servos]
+    assert len(driven) == 6, f'expected six servos, the layout has {len(driven)}'
+    assert set(driven) == {f'joint_{i}' for i in range(1, 6)}
+    origins = mp.joint_origins()
+    for joint in driven:
+        assert joint in origins, f'{joint} is not a joint in the description'

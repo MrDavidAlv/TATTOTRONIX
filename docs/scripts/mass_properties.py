@@ -39,6 +39,8 @@ would give.
 
 import argparse
 import struct
+import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import numpy as np
@@ -70,6 +72,48 @@ MATERIALS = {
     "PLA, 50% infill": 680.0,
     "PLA, solid": 1240.0,
     "aluminium 6061": 2700.0,
+}
+
+# ---------------------------------------------------------------------------
+# The arm as actually built: printed shells with servos bolted into them.
+#
+# This is where measurement stops and declaration starts, and the line is drawn
+# here on purpose. Volumes above are integrated from the meshes and are facts.
+# Everything in this section is a statement about a robot that is not in the
+# room - it was lost - so none of it can be weighed, and all of it is written
+# as one named constant that is trivial to correct.
+# ---------------------------------------------------------------------------
+
+#: Solid PLA, kg/m^3, and the fraction of solid a printed part actually comes
+#: out at. A 20% infill print is not 20% of solid: the perimeters and the top
+#: and bottom layers are dense, and on parts this small they dominate. A third
+#: of solid is the usual result for a part of this size at 20% with three
+#: perimeters. THIS FRACTION IS A DECLARATION, not a measurement, and it is the
+#: only number here that nothing in the repository can check.
+PLA_SOLID = 1240.0
+PRINTED_FRACTION = 0.35
+
+#: The servos. Masses and dimensions are catalogue figures for the parts named,
+#: declared because the model was not confirmed. Changing them is one line each.
+SERVOS = {
+    "large": {"mass": 0.055, "size": (0.0407, 0.0197, 0.0429), "part": "MG996R"},
+    "small": {"mass": 0.009, "size": (0.0225, 0.0118, 0.0227), "part": "SG90"},
+}
+
+#: Which servos sit in which link, and which joint each one drives. A servo is
+#: mounted on the link *before* the joint it turns, so its mass is placed at
+#: that joint's origin, which the URDF gives exactly.
+#:
+#: Six servos across five joints: the shoulder carries two, which is where a
+#: printed arm doubles them because it is the joint with the most gravity load.
+#: The small one is last, since joint_5 turns nothing but the pen.
+SERVO_LAYOUT = {
+    "base_link": [("large", "joint_1")],
+    "shoulder_link": [("large", "joint_2"), ("large", "joint_2")],
+    "upper_arm_link": [("large", "joint_3")],
+    "forearm_link": [("large", "joint_4")],
+    "wrist_link": [("small", "joint_5")],
+    "tool_mount_link": [],
 }
 
 #: The covariance of the canonical tetrahedron with vertices at the origin and
@@ -180,10 +224,72 @@ def inertia_about(volume, centroid, covariance, density):
     return density * (about_origin - shift), mass
 
 
+def joint_origins():
+    """Where each joint sits in its parent link, from the live description."""
+    import subprocess
+    urdf = ROOT / "src" / "tattotronix_description" / "urdf" / "tattotronix.urdf.xacro"
+    out = subprocess.run(
+        [sys.executable, "-c",
+         "import sys; from xacro import main; sys.argv=['xacro', %r]; main()" % str(urdf)],
+        capture_output=True, text=True)
+    if out.returncode != 0:                                   # pragma: no cover
+        raise SystemExit("xacro failed:\n" + out.stderr)
+    root = ET.fromstring(out.stdout)
+    origins = {}
+    for joint in root.findall("joint"):
+        origin = joint.find("origin")
+        xyz = (origin.get("xyz") if origin is not None else None) or "0 0 0"
+        origins[joint.get("name")] = np.array([float(v) for v in xyz.split()])
+    return origins
+
+
+def box_inertia(mass, size):
+    """Inertia of a solid box about its own centre, kg m^2."""
+    x, y, z = size
+    return np.diag([mass * (y * y + z * z) / 12.0,
+                    mass * (x * x + z * z) / 12.0,
+                    mass * (x * x + y * y) / 12.0])
+
+
+def shift(tensor, mass, offset):
+    """Parallel axis: move an inertia tensor from a body's centre to a frame."""
+    return tensor + mass * (np.dot(offset, offset) * np.eye(3) - np.outer(offset, offset))
+
+
+def printed_link(name, volume, centroid, covariance, origins):
+    """Mass, centre of mass and inertia of one link as built.
+
+    The shell is the mesh at the printed density. Each servo is a box of
+    catalogue size and mass, placed at the origin of the joint it drives. The
+    two are combined properly - masses add, centres of mass average by weight,
+    and both inertias are carried to the combined centre - rather than by
+    smearing the motors into the plastic, which is the whole point: a servo is
+    a third of a link's mass sitting at one end of it.
+    """
+    shell_density = PLA_SOLID * PRINTED_FRACTION
+    shell_inertia, shell_mass = inertia_about(volume, centroid, covariance, shell_density)
+
+    masses = [shell_mass]
+    centres = [centroid]
+    inertias = [shell_inertia]
+    for kind, joint in SERVO_LAYOUT.get(name, []):
+        spec = SERVOS[kind]
+        masses.append(spec["mass"])
+        centres.append(origins[joint])
+        inertias.append(box_inertia(spec["mass"], spec["size"]))
+
+    mass = sum(masses)
+    com = sum(m * c for m, c in zip(masses, centres)) / mass
+    tensor = sum(shift(i, m, c - com) for i, m, c in zip(inertias, masses, centres))
+    return mass, com, tensor, shell_mass
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--density", type=float, default=None,
                     help="kg/m^3 to report a full inertia tensor for")
+    ap.add_argument("--printed", action="store_true",
+                    help="the arm as built: printed shells plus servos")
     args = ap.parse_args()
 
     print("Volumes integrated from the meshes, and the density each declared "
@@ -241,6 +347,39 @@ def main():
     for density in MATERIALS.values():
         row += "%18.3f" % (density * total_volume)
     print(row)
+
+    if args.printed:
+        origins = joint_origins()
+        print("\nThe arm as built: printed shells at %.0f kg/m^3 "
+              "(%.0f%% of solid PLA)\nplus servos placed at the joints they "
+              "drive.\n" % (PLA_SOLID * PRINTED_FRACTION, 100 * PRINTED_FRACTION))
+        print("%-18s %8s %8s %8s   %-24s %s"
+              % ("link", "shell", "servos", "total", "centre of mass, m", "servos"))
+        print("%-18s %8s %8s %8s" % ("", "kg", "kg", "kg"))
+        built = {}
+        for name, (volume, centroid, covariance, declared, _) in results.items():
+            mass, com, tensor, shell = printed_link(
+                name, volume, centroid, covariance, origins)
+            built[name] = (mass, com, tensor)
+            kinds = [k for k, _ in SERVO_LAYOUT.get(name, [])]
+            print("%-18s %8.3f %8.3f %8.3f   (%6.3f,%6.3f,%6.3f)  %s"
+                  % (name, shell, mass - shell, mass, *com,
+                     ", ".join(kinds) or "-"))
+        total = sum(m for m, _, _ in built.values())
+        shells = sum(PLA_SOLID * PRINTED_FRACTION * v
+                     for v, _, _, _, _ in results.values())
+        print("%-18s %8.3f %8.3f %8.3f"
+              % ("TOTAL", shells, total - shells, total))
+        print("\nAgainst %.3f kg declared today. The motors are %.0f%% of the "
+              "arm, so the mass\nis concentrated at the joints rather than "
+              "spread along the links."
+              % (total_mass, 100 * (total - shells) / total))
+
+        print("\nInertia tensors about each centre of mass, kg m^2\n")
+        for name, (mass, com, tensor) in built.items():
+            print("%s   mass %.4f kg" % (name, mass))
+            for row in tensor:
+                print("    %12.3e %12.3e %12.3e" % tuple(row))
 
     if args.density is not None:
         print("\nInertia tensors about each centre of mass at %.0f kg/m^3, "
