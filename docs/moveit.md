@@ -7,11 +7,11 @@ the short version is that five joints cannot reach an arbitrary six-number pose,
 so a solver asked for a full pose fails on nearly every goal, while the drawing
 itself is already solved better offline by this project's 5×5 task Jacobian.
 
-| Motion | Planned by |
-|---|---|
-| Drawing a stroke | This project's 5×5 task inverse kinematics, offline |
-| Lifting, travelling between strokes, approach and retract | MoveIt |
-| Checking any of it is collision free | MoveIt's planning scene |
+| Motion | Planned by, as intended | Today |
+|---|---|---|
+| Drawing a stroke | This project's 5×5 task inverse kinematics, offline | Yes |
+| Lifting, travelling between strokes, approach and retract | MoveIt | No: travel is still part of the offline trajectory `draw.py` sends |
+| Checking any of it is collision free | MoveIt's planning scene | Available on request; not yet run over the drawing |
 
 ---
 
@@ -57,7 +57,10 @@ is not in the URDF, so it is derived rather than picked: each joint is given
 0.2 s to reach its velocity limit, and the torque that costs is checked against
 the effort limit with the measured peak gravity load of 0.31 N·m already
 subtracted. Worst case across the arm is **1.7% of the available effort**, in
-line with the 2% the drawing itself uses. The effective inertia it is computed
+line with the 2% the drawing itself uses. Both are measured against the URDF's
+20 N·m effort limit, which is a placeholder: the servos the arm carried are
+rated near 1 N·m (MG996R) and 0.2 N·m (SG90), so these shares show the ramp is
+cheap in the model, not that the real motors would have that margin. The effective inertia it is computed
 against, 1/(M⁻¹)ᵢᵢ, is recovered from the published gains rather than re-derived.
 The ramp time is the one declared number, and deriving it this way is what shows
 the choice to be affordable instead of assuming it.
@@ -75,7 +78,9 @@ Run against the live description, `move_group` loads the model, reports
 and `/get_planning_scene`. Position-only inverse kinematics onto the middle of
 the panel solves.
 
-Joint-space planning now succeeds: 7 waypoints over 0.53 s, found in 11 ms.
+Joint-space planning now succeeds: 7 waypoints over 0.53 s, found in 10 ms on the
+run `docs/scripts/moveit_check.sh` last recorded in `docs/data/moveit_check.json`
+(planning time varies from run to run; the path does not).
 
 It did not at first, and the reason was not the planner. OMPL reported
 `Skipping invalid start state` — the arm was in self-collision at the pose it
@@ -101,11 +106,11 @@ which is why the raw vertex bounding boxes and triangle counts of the two now
 match exactly, link for link.
 
 What it did not do is clear the `<node><matrix>` that instantiates the geometry
-in each DAE's visual scene. Those matrices are still the original ones, and
-assimp applies them on top of vertices that have already been corrected. The
-transform lands twice:
+in each DAE's visual scene. Those matrices were still the original ones, and
+assimp applied them on top of vertices that had already been corrected. The
+transform landed twice:
 
-| Link | Node matrix still present |
+| Link | Node matrix that had been left in place |
 |---|---|
 | `wrist_link` | 90° about Y |
 | `forearm_link`, `upper_arm_link`, `shoulder_link` | −90° about X, two with a translation |
@@ -140,8 +145,8 @@ and running it again reports every link aligned, which is the idempotence the
 tool claims about itself.
 
 No published number moved. Collision geometry feeds neither the kinematics nor
-the dynamics — those read joint origins and inertias — so all twelve certified
-numbers still match their data files. What changed is that collision queries now
+the dynamics — those read joint origins and inertias — so every number certified
+at the time still matched its data file. What changed is that collision queries now
 answer about the arm that is actually drawn.
 
 `tests/test_meshes.py` is what should have caught this originally and now does.

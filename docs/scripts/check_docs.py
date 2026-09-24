@@ -1,3 +1,17 @@
+# Copyright 2026 Mario David Alvarez Vallejo
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Check that the published documents still agree with the data files.
 
 A document and the run that produced it drift apart silently: someone reruns an
@@ -25,7 +39,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "docs" / "data"
-DOCS = [ROOT / "README.md"] + sorted((ROOT / "docs" / "mathematical-model").glob("*.md"))
+DOCS = ([ROOT / "README.md", ROOT / "docs" / "moveit.md"]
+        + sorted((ROOT / "docs" / "mathematical-model").glob("*.md")))
 
 
 def _spellings(x, unit="", decimals=(0, 1)):
@@ -56,6 +71,7 @@ def claims():
     rec = min(cf["configs"].values(), key=lambda c: c["marking_max_um"])
     pid_g = cs["modes"]["pid+g"]
 
+    mv = json.loads((DATA / "moveit_check.json").read_text(encoding="utf-8"))
     MM = "docs/mathematical-model/"
     out = [
         ("path points", _spellings(s["path_points"], decimals=(0,)),
@@ -82,8 +98,27 @@ def claims():
          [MM + "control.md", MM + "parameters.md"]),
         ("recommended peak torque",
          {f'{rec["tau_peak"]:.2f} N·m'}, [MM + "control.md", MM + "parameters.md"]),
-        ("needle entries", {"98"},
+        # Read from the data. This used to be the literal "98", so the check
+        # compared the documents with themselves and passed for as long as
+        # they agreed - long after the path had come to have 117 entries.
+        ("needle entries", {str(s["needle_entries"])},
          [MM + "toolpath.md", MM + "control.md", MM + "parameters.md", "README.md"]),
+        ("tracer outer perimeter",
+         {f'{s["tracer_annulus_perimeters_mm"][0]:.2f} mm'}, [MM + "toolpath.md"]),
+        ("tracer inner perimeter",
+         {f'{s["tracer_annulus_perimeters_mm"][1]:.2f} mm'}, [MM + "toolpath.md"]),
+        ("logo regions", {f'{s["tracer_logo_regions"]} regions'}, [MM + "toolpath.md"]),
+        ("drawing animation length", {f'{s["path_time_s"]:.0f} s compressed into 24'},
+         [MM + "toolpath.md", "README.md"]),
+        ("moveit plan waypoints", {f'{mv["plan"]["waypoints"]} waypoints over '
+                                   f'{mv["plan"]["duration_s"]:.2f} s'}, ["docs/moveit.md"]),
+        ("moveit planning time", {f'{mv["plan"]["planning_time_s"] * 1000:.0f} ms'},
+         ["docs/moveit.md", "README.md"]),
+    ] + [
+        (f"gravity check, pose {i}",
+         {f"{v:.1e}".split("e")[0] + " × 10" + str(int(f"{v:.1e}".split("e")[1])).translate(
+             str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")) + " N·m"}, [MM + "control.md"])
+        for i, v in enumerate(s["gravity_check_Nm"])
     ]
     return out
 
@@ -94,7 +129,11 @@ def check_numbers():
     bad = []
     for label, want, where in claims():
         for name in where:
-            if not any(w in text.get(name, "") for w in want):
+            # Anchored on both sides: as a bare substring "98" was found inside
+            # "98.4%", and the entry count passed in a document that said 117.
+            body = text.get(name, "")
+            if not any(re.search(r"(?<![\d.])" + re.escape(w) + r"(?![\d])", body)
+                       for w in want):
                 bad.append(f"{name}: {label} should read one of "
                            + " or ".join(sorted(repr(w) for w in want)))
     return bad
@@ -366,6 +405,10 @@ def check_inertia_table():
             if not _traceable(written, [ratio]):
                 bad.append(f"control.md: joint_{j + 1} factor is written {written}, "
                            f"the data gives {ratio:.3f}")
+    j5 = re.search(r"and by ([\d.]+) on `joint_5`", re.sub(r"\s+", " ", text))
+    ratio5 = s["M_diag_zero"][4] / s["J_eff_zero"][4]
+    if j5 is None or not _traceable(j5.group(1), [ratio5]):
+        bad.append(f"control.md: joint_5 factor should read {ratio5:.1f}")
     return bad
 
 
@@ -400,6 +443,37 @@ def check_mass():
         if not re.search(r"(?<![\d.])" + re.escape(phrase), flat):
             bad.append(f"mass.md: expected '{phrase}'")
     return bad
+
+
+def check_kinematics():
+    """kinematics.md and parameters.md against kinematics_study.json.
+
+    Counts, singular values and condition numbers carry no unit, so nothing
+    else reads them; the page went on quoting a 4372-point path long after the
+    path had 16 656.
+    """
+    f = DATA / "kinematics_study.json"
+    if not f.exists():
+        return ["kinematics_study.json is missing; run kinematics_study.py"]
+    k = json.loads(f.read_text(encoding="utf-8"))
+    p = k["path"]
+    mm = ROOT / "docs" / "mathematical-model"
+    kin = re.sub(r"\s+", " ", (mm / "kinematics.md").read_text(encoding="utf-8"))
+    par = re.sub(r"\s+", " ", (mm / "parameters.md").read_text(encoding="utf-8"))
+    want = [
+        (kin, "kinematics.md", f"all {p['points']} path points"),
+        (kin, "kinematics.md", f"{p['sigma1_min']:.4f} … {p['sigma1_max']:.4f}"),
+        (kin, "kinematics.md", f"{p['sigma5_min']:.4f} … {p['sigma5_max']:.4f}"),
+        (kin, "kinematics.md", f"{p['cond_min']:.0f} … {p['cond_max']:.0f}"),
+        (par, "parameters.md", f"{p['sigma5_min']:.4f} … {p['sigma5_max']:.4f}"),
+        (par, "parameters.md", f"{p['cond_min']:.0f} … {p['cond_max']:.0f}"),
+    ]
+    for r in k["placements"]:
+        want.append((kin, "kinematics.md",
+                     f"| {r['width_mm']} × {r['offset_mm']} mm | {r['reach_mm']:.0f} mm | "
+                     f"{r['sigma5_min']:.4f} | {r['cond_max']:.0f} | "
+                     f"{r['ik_converged_pct']:.0f}% |"))
+    return [f"{name}: expected '{w}'" for text, name, w in want if w not in text]
 
 
 def check_paths():
@@ -438,7 +512,8 @@ def main():
     shares = check_shares()
     inertia = check_inertia_table()
     mass = check_mass()
-    for b in nums + traced + gains + shares + inertia + mass + links + paths:
+    kin = check_kinematics()
+    for b in nums + traced + gains + shares + inertia + mass + kin + links + paths:
         print("  FAIL", b)
     print(f"  {len(claims())} documented numbers, "
           f"{'all match' if not nums else str(len(nums)) + ' stale'}")
@@ -452,9 +527,12 @@ def main():
           + ("matches the data" if not inertia else f"{len(inertia)} stale"))
     print("  mass model:        "
           + ("matches the data" if not mass else f"{len(mass)} stale"))
+    print("  kinematics:        "
+          + ("matches the data" if not kin else f"{len(kin)} stale"))
     print(f"  links and anchors: {'all resolve' if not links else str(len(links)) + ' broken'}")
     print(f"  script paths:      {'all resolve' if not paths else str(len(paths)) + ' broken'}")
-    return 1 if (nums or traced or gains or shares or inertia or mass or links or paths) else 0
+    failed = nums + traced + gains + shares + inertia + mass + kin + links + paths
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

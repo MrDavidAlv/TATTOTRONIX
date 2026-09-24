@@ -4,14 +4,21 @@ Model of a **five axis desktop manipulator** that draws the official ROS logo on
 a flat panel. It covers kinematics, the artwork-to-toolpath pipeline, rigid body
 dynamics, joint control and the error budget that ties them together.
 
-> **Every number here is produced by a script, not typed.** The scripts live in
-> [`docs/scripts/`](../scripts/) and read the same URDF that
-> `robot_state_publisher` loads, so the model cannot drift away from the robot:
+> **Every number here comes from a script, and a check holds the documents to
+> it.** The scripts live in [`docs/scripts/`](../scripts/) and read the same URDF
+> that `robot_state_publisher` loads; their results land in `docs/data/`, and
+> `docs/scripts/check_docs.py` fails the build if a published figure no longer
+> matches them. That second half is recent, and it is what found the figures
+> that had been typed and had gone stale.
 >
 > ```bash
-> docs/scripts/fetch_artwork.sh    # the official ROS logo, CC BY-NC, not vendored
-> python3 docs/scripts/analysis.py
+> docs/scripts/fetch_artwork.sh              # the official ROS logo, CC BY-NC, not vendored
+> python3 docs/scripts/mass_properties.py --write-xacro --write-data
+> python3 docs/scripts/analysis.py           # 2 min
+> python3 docs/scripts/kinematics_study.py   # 4 min
+> python3 docs/scripts/control_study.py      # 15 min; also approach_, resample_, rate_study.py
 > python3 docs/scripts/figures.py
+> python3 docs/scripts/check_docs.py
 > ```
 >
 > Where a value is an estimate rather than a measurement, it says so. That
@@ -82,11 +89,12 @@ is quoted against it.
 
 | Error source | Magnitude | Against 0.3 mm | Status |
 |---|---|---|---|
-| Worst tracking error | 46.8 µm, at the hardest moment of the drawing | 0.16× | **Still the largest modelled term.** Bounded by the 1 kHz control rate |
+| Worst tracking error | 46.8 µm, at the hardest moment of the drawing | 0.16× | **The largest modelled term.** Bounded by the 1 kHz control rate |
+| Path discretisation | 45.1 µm chord error at the 0.15 mm step | 0.15× | Under the 0.25 mm mask pitch — see [toolpath](./toolpath.md#what-the-resampling-step-is-actually-for) |
 | Settled tracking error | 6.5 µm | 0.02× | Bounded by the 1 kHz control rate |
-| Path discretisation | chord error below the mask resolution | — | **Fixed** by a 0.15 mm step — see [toolpath](./toolpath.md#what-the-resampling-step-is-actually-for) |
-| Needle entry transient | was 3.2 mm, 98 times per drawing | — | **Fixed** by a 4 mm slow approach — see [control](./control.md#4-the-needle-enters-before-the-loop-settles) |
-| Inverse kinematics residual | $10^{-6}$, dimensionless | — | Negligible |
+| Needle entry transient | was 3.2 mm, 117 times per drawing | — | **Fixed** by a 4 mm slow approach together with the recommended bandwidth — see [control](./control.md#4-the-needle-enters-before-the-loop-settles) |
+| Inverse kinematics residual | 1.0 × 10⁻⁶ | — | Negligible |
+| Actuator torque | modelled against a 20 N·m placeholder | — | **Not credible yet**: the servos the arm carried are rated near 1 N·m and 0.2 N·m |
 | Servo resolution | not modelled | — | Needs the encoder |
 | Backlash and flexure | not modelled | — | Needs the hardware |
 | Tissue deformation | not modelled | — | A separate project |
@@ -95,6 +103,7 @@ The table is sorted by magnitude, and **the order is the result**. Every modelle
 term is now well inside the line width — the worst instant of the drawing sits at
 a sixth of it.
 
-What is left is the bottom three rows, which are not modelled at all. They are
+What is left is the bottom four rows: one modelled against a placeholder, three
+not modelled at all. They are
 what stops this being a credible *accuracy* figure rather than a credible
 *control* figure.

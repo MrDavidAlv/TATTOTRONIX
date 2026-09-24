@@ -23,8 +23,11 @@ reason.
 
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
+
+REPO = Path(__file__).resolve().parents[1]
 
 LINTED = ['docs/scripts', 'tools', 'tests']
 
@@ -75,3 +78,15 @@ def test_no_ai_attribution_in_the_history(repo):
     assert log.stdout.strip(), 'git log returned nothing'
     found = [b for b in BANNED_IN_HISTORY if b in log.stdout.lower()]
     assert not found, f'attribution found in commit history: {found}'
+
+
+@pytest.mark.parametrize('path', sorted(
+    str(p.relative_to(REPO)) for d in LINTED for p in (REPO / d).glob('*.py')))
+def test_every_script_carries_the_licence_header(path):
+    """ament's copyright check covers the ROS packages and nothing else.
+
+    Fourteen files under docs/scripts and tools went without a header for as
+    long as that was true, while CONTRIBUTING said new files needed one.
+    """
+    head = '\n'.join((REPO / path).read_text(encoding='utf-8').splitlines()[:3])
+    assert 'Copyright' in head and 'Mario David Alvarez Vallejo' in head, path

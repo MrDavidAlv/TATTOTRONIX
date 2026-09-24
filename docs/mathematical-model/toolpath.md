@@ -49,7 +49,7 @@ the artwork loader. That was the design goal, and it is now demonstrated rather
 than asserted.
 
 It changed the **results** considerably. The stand-in was nine convex blobs; the
-logo has two counters and **98 needle lifts against 2**. That jump is what
+logo has two counters and **117 needle lifts against 2**. That jump is what
 exposed the needle entry transient as the dominant error
 ([control](./control.md#4-the-needle-enters-before-the-loop-settles)). *The
 stand-in was hiding two separate defects, not one.*
@@ -110,10 +110,14 @@ on three properties a tracer can fail independently:
 through a neck and comes home early; a loop can be closed and have the right hole
 count and still have missed half the boundary.
 
-Annulus perimeter against geometry: **93.48 mm** vs 94.25 mm outside (+0.8%) and
-**50.92 mm** vs 50.27 mm inside (+1.3%). The residual is the pixel staircase the
-smoothing does not quite erase, and it errs in the expected direction — an
-8-connected staircase is longer than the curve it follows.
+Annulus perimeter against geometry: **93.72 mm** against 94.25 mm outside
+(-0.6%) and **50.98 mm** against 50.27 mm inside (+1.4%). The two errors have
+opposite signs, and that is the tell: the trace runs through the *centres* of the
+boundary pixels, half a pixel inside the region. At the 0.25 mm pitch that
+shrinks the outer circle to $2\pi(15 - 0.125) = 93.46$ mm and widens the hole to
+$2\pi(8 + 0.125) = 51.05$ mm, close to both measurements. An earlier version
+of this page blamed a staircase being longer than its curve, which would make
+both loops long; the sign had been hidden by printing an absolute value.
 
 The `E` / `B` pair pins down the distinction that matters: a notch open to the
 edge is concave but **not** a hole.
@@ -135,7 +139,7 @@ pass, which doubled cycle time and would have stippled every edge.
 <div align="center">
 <img src="../figures/drawing.gif" width="900"/>
 <br/>
-<sub>The same path, run. 537 s compressed into 24.</sub>
+<sub>The same path, run. 557 s compressed into 24.</sub>
 </div>
 
 | Parameter | Value | Reason |
@@ -154,7 +158,7 @@ R or the O has to lift and re-enter, and that is where the travel goes.
 
 That last number used to be the project's dominant error, because each entry
 drove the needle in while the loop was still settling. The
-[slow approach](./control.md#the-fix) fixed that, at 14% of cycle time. Ordering
+[slow approach](./control.md#the-fix) fixed that, at 15% of cycle time. Ordering
 the passes to lift less would give that time back, and is worth doing for that
 reason rather than for accuracy now.
 

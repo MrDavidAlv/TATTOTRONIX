@@ -1,3 +1,17 @@
+# Copyright 2026 Mario David Alvarez Vallejo
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Rigid body dynamics for the TATTOTRONIX chain.
 
 Recursive Newton-Euler for inverse dynamics, with the mass, centre of mass and
@@ -158,6 +172,35 @@ class Model:
         M = self.inertia(q)
         bias = self.rnea(q, qd, np.zeros(self.n), gravity=True)
         return np.linalg.solve(M, tau - bias)
+
+
+#: The poses control.md quotes the gravity check at.
+CHECK_POSES = [np.zeros(5), np.array([0.3, -0.5, 0.7, 0.2, -0.4]),
+               np.array([-0.8, 1.0, -0.6, 0.9, 1.1])]
+
+
+def potential(model, q):
+    """Potential energy of every lumped body, in the base frame."""
+    from kinematics import axis_rotation
+    total, T = 0.0, np.eye(4)
+    for i, b in enumerate(model.bodies):
+        R = np.eye(4)
+        R[:3, :3] = axis_rotation(b["axis"], q[i])
+        T = T @ b["pre"] @ R
+        total += b["m"] * -GRAVITY[2] * (T @ np.append(b["com"], 1.0))[2]
+    return total
+
+
+def gravity_check(model, q, step=1e-6):
+    """Worst disagreement between Newton-Euler gravity and dU/dq, N m.
+
+    Two unrelated derivations - a rigid body recursion against the derivative
+    of a scalar - so agreement to machine precision is evidence.
+    """
+    q = np.asarray(q, float)
+    numeric = np.array([(potential(model, q + e * step) - potential(model, q - e * step))
+                        / (2 * step) for e in np.eye(len(q))])
+    return float(np.abs(model.gravity(q) - numeric).max())
 
 
 def load(mass_model=None):

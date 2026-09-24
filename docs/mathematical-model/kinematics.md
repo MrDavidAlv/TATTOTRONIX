@@ -52,12 +52,14 @@ The script's forward kinematics was checked against the live TF tree of the
 running system, `robot_state_publisher` loaded with the same URDF. At the zero
 pose:
 
-| Frame | Script (mm) | Live TF (mm) |
+| Frame | Script (mm) | Live TF, as `tf2_echo` prints it (m) |
 |---|---|---|
-| `tool0` | `213.96, −9.44, 245.58` | `213.96, −9.44, 245.58` |
-| `tattoo_tcp` | `258.96, −9.44, 245.58` | `258.96, −9.44, 245.58` |
+| `tool0` | `213.96, −9.44, 245.58` | `0.214, −0.009, 0.246` |
+| `tattoo_tcp` | `258.96, −9.44, 245.58` | `0.259, −0.009, 0.246` |
 
-They agree to the resolution `tf2_echo` prints. Arm dimensions at the zero pose:
+They agree to the resolution `tf2_echo` prints, which is a millimetre. An
+earlier version of this table showed the live column to a hundredth of a
+millimetre, a precision the tool never printed. Arm dimensions at the zero pose:
 wrist axis at **242 mm**, highest point **292 mm**, flange **214 mm**, tip
 **259 mm**.
 
@@ -119,7 +121,7 @@ are imposed by saturation: with ±1.57 rad on every axis and the panel well
 inside the envelope, saturation firing means the pose is genuinely unreachable,
 not that the solver needs help.
 
-**Result on the logo:** 100% convergence at all 4372 path points, worst residual
+**Result on the logo:** 100% convergence at all 16656 path points, worst residual
 $1.0 \times 10^{-6}$.
 
 ## 6. Reachability and where the drawing goes
@@ -145,16 +147,19 @@ Jacobian:
 | Width × offset | Max reach in $+x$ | $\sigma_5$ | Condition | IK convergence |
 |---|---|---|---|---|
 | 120 × 0 mm | 60 mm | 0.0590 | 30 | 100% |
-| 150 × 0 mm | 75 mm | 0.0484 | 36 | 100% |
+| 150 × 0 mm | 75 mm | 0.0483 | 36 | 100% |
 | 120 × 15 mm | 75 mm | 0.0484 | 36 | 100% |
 | 100 × 30 mm | 80 mm | 0.0441 | 40 | 100% |
-| 150 × 15 mm | 90 mm | 0.0333 | 53 | 100% |
+| 150 × 15 mm | 90 mm | 0.0332 | 53 | 100% |
 | 120 × 30 mm | 90 mm | 0.0333 | 53 | 100% |
-| 150 × 30 mm | 105 mm | — | 457 | 98% |
-| 150 × 45 mm | 120 mm | — | 1462 | 85% |
+| 150 × 30 mm | 105 mm | 0.0055 | 317 | 98% |
+| 150 × 45 mm | 120 mm | 0.0056 | 316 | 85% |
 
-Two different width-and-offset pairs give **exactly the same** $\sigma_5$
-whenever their maximum reach in $+x$ matches. That is what makes it a law rather
+$\sigma_5$ and the condition number are taken over the points where inverse
+kinematics converged; in the last two rows some did not.
+
+Two different width-and-offset pairs give **the same** $\sigma_5$, to within
+0.2%, whenever their maximum reach in $+x$ matches. That is what makes it a law rather
 than a coincidence: $\sigma_5$ depends only on how far the arm reaches, and it
 **falls** as the drawing moves out.
 
@@ -175,8 +180,8 @@ condition number in the thirties on a 200 mm panel.
 
 | Measure | Value over the logo |
 |---|---|
-| $\sigma_1$ (largest) | 1.7486 … 1.7573 |
-| $\sigma_5$ (smallest) | 0.0484 … 0.0846 |
+| $\sigma_1$ (largest) | 1.7485 … 1.7573 |
+| $\sigma_5$ (smallest) | 0.0483 … 0.0846 |
 | Condition number | 21 … 36 |
 
 The arm comes nowhere near a singularity. The extreme of 36 is the right edge of
@@ -184,7 +189,7 @@ the **S**, the point of the drawing furthest out in $+x$, which is consistent
 with the table above.
 
 The weakest singular direction at that worst point is `joint_2` / `joint_3`
-(components −0.48 and +0.81) with some `joint_5` (−0.34): the ordinary
+(components -0.48 and +0.81) with some `joint_5` (-0.34): the ordinary
 half-extended elbow, not a wrist problem.
 
 ### Why `joint_4` sits at zero
@@ -193,8 +198,8 @@ half-extended elbow, not a wrist problem.
 <img src="../figures/05_joint_trajectories.png" width="900"/>
 </div>
 
-`joint_4` is a flat line, and on the real logo it stays flat: its range over
-4372 path points is `0.0000` to `0.0000` rad.
+`joint_4` is a flat line, and on the real logo it stays flat: over 16656 path
+points it never leaves zero by more than 1e-07 rad.
 
 It is not redundant. Its Jacobian column has norm 0.82, comparable to the
 others. **Zero is the solution.** `joint_4` is roll about $x$; any non-zero value

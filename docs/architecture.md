@@ -90,9 +90,9 @@ MoveIt is not a replacement for the inverse kinematics this project already has.
 The reason is the arm itself.
 
 **This is a 5-DOF arm.** A full pose in space needs six numbers, so five joints
-cannot reach an arbitrary pose — the general 6-D inverse kinematics problem has
-no solution here, and MoveIt's stock `KDLKinematicsPlugin` will report failure
-rather than a useful answer for most goals given to it.
+cannot reach an arbitrary pose — the general 6-D inverse kinematics problem is
+over-determined here, and a full-pose goal generally has no exact solution for
+any solver to find.
 
 The project's own solver sidesteps this on purpose. It builds a **5×5 task
 Jacobian**: three rows for the tip position and two for the direction of the pen
@@ -101,15 +101,18 @@ of revolution and rotating it about its own axis changes nothing. Five
 constraints, five joints, square system. That is the right formulation for this
 task, and MoveIt has no reason to be involved in it.
 
-So the split is by motion type:
+So the split is by motion type. **Only part of it is in place.** Today the
+drawing application sends one precomputed trajectory, travel moves included, and
+MoveIt is used on its own: to check collisions and to plan on request. Handing it
+the travel moves is the intended split, not the current one.
 
-| Motion | Planned by | Why |
+| Motion | Planned by, as intended | Why |
 |---|---|---|
 | Drawing a stroke | This project's 5×5 task IK, offline | The path is given in Cartesian space to a fraction of a needle width. It is a tracking problem, not a planning one |
 | Lifting, travelling between strokes, approach and retract | MoveIt | Free space, no Cartesian requirement, and the one place where the arm can collide with the panel, the table or itself |
-| Checking that any of it is collision free | MoveIt's planning scene | The project has never had collision checking. This is the capability being bought |
+| Checking that any of it is collision free | MoveIt's planning scene | The project had no collision checking before it. This is the capability it bought, and the first thing it found was a defect in the collision meshes |
 
-The honest summary is that MoveIt is being added here for **collision checking
+The honest summary is that MoveIt is here for **collision checking
 and free-space motion**, not for inverse kinematics. Configured with
 `position_only_ik`, a 5-DOF group is well posed for MoveIt's solver — three
 constraints against five joints, with two left redundant — and that is enough

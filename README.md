@@ -5,7 +5,9 @@
 <br/>
 <sub>The arm drawing the official ROS logo in Gazebo, with the ink shown as an
 RViz marker — nothing in a simulator leaves a mark when a tool passes over a
-surface. Sped up; the full run is 561 s at a 6 mm/s marking feed.
+surface. Sped up. Recorded on an earlier revision of the path, whose run took
+561 s; the current trajectory takes 557 s at a 6 mm/s marking feed, plus a few
+seconds for the arm to settle before it starts.
 <a href="docs/figures/simulation.mp4">Full clip (MP4)</a>.</sub>
 </div>
 
@@ -43,23 +45,26 @@ docker compose run --rm dev                  # a shell, no graphics
 docker compose run --rm dev colcon test
 docker compose run --rm gui ros2 launch tattotronix_gazebo draw.launch.py
 
-docker compose run --rm ci                   # exactly what CI checks
+docker compose build ci && docker compose run --rm ci   # exactly what CI checks
 ```
 
-Run `ci` before pushing. It is the same image with **nothing mounted over it**,
+Run `ci` before pushing, and build it first: it runs the code baked into the
+image, so without a build it tests whatever you built last. It is the same image with **nothing mounted over it**,
 which is the difference that matters: `dev` mounts the workspace, so a file
 missing from the image is still there because the mount put it back. The
 document certification passed that way and failed the moment CI ran it without
 a mount.
 
-`dev` is headless and is what the analysis scripts and CI use. `gui` is the same
+`dev` is headless and is what the analysis scripts use; CI uses `ci`. `gui` is the same
 image with the host display handed in, for watching the simulation. They are
 separate because a container that needs an X socket fails on a machine with
 none, and CI is exactly that machine.
 
 The workspace is mounted, so edits on the host are what runs; `build/` and
 `install/` stay in named volumes, because mixing a host build tree with a
-container one breaks both.
+container one breaks both. Those volumes persist between runs and are not
+rebuilt for you: after pulling a change that adds or alters a package, run
+`colcon build --symlink-install` inside `dev` once, or it will not find it.
 
 ### On the host
 
@@ -71,7 +76,9 @@ sudo apt update && sudo apt install ros-humble-desktop
 sudo apt install ros-humble-ros-gz-sim ros-humble-ros-gz-bridge \
                  ros-humble-gz-ros2-control ros-humble-ros2-control \
                  ros-humble-ros2-controllers ros-humble-xacro \
-                 ros-humble-joint-state-publisher-gui
+                 ros-humble-joint-state-publisher-gui ros-humble-moveit
+# or, from the checkout, exactly what the package manifests declare:
+#   rosdep install --from-paths src --ignore-src -y
 
 # 3. Build
 git clone git@github.com:MrDavidAlv/TATTOTRONIX.git
@@ -147,7 +154,7 @@ away from the robot. The full write-up lives in
 <br/>
 <sub>The same path rendered directly from the solved trajectory by
 <a href="docs/scripts/render_drawing.py">render_drawing.py</a>: the arm in
-elevation, the panel face on. 561 s compressed into 24 —
+elevation, the panel face on. 557 s compressed into 24 —
 <a href="docs/figures/drawing.mp4">MP4</a>.</sub>
 </div>
 
@@ -160,7 +167,7 @@ elevation, the panel face on. 561 s compressed into 24 —
 | <img src="docs/figures/07_gravity.png" width="420"/><br/>**Gravity torque.** Newton–Euler against the gradient of potential energy, agreeing to 10⁻¹¹ N·m. | <img src="docs/figures/08_step.png" width="420"/><br/>**Step response.** Every gain traces back to a measured inertia and one bandwidth decision. |
 | <img src="docs/figures/09_tracking.png" width="420"/><br/>**Tracking.** Settled the tip holds 118.2 µm; the spikes are needle entries and exits. | <img src="docs/figures/05_joint_trajectories.png" width="420"/><br/>**Joint trajectories.** `joint_4` sits at exactly zero, the correct answer for flat work. |
 | <img src="docs/figures/10_control_study.png" width="420"/><br/>**Control study.** Over the busiest stretch of the logo, where the needle lifts most. | <img src="docs/figures/12_approach.png" width="420"/><br/>**Needle entry.** Landing the last 4 mm at marking feed took the worst entry from 3.2 mm to 347 µm at 40 rad/s; the recommended bandwidth takes the rest inside the line. |
-| <img src="docs/figures/13_resample.png" width="420"/><br/>**Resampling.** A finer path lowers the settled error, because the feedforward differentiates it; on the arm as built the worst case no longer follows. | <img src="docs/figures/14_rate.png" width="420"/><br/>**Controller rate.** The bandwidth ceiling was never the gains — it was the 200 Hz loop rate. |
+| <img src="docs/figures/13_resample.png" width="420"/><br/>**Resampling.** A finer path lowers the settled error, because the feedforward differentiates it; on the arm as built the worst case no longer follows. | <img src="docs/figures/14_rate.png" width="420"/><br/>**Controller rate.** The bandwidth ceiling was never the gains — it was the loop rate, 200 Hz at the time. |
 | <img src="docs/figures/06_manipulability.png" width="420"/><br/>**Conditioning.** Condition number 21 to 36; nowhere near a singularity. | <img src="docs/figures/03_panel.png" width="420"/><br/>**Panel reachability.** The needle can be put perpendicular over 98.4% of the surface. |
 | <img src="docs/figures/18_mass_model.png" width="420"/><br/>**Mass model.** The box approximation made the arm eight times too heavy; as built, the servos are most of it. | <img src="docs/figures/16_collision_after.png" width="420"/><br/>**Collision geometry.** The shape every collision query reads, after the double transform was removed. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
@@ -183,12 +190,12 @@ a name it does not have and it lists the ones it does.
 |---|---|---|---|---|---|
 | `ros_logo` *(default)* | The official ROS logo | threshold | 16 656 | 2558 mm | 9 min |
 | `hagamos` | A wordmark | threshold | 28 468 | 4229 mm | 15 min |
-| `semillero` | A robotics club logo | threshold | 44 066 | 6718 mm | 26 min |
+| `semillero` | A robotics club logo | threshold | 44 066 | 6717 mm | 26 min |
 | `foto` | A photograph, as line art | edges | 40 330 | 5320 mm | 38 min |
 
 Inverse kinematics converges at 100% of the path points for all four.
 
-A fifth, `ingeniero`, is not in the repository. It is 3.9 MB and fully
+A fifth, `ingeniero`, is not in the repository. It is about 4 MB and fully
 reproducible from an image that *is* here, which makes it the one derived
 artifact worth regenerating rather than versioning — the other four come from
 artwork this repository cannot publish, so their trajectory is the only copy.
@@ -229,14 +236,15 @@ covers less than half the image — so artwork on a black field works without a
 flag. `--method edges` traces outlines instead, and is the honest choice for a
 photograph: thresholding a continuous-tone image fuses hair and dark clothing
 into one blob, and recovering that detail with a local threshold came to 34
-hours of marking on a 150 mm portrait. Edges give line art in a fraction of it.
+hours of marking on a 150 mm portrait when it was tried. Edges give line art in a fraction of it.
 
 **`--pitch` is the fill spacing, and it is not the same as coverage.** The
 default 1.2 mm leaves a 0.9 mm gap between passes of a 0.3 mm needle, which is
 hatching rather than filling — legible on bold shapes, hollow on anything
 finer. A pitch at or below the line width fills solid, at four times the marking
-time. The trajectories above use 0.5 mm, which reads as filled without taking
-half an hour.
+time. Three of the trajectories above use 0.5 mm, which reads as filled without
+taking half an hour; the ROS logo keeps the 1.2 mm default, which is what every
+figure in the analysis was measured on.
 
 It refuses to export a trajectory whose inverse kinematics did not converge
 everywhere, rather than hand the arm a path it cannot follow.
@@ -244,22 +252,32 @@ everywhere, rather than hand the arm a path it cannot follow.
 ### Reproducing
 
 ```bash
-docs/scripts/fetch_artwork.sh     # the official ROS logo, CC BY-NC, not vendored
-python3 docs/scripts/rospath.py   # self-checks the contour tracer, then path stats
-python3 docs/scripts/analysis.py  # ~15 min, writes docs/data/analysis.npz
-python3 docs/scripts/control_study.py    # ~30 min
-python3 docs/scripts/approach_study.py   # ~15 min
-python3 docs/scripts/resample_study.py   # ~10 min
-python3 docs/scripts/rate_study.py       # ~40 min
-python3 docs/scripts/figures.py   # writes docs/figures/*.png
-python3 docs/scripts/export_trajectory.py   # trajectory for the draw node
-python3 docs/scripts/render_drawing.py      # the animation at the top
-python3 docs/scripts/check_docs.py       # certifies the documents against the data
+docs/scripts/fetch_artwork.sh                  # the official ROS logo, CC BY-NC, not vendored
+python3 docs/scripts/rospath.py                # self-checks the contour tracer, then path stats
+python3 docs/scripts/mass_properties.py --write-xacro --write-data   # the mass model
+python3 docs/scripts/analysis.py               # 2 min, writes docs/data/summary.json
+python3 docs/scripts/kinematics_study.py       # 4 min
+python3 docs/scripts/control_study.py          # 15 min
+python3 docs/scripts/approach_study.py         # 6 min
+python3 docs/scripts/resample_study.py         # 3.5 min
+python3 docs/scripts/rate_study.py             # 33 min
+python3 docs/scripts/make_moveit_config.py     # SRDF and joint limits
+docs/scripts/moveit_check.sh                   # asks move_group what docs/moveit.md claims
+python3 docs/scripts/figures.py                # writes docs/figures/*.png
+python3 docs/scripts/export_trajectory.py      # trajectory for the draw node
+python3 docs/scripts/render_drawing.py         # the animation at the top
+python3 docs/scripts/check_docs.py             # certifies the documents against the data
 ```
 
-`check_docs.py` is the one that matters if you change anything: it fails if a
-documented number no longer matches the data file it came from, if a link or
-image is broken, or if a script's idea of where the repository is has drifted.
+The studies are independent of each other and can run in parallel; times are
+single runs on a 16-core workstation.
+
+`check_docs.py` is the one that matters if you change anything. It fails if a
+headline number no longer matches the data file it came from, if any figure in
+µm or N·m is absent from the data without a stated reason, if the gains, torque
+shares, inertia table, mass table or kinematic figures disagree with their
+data, or if a link, image or script path is broken. It cannot see a claim with
+no number in it; those have to be re-read against the data by hand.
 
 Beyond ROS 2 Humble these need `numpy`, `scipy`, `matplotlib`, `pillow` and
 `cairosvg`. See [Known Issues](#known-issues) about `PATH` and OSS CAD Suite.
@@ -314,8 +332,10 @@ ends, and is rotated so its +z runs along the bracket's +x. Behind that hole the
 face opens into a stepped boss of radius 2.50, 3.00 and 4.00 mm, concentric with
 it to within 5 um, which is a bearing seat and not a bolt hole.
 
-What the servo drives is not decided yet, so the description records the
-geometry and actuates nothing: the tool hangs off a fixed joint.
+The servo drives the tool, not the arm: it is one of two SG90s on the built arm,
+the other turning `joint_5`. The description records the geometry and actuates
+nothing here — the tool hangs off a fixed joint — but the servo's 9 g is in the
+mass model, on the tool axis.
 
 ---
 
@@ -323,18 +343,21 @@ geometry and actuates nothing: the tool hangs off a fixed joint.
 
 ```
 src/
-  tattotronix_description/   URDF/xacro, meshes, RViz config, display launch
-  tattotronix_control/       ros2_control controller YAML and spawners
-  tattotronix_gazebo/        Gazebo Sim world and the simulation launch
+  tattotronix_description/     URDF/xacro, meshes, generated inertials, RViz config, display launch
+  tattotronix_control/         controller YAML, spawners, the draw node and its trajectories
+  tattotronix_moveit_config/   SRDF, kinematics and planner config, move_group launch
+  tattotronix_gazebo/          Gazebo Sim world, the simulation and draw launches
+docs/scripts/                  the design toolchain: models, studies, figures, certification
 tools/
-  align_collision_meshes.py  Puts each collision DAE in its visual's frame
+  align_collision_meshes.py    puts each collision DAE in its visual's frame
 ```
 
 | Package | Build type | What it owns |
 |---------|-----------|--------------|
 | `tattotronix_description` | `ament_cmake` | The robot. Geometry, kinematics, ros2_control and Gazebo tags, all behind arguments so one file serves RViz, mock hardware and simulation |
-| `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart |
-| `tattotronix_gazebo` | `ament_python` | The studio world and the launch file that assembles simulator, description, spawn, clock bridge and controllers |
+| `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart, and the drawing application with its trajectories |
+| `tattotronix_moveit_config` | `ament_python` | Planning: SRDF and joint limits generated from the description, position-only IK, OMPL, the `move_group` launch |
+| `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers, and run the drawing |
 
 ---
 
@@ -370,10 +393,12 @@ manifests and fails on any edge that points the wrong way.
 ## Planning with MoveIt
 
 **[docs/moveit.md](docs/moveit.md)** is the full account. MoveIt is here for
-**collision checking and free-space travel between strokes**, not for inverse
-kinematics: five joints cannot reach an arbitrary six-number pose, so the stock
-solver fails on nearly every full-pose goal, while the drawing is already solved
-offline by this project's 5x5 task Jacobian.
+**collision checking and free-space motion**, not for inverse kinematics: five
+joints cannot reach an arbitrary six-number pose, so a full-pose goal generally
+has no exact solution, while the drawing is already solved offline by this
+project's 5x5 task Jacobian. Today it runs alongside the drawing rather than
+inside it - travel between strokes is still part of the offline trajectory -
+and handing it those moves is the intended next step.
 
 ```bash
 ros2 launch tattotronix_gazebo simulation.launch.py
@@ -392,7 +417,7 @@ torque, in line with the 2% the drawing uses.
 ### What it found immediately
 
 `move_group` loads the model, reports `Using position only ik`, solves inverse
-kinematics onto the panel, and plans a joint-space motion in 11 ms.
+kinematics onto the panel, and plans a joint-space motion in 10 ms.
 
 It did not at first. Planning failed, and not because of the planner: **the arm
 was in self-collision at the home pose** - the very pose every measured number
@@ -430,7 +455,7 @@ from the planner's side.*
 
 ## Description Arguments
 
-`tattotronix.urdf.xacro` takes four arguments:
+`tattotronix.urdf.xacro` takes five arguments:
 
 | Argument | Values | Default | Effect |
 |----------|--------|---------|--------|
@@ -438,6 +463,7 @@ from the planner's side.*
 | `tool` | `tattoo`, `none` | `tattoo` | Whether the pen is mounted on `tool0` |
 | `controllers_file` | path | empty | Controller manager YAML, read by the Gazebo plugin. Only consulted when `hardware:=gz` |
 | `use_world_link` | `true`, `false` | `true` | Bolts `base_link` to a `world` link. Set false when the arm is embedded in a larger cell |
+| `mass_model` | `printed`, `box` | `printed` | `printed` is the arm as built, shells plus servos, from `inertials_printed.xacro`; `box` is the earlier bounding-box approximation, kept for comparison. Anything else stops the build |
 
 ```bash
 # the exported CAD with no tool and no control stack
@@ -496,7 +522,7 @@ moving it to x = 0.259 m.
 The panel is rigid. Modelling compliant tissue is a separate piece of work and
 pretending otherwise here would hide it.
 
-Arguments: `world`, `world_name`, `tool`, `use_rviz`, `headless`, `spawn_z`.
+Arguments: `world`, `world_name`, `tool`, `use_rviz`, `rviz_config`, `headless`, `spawn_z`.
 
 ---
 
@@ -516,9 +542,12 @@ plugin in simulation and will be read by `ros2_control_node` on hardware, so the
 controller set cannot drift between the two. Anything that genuinely differs
 belongs in the hardware interface, not in that file.
 
-The controller manager runs at 200 Hz. A tattoo needle follows a contour at a
-few millimetres per second, so the control rate is set by how finely the path is
-sampled rather than by how fast the arm moves.
+The controller manager runs at 1 kHz. It used to run at 200 Hz, on the
+reasoning that a needle moving a few millimetres per second does not need more;
+that reasoning was wrong. The loop rate sets the highest bandwidth a joint loop
+can be tuned to, usable up to about a quarter of it, and the bandwidth is what
+keeps the needle on the line — see
+[the rate study](docs/mathematical-model/control.md#7-the-rate-is-the-ceiling).
 
 `arm_controller` claims the position command interface only, because that is the
 only command interface the description exposes; claiming another would leave the
@@ -544,10 +573,15 @@ corrected on the way, because ROS 1 tolerated them and ROS 2 does not:
 
 - **Zero effort limits.** Every joint declared `effort="0"`, which caps actuator
   torque at zero and makes the arm inert under any effort-aware controller. The
-  axes now carry a 20 Nm, 1.5 rad/s envelope with damping and friction.
+  axes now carry a 20 Nm, 1.5 rad/s envelope with damping and friction — a
+  placeholder, far above the roughly 1 N·m and 0.2 N·m the arm's MG996R and
+  SG90 servos are rated at.
 - **An undeclared `world` link.** The base joint parented `base_link` to a link
   that was never declared. The anchor is now explicit and optional.
-- **No inertia anywhere.** Each link gets a bounding-box approximation.
+- **No inertia anywhere.** Each link first got a bounding-box approximation.
+  Those masses later turned out to imply a density above steel's; the default
+  is now the arm as built, integrated from the meshes — see
+  [mass properties](docs/mathematical-model/mass.md).
 - **Collision meshes in the wrong frame.** The CAD was exported twice, STL for
   the visuals and COLLADA for the collision shapes, and the two runs did not
   agree on axes. Every DAE declares `Z_UP` while its coordinates are Y-up, so
@@ -559,8 +593,12 @@ corrected on the way, because ROS 1 tolerated them and ROS 2 does not:
 That last one is worth expanding on, because it was silent and because the fix
 is reproducible. Each DAE has the same triangle count and the same surface area
 as its STL, to 0.01 cm2, so the pair differ by a rigid transform and nothing
-else. `tools/align_collision_meshes.py` recovers that transform and bakes it
-into the DAE:
+else. `tools/align_collision_meshes.py` recovers that transform, bakes it into
+the DAE vertices and clears the COLLADA node matrix that instantiates the
+geometry. The first version did only the first half, so a loader applied the
+transform twice and the arm sat in self-collision at its home pose, which
+nothing noticed until MoveIt refused to plan — see
+[docs/moveit.md](docs/moveit.md#the-cause-the-collision-meshes-are-transformed-twice):
 
 ```bash
 python3 tools/align_collision_meshes.py          # report only
@@ -585,9 +623,9 @@ rotation was undone. That export is now the tool mount.
 The distinction matters, because a detailed placeholder invites people to
 measure off it.
 
-**Measured, from the CAD:** the six link meshes, the five joint axes and their
-origins, the +-1.57 rad travel, the tool mount bracket and the 12.0 mm SG90
-clamp gap.
+**Measured, from the CAD:** the six link meshes and the volumes integrated from
+them, the five joint axes and their origins, the +-1.57 rad travel, the tool
+mount bracket and the 12.0 mm SG90 clamp gap.
 
 **Real, not a stand-in:** the artwork. The drawing is the official ROS logo,
 rasterised from the SVG published by
@@ -601,7 +639,7 @@ is Apache-2.0. Run `docs/scripts/fetch_artwork.sh`.
 | Item | What it is now | Replace with |
 |------|----------------|--------------|
 | Link inertias | Each link's printed shell, its volume integrated from the mesh, plus the servos mounted in it - five large, two SG90 - at catalogue masses. The volumes are measured; the print density (0.35 of solid PLA) and the servo figures are declared | Weighing the parts once the arm is rebuilt |
-| Joint effort and velocity limits | 20 Nm, 1.5 rad/s on every axis | Per-axis gearbox characterisation |
+| Joint effort and velocity limits | 20 Nm, 1.5 rad/s on every axis — far above the roughly 1 N·m and 0.2 N·m of the servos the arm carried | Limits from the servos actually fitted, per axis |
 | The tattoo pen | One 45 mm x 3 mm cylinder on the tool axis | The pen, once it is built |
 | `tool0` offset | x from the far +x face of the bracket mesh, y and z from the middle hole of the outer face and the bearing seat behind it | A CAD datum |
 | Work surface | A rigid panel | A compliant tissue model, which is its own project |
@@ -610,9 +648,11 @@ is Apache-2.0. Run `docs/scripts/fetch_artwork.sh`.
 **Where the model stands.** With gravity and velocity feedforward at
 `wn = 160 rad/s` on a 1 kHz loop, a 4 mm slow approach into the work and the path
 resampled at 0.15 mm, the tip holds 6.5 µm while marking and 46.8 µm at the worst
-moment of the drawing, against a 0.3 mm tattoo line. Every modelled error term is inside the line width. The three that
-are not modelled — servo resolution, backlash and tissue — are what stop this
-from being an accuracy claim. See
+moment of the drawing, against a 0.3 mm tattoo line. Every modelled error term
+is inside the line width. What stops this from being an accuracy claim is four
+things: actuator torque, modelled only against a 20 N·m placeholder rather than
+the servos the arm carried, and servo resolution, backlash and tissue, which are
+not modelled at all. See
 [control](docs/mathematical-model/control.md#6-recommended-configuration).
 
 ---
@@ -642,8 +682,10 @@ from being an accuracy claim. See
   the controllers never finish activating. `docs/scripts/record_simulation.sh`
   refuses to start when it finds one already up; by hand, check with
   `pgrep -af "ign gazebo|rviz2|parameter_bridge"` before launching.
-- **MoveIt is not installed** and no motion planning is wired up yet. The arm
-  accepts joint trajectories on `arm_controller` and nothing plans them.
+- **MoveIt plans, but not the drawing.** It is installed and configured, and it
+  checks collisions and plans on request, but the drawing application still
+  sends one precomputed trajectory, travel moves included. Handing MoveIt the
+  travel moves is the next step, not a current feature.
 
 ---
 
