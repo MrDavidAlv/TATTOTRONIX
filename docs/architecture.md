@@ -50,7 +50,7 @@ not reach it. It has its own suite, `pytest tests/`, and both run in CI.
 
 ## Layers inside `src/`
 
-Four packages, each allowed to depend only on a strictly lower layer. Same-level
+Five packages, each allowed to depend only on a strictly lower layer. Same-level
 dependencies are rejected as well: two packages at one level that need each
 other are one package that has been split for no reason.
 
@@ -60,9 +60,10 @@ other are one package that has been split for no reason.
 | 1 | `tattotronix_control` | `ament_python` | The controller set and the drawing application: `tattotronix_controllers.yaml`, the exported trajectories, `draw.py` | Geometry. It reads the description's |
 | 1 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF, kinematics and planner configuration, the `move_group` launch | Controller gains, which belong to layer 1's other half |
 | 2 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers | Anything that would also be true on hardware |
+| 2 | `tattotronix_hardware` | `ament_cmake` | The real arm: the `ros2_control` driver for its hobby servos through a PCA9685 board | Controller configuration, which it takes from layer 1 unchanged |
 
 ```
-        tattotronix_gazebo            layer 2   assembles
+  tattotronix_gazebo   tattotronix_hardware   layer 2   assembles: simulated, real
            ╱            ╲
 tattotronix_control   tattotronix_moveit_config   layer 1   commands
            ╲            ╱
@@ -77,10 +78,10 @@ Gazebo, `ros2_control` or this project's task, which is exactly what
 ### Why the controllers are backend agnostic
 
 `tattotronix_control` names no simulator. The same YAML is loaded whether the
-hardware interface is `gz_ros2_control`, `mock_components` or, eventually, a
-real bus. If the simulation and the hardware could carry different controller
-configurations, they would, and the difference would be discovered on the
-hardware.
+hardware interface is `gz_ros2_control`, `mock_components` or the real servos'
+driver in `tattotronix_hardware`. If the simulation and the hardware could carry
+different controller configurations, they would, and the difference would be
+discovered on the hardware.
 
 ---
 
@@ -151,7 +152,7 @@ if that stops being true, which is the only way it stays true.
 
 | Pattern | Applies to |
 |---|---|
-| `tattotronix_<role>` | Every ROS package. `role` is the standard ROS one: `description`, `control`, `gazebo`, `moveit_config`, and `bringup` if it ever exists |
+| `tattotronix_<role>` | Every ROS package. `role` is the standard ROS one: `description`, `control`, `gazebo`, `hardware`, `moveit_config`, and `bringup` if it ever exists |
 | `joint_1` … `joint_5` | Joints, base outwards |
 | `<part>_link` | Links, except `tool0`, which is the ROS convention for the tool flange |
 | `tattoo_tcp` | The tool centre point. The frame every Cartesian number in this repository is expressed in |
