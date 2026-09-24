@@ -45,9 +45,16 @@
           <mesh filename="${mesh_path}/collision/${name}.dae" scale="${mesh_scale}"/>
         </geometry>
       </collision>
-      <xacro:inertial_box mass="${mass}" x="${sx}" y="${sy}" z="${sz}">
-        <origin xyz="${cx} ${cy} ${cz}" rpy="0 0 0"/>
-      </xacro:inertial_box>
+      <!-- mass_model is set in tattotronix.urdf.xacro. The box arguments are
+           still passed either way, so the default model is untouched. -->
+      <xacro:if value="${mass_model == 'printed'}">
+        <xacro:call macro="printed_inertial_${name}"/>
+      </xacro:if>
+      <xacro:if value="${mass_model == 'box'}">
+        <xacro:inertial_box mass="${mass}" x="${sx}" y="${sy}" z="${sz}">
+          <origin xyz="${cx} ${cy} ${cz}" rpy="0 0 0"/>
+        </xacro:inertial_box>
+      </xacro:if>
     </link>
   </xacro:macro>
 

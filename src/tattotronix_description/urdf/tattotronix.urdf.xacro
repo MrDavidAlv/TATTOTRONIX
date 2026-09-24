@@ -23,18 +23,35 @@
       use_world_link    true bolts base_link to a world link, which is how the
                         arm is anchored in simulation. Set false when the
                         description is embedded in a larger cell.
+      mass_model        box (default) approximates each link by the solid box
+                        that fits its bounding box, with masses written by hand.
+                        printed is the arm as built: each link's printed shell,
+                        integrated from its mesh, plus the servos mounted in it,
+                        generated into inertials_printed.xacro by
+                        docs/scripts/mass_properties.py. Only inertia changes;
+                        geometry and kinematics are identical in both.
   -->
 
   <xacro:arg name="hardware" default="none"/>
   <xacro:arg name="tool" default="tattoo"/>
   <xacro:arg name="controllers_file" default=""/>
   <xacro:arg name="use_world_link" default="true"/>
+  <xacro:arg name="mass_model" default="box"/>
 
   <xacro:property name="hardware" value="$(arg hardware)"/>
   <xacro:property name="tool" value="$(arg tool)"/>
   <xacro:property name="use_world_link" value="$(arg use_world_link)"/>
+  <xacro:property name="mass_model" value="$(arg mass_model)"/>
+
+  <!-- An unknown model would otherwise match neither branch in arm_macro and
+       leave every arm link with no inertial at all: a massless robot that
+       Gazebo loads without a word. -->
+  <xacro:if value="${mass_model not in ['box', 'printed']}">
+    ${xacro.fatal('mass_model must be box or printed, not ' + str(mass_model))}
+  </xacro:if>
 
   <xacro:include filename="$(find tattotronix_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find tattotronix_description)/urdf/inertials_printed.xacro"/>
   <xacro:include filename="$(find tattotronix_description)/urdf/arm_macro.xacro"/>
   <xacro:include filename="$(find tattotronix_description)/urdf/tattoo_tool.xacro"/>
   <xacro:include filename="$(find tattotronix_description)/urdf/tattotronix.ros2_control.xacro"/>
