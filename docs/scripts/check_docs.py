@@ -133,13 +133,56 @@ def claims():
                                    f'{mv["plan"]["duration_s"]:.2f} s'}, ["docs/moveit.md"]),
         ("moveit planning time", {f'{mv["plan"]["planning_time_s"] * 1000:.0f} ms'},
          ["docs/moveit.md", "README.md"]),
-    ] + [
+    ] + actuator_claims(MM) + [
         (f"gravity check, pose {i}",
          {f"{v:.1e}".split("e")[0] + " × 10" + str(int(f"{v:.1e}".split("e")[1])).translate(
              str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")) + " N·m"}, [MM + "control.md"])
         for i, v in enumerate(s["gravity_check_Nm"])
     ]
     return out
+
+
+def actuator_claims(MM):
+    """Every cell of actuators.md's two tables, and the figures quoted elsewhere."""
+    a = json.loads((DATA / "actuator_study.json").read_text())
+    o = a["options"]
+    pca, ard = o["as built, PCA9685 at 50 Hz"], o["as built, Arduino Servo library"]
+    upgraded, bus = o["bus servos on joints 1 to 3"], o["bus servos, 12-bit encoders"]
+    page = [MM + "actuators.md"]
+    out = []
+    for name, opt in o.items():
+        for key in ("lateral_worst_mm", "lateral_rms_median_mm", "depth_worst_mm"):
+            out.append((f"actuators: {name}, {key}", {f"{opt[key]:.2f} mm"}, page))
+    for j, (lat, dep) in enumerate(zip(a["lever_lateral_mm_per_deg"],
+                                       a["lever_depth_mm_per_deg"])):
+        out.append((f"actuators: joint {j + 1} lever", {f"{lat:.2f} mm/°"}, page))
+        out.append((f"actuators: joint {j + 1} depth lever", {f"{dep:.2f} mm/°"}, page))
+    per_tenth = a["play_lateral_mm_per_deg"] / 10
+    return out + [
+        ("actuators: MG996R rests within", {f"±{pca['rest_deg'][0]:.3f}°"}, page),
+        ("actuators: SG90 rests within", {f"±{pca['rest_deg'][4]:.3f}°"}, page),
+        ("actuators: one degree of play", {f"{a['play_lateral_mm_per_deg']:.2f} mm"}, page),
+        ("actuators: a tenth of a degree", {f"{per_tenth:.2f} mm"},
+         page + [MM + "README.md", MM + "parameters.md"]),
+        ("actuators: joint resolution needed", {f"{a['required_deg']:.3f}°"},
+         page + [MM + "parameters.md"]),
+        ("actuators: PCA9685 floor", {f"{pca['lateral_worst_mm']:.2f} mm"},
+         [MM + "README.md", MM + "parameters.md", "README.md"]),
+        ("actuators: PCA9685 typical", {f"{pca['lateral_rms_median_mm']:.2f} mm"},
+         [MM + "README.md"]),
+        ("actuators: PCA9685 in line widths",
+         {f"{pca['times_line']:.1f} line widths", f"{pca['times_line']:.1f}×"},
+         page + [MM + "README.md"]),
+        ("actuators: Arduino in line widths", {f"{ard['times_line']:.1f} with an Arduino"},
+         page),
+        ("actuators: bus servos in line widths",
+         {f"{bus['times_line']:.1f} line widths", f"leave {bus['times_line']:.1f}"},
+         page + [MM + "README.md"]),
+        ("actuators: README floors", {f"{ard['lateral_worst_mm']:.2f} mm"}, ["README.md"]),
+        ("actuators: README, joints 1 to 3", {f"{upgraded['lateral_worst_mm']:.2f} mm"},
+         ["README.md"]),
+        ("actuators: README, every joint", {f"{bus['lateral_worst_mm']:.2f} mm"}, ["README.md"]),
+    ]
 
 
 def check_numbers():
@@ -257,8 +300,9 @@ DECLARED = {
 #: vouch for one. The membership test compares numbers, not units, and a mass
 #: file full of areas and volumes will contain something that rounds to almost
 #: any figure: upper_arm_link's 299.57 cm^2 of surface once "traced" the 300 um
-#: line width.
-NOT_MEASURED_IN_UM_OR_NM = {"mass_properties.json"}
+#: line width. The actuator study is in millimetres and degrees, and carries
+#: thousands of them for its figure.
+NOT_MEASURED_IN_UM_OR_NM = {"mass_properties.json", "actuator_study.json"}
 
 
 def _data_values():

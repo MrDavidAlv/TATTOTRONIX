@@ -423,7 +423,9 @@ rate. Same hard window:
 | $\omega_n = 160$, PID + g | 6.5 µm | 51.1 µm | 0.35 N·m |
 | $\omega_n = 160$, PID + g + v | **6.5 µm** | **46.8 µm** | 0.35 N·m |
 
-**The whole drawing sits inside the line, worst case included**, at about a
+**The whole drawing sits inside the line, worst case included**, for the joint
+loop this page studies — the hobby servos the arm was built with close their own
+loop and cannot, as [actuators](./actuators.md) shows — at about a
 sixth of its width: 46.8 µm against 300 µm, with a settled mean of 6.5 µm, at
 2% of the 20 N·m torque limit - a limit the description declares as a
 placeholder, far above the roughly 1 N·m an MG996R is rated at, so this share

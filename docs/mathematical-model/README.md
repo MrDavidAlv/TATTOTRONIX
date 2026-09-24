@@ -17,6 +17,7 @@ dynamics, joint control and the error budget that ties them together.
 > python3 docs/scripts/analysis.py           # 2 min
 > python3 docs/scripts/kinematics_study.py   # 4 min
 > python3 docs/scripts/control_study.py      # 15 min; also approach_, resample_, rate_study.py
+> python3 docs/scripts/actuator_study.py     # seconds
 > python3 docs/scripts/figures.py
 > python3 docs/scripts/check_docs.py
 > ```
@@ -44,7 +45,9 @@ dynamics, joint control and the error budget that ties them together.
 4. **[Mass properties](./mass.md)** — volumes integrated from the meshes, the
    arm as built as printed shells plus seven servos, and **why the box
    approximation made it eight times too heavy**
-5. **[Parameters](./parameters.md)** — every value, with its source
+5. **[Actuators](./actuators.md)** — what hobby servos let any controller do,
+   and **why the servos, not the control, now set the floor under the error**
+6. **[Parameters](./parameters.md)** — every value, with its source
 
 ---
 
@@ -89,21 +92,22 @@ is quoted against it.
 
 | Error source | Magnitude | Against 0.3 mm | Status |
 |---|---|---|---|
-| Worst tracking error | 46.8 µm, at the hardest moment of the drawing | 0.16× | **The largest modelled term.** Bounded by the 1 kHz control rate |
+| Servo resolution, as built | 3.80 mm worst, 1.43 mm typical, driven by a PCA9685 | 12.7× | **The largest term by far**, and the servos' own: no controller above them removes it — see [actuators](./actuators.md) |
+| Worst tracking error | 46.8 µm, at the hardest moment of the drawing | 0.16× | **The largest term the controller owns.** Bounded by the 1 kHz control rate |
 | Path discretisation | 45.1 µm chord error at the 0.15 mm step | 0.15× | Under the 0.25 mm mask pitch — see [toolpath](./toolpath.md#what-the-resampling-step-is-actually-for) |
 | Settled tracking error | 6.5 µm | 0.02× | Bounded by the 1 kHz control rate |
 | Needle entry transient | was 3.2 mm, 117 times per drawing | — | **Fixed** by a 4 mm slow approach together with the recommended bandwidth — see [control](./control.md#4-the-needle-enters-before-the-loop-settles) |
 | Inverse kinematics residual | 1.0 × 10⁻⁶ | — | Negligible |
 | Actuator torque | modelled against a 20 N·m placeholder | — | **Not credible yet**: the servos the arm carried are rated near 1 N·m and 0.2 N·m |
-| Servo resolution | not modelled | — | Needs the encoder |
-| Backlash and flexure | not modelled | — | Needs the hardware |
+| Backlash and flexure | not measured; up to 0.81 mm per 0.1° of play at every joint | — | Needs the hardware — see [actuators](./actuators.md#5-what-the-drawing-needs) |
 | Tissue deformation | not modelled | — | A separate project |
 
-The table is sorted by magnitude, and **the order is the result**. Every modelled
-term is now well inside the line width — the worst instant of the drawing sits at
-a sixth of it.
+The table is sorted by magnitude, and **the order is the result**. Everything the
+controller owns is well inside the line width — the worst instant of the drawing
+sits at a sixth of it. The servos are not: the arm as built can come to rest 12.7
+line widths from where it was sent, whatever the controller does, and bus servos
+with encoders on every joint would still leave 2.4. What limits the drawing now
+is the hardware, not the control.
 
-What is left is the bottom four rows: one modelled against a placeholder, three
-not modelled at all. They are
-what stops this being a credible *accuracy* figure rather than a credible
-*control* figure.
+Below that, one term is modelled against a placeholder and two are not modelled
+at all.

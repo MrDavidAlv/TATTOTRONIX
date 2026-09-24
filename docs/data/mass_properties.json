@@ -12,7 +12,8 @@
           0.0429
         ],
         "part": "MG996R",
-        "stall_Nm": 0.92
+        "stall_Nm": 0.92,
+        "deadband_us": 5.0
       },
       "small": {
         "mass": 0.009,
@@ -22,7 +23,8 @@
           0.0227
         ],
         "part": "SG90",
-        "stall_Nm": 0.18
+        "stall_Nm": 0.18,
+        "deadband_us": 10.0
       }
     }
   },

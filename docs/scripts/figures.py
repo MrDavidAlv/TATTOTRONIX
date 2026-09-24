@@ -742,9 +742,67 @@ def fig_mass():
            "concentrated at the joints.")
 
 
+def fig_actuators():
+    """The tip error the servos' resolution leaves, against the line."""
+    import json
+    f = DATA / "actuator_study.json"
+    if not f.exists():
+        print("   (skipping 30, actuator_study.json not found)")
+        return
+    S = json.loads(f.read_text())
+    opts = list(S["options"].items())
+    colours = C[:len(opts)]
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11.6, 4.0),
+                                 gridspec_kw={"width_ratios": [1.35, 1]})
+    t = np.array(S["series_t_s"])
+    for (name, o), colour in zip(opts, colours):
+        a1.plot(t, o["series_lateral_worst_mm"], color=colour, lw=1.1, label=name, zorder=3)
+    a1.axhline(S["line_mm"], color=INK2, lw=1.2, ls=(0, (4, 2)), zorder=2)
+    a1.text(t[-1], S["line_mm"] * 1.1, f"the {S['line_mm']} mm line", color=INK2,
+            fontsize=8.2, ha="right", va="bottom")
+    a1.set_yscale("log")
+    a1.set_ylim(0.15, 16)
+    a1.set_yticks([0.2, 0.3, 0.5, 1, 2, 5, 10], ["0.2", "0.3", "0.5", "1", "2", "5", "10"])
+    a1.minorticks_off()
+    a1.set_xlim(0, t[-1])
+    a1.set_xlabel("time into the drawing  [s]")
+    a1.set_ylabel("worst lateral tip error  [mm]")
+    a1.set_title("Along the drawing, while the needle is down", fontsize=10, loc="left")
+    a1.legend(fontsize=8, loc="upper left", ncol=2)
+    grid_on(a1, "y")
+
+    x = np.arange(len(S["joints"]))
+    w = 0.8 / len(opts)
+    for i, ((name, o), colour) in enumerate(zip(opts, colours)):
+        a2.bar(x + (i - (len(opts) - 1) / 2) * w, o["rest_deg"], w * 0.92, color=colour,
+               zorder=3)
+    a2.axhline(S["required_deg"], color=INK2, lw=1.2, ls=(0, (4, 2)), zorder=2,
+               label=f"needed to hold the line: ±{S['required_deg']:.3f}°")
+    a2.set_yscale("log")
+    a2.set_ylim(0.02, 4)
+    a2.set_yticks([0.03, 0.1, 0.3, 1, 3], ["0.03", "0.1", "0.3", "1", "3"])
+    a2.minorticks_off()
+    a2.legend(fontsize=8, loc="upper left")
+    a2.set_xticks(x, [f"{j}\n{S['declared']['servo_by_joint'][j]}" for j in S["joints"]],
+                  fontsize=8)
+    a2.set_ylabel("where a joint can rest, ± degrees")
+    a2.set_title("Each joint, against what the line needs", fontsize=10, loc="left")
+    grid_on(a2, "y")
+    worst = {name: o["lateral_worst_mm"] for name, o in opts}
+    finish(fig, "30_actuators.png",
+           "The servos, not the controller, set the floor under the tip error",
+           f"A servo rests anywhere inside its dead band, and every command is rounded "
+           f"to the step of whatever makes the pulse. Through the arm's Jacobian, at the "
+           f"worst corner of those errors, the needle can be "
+           f"{worst['as built, PCA9685 at 50 Hz']:.1f} mm off the line with a PCA9685, "
+           f"{worst['as built, Arduino Servo library']:.1f} mm with an Arduino and "
+           f"{worst['bus servos, 12-bit encoders']:.2f} mm with 12-bit bus servos. Holding a "
+           f"{S['line_mm']} mm line needs every joint to hold {S['required_deg']:.3f}°.")
+
+
 if __name__ == "__main__":
     print("figures:")
     fig_chain(); fig_workspace(); fig_panel(); fig_toolpath(); fig_joint_traj()
     fig_manip(); fig_gravity(); fig_step(); fig_tracking(); fig_control_study()
     fig_contours(); fig_approach(); fig_resample(); fig_rate()
-    fig_mass()
+    fig_mass(); fig_actuators()
