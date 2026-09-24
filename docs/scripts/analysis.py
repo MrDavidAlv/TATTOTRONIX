@@ -189,6 +189,48 @@ def single_axis_overshoot(wn=None):
     return float((y.max() - 1) * 100)
 
 
+def coupled_loop(M, J, wn, dt=None):
+    """The joint loops closed on the whole arm, as one linear system.
+
+    tune() treats each axis as its own double integrator, but the axes share a
+    mass matrix. Gravity is cancelled by its feedforward, so the feedback sees M
+    alone. The state is [q, qd, ei] for every joint.
+
+    With dt=None the loop is continuous and this returns its system matrix. With
+    dt it is sampled the way simulate() and the studies run it - torque held
+    between samples, the integral updated before it is used - and this returns
+    the map from one sample to the next.
+    """
+    n = len(J)
+    Minv = np.linalg.inv(M)
+    Kp, Kd, Ki = 3 * J * wn ** 2, 3 * J * wn, J * wn ** 3
+    I, Z = np.eye(n), np.zeros((n, n))
+    if dt is None:
+        return np.block([[Z, I, Z],
+                         [-Minv * Kp, -Minv * Kd, Minv * Ki],
+                         [-I, Z, Z]])
+    A = np.block([[I, dt * I, Z], [Z, I, Z], [-dt * I, Z, I]])
+    B = np.vstack([dt ** 2 / 2 * Minv, dt * Minv, Z])
+    return A + B @ np.hstack([-np.diag(Kp + Ki * dt), -np.diag(Kd), np.diag(Ki)])
+
+
+def sampled_boundary(M, J):
+    """The largest wn * dt at which the sampled loop of the arm is stable.
+
+    Found by bisection on the spectral radius of coupled_loop(), with no
+    assumption about its structure. The notebook docs/notebooks/03_control
+    derives it in closed form, and checks the two against each other.
+    """
+    def rho(x):
+        return np.abs(np.linalg.eigvals(coupled_loop(M, J, x, dt=1.0))).max()
+    lo, hi = 1e-3, 2.0
+    assert rho(lo) < 1 < rho(hi)
+    for _ in range(50):
+        mid = 0.5 * (lo + hi)
+        lo, hi = (mid, hi) if rho(mid) < 1 else (lo, mid)
+    return lo
+
+
 def simulate(model, Kp, Ki, Kd, q_ref_fn, t_end, dt=1.0 / 1000, q0=None,
              gravity_ff=True, tau_max=20.0):
     """Closed loop with the full nonlinear dynamics in the plant."""
@@ -372,6 +414,25 @@ def main():
     summary["step_overshoot_single_axis_pct"] = out["step_overshoot_single_axis"]
     summary["step_overshoot_ff_pct"] = out["step_overshoot_ff"].tolist()
     summary["step_overshoot_noff_pct"] = out["step_overshoot_noff"].tolist()
+
+    # The loop on the whole arm rather than on one axis. Every gain is a multiple
+    # of the same effective inertia, so the coupled loop splits into modes whose
+    # gain is scaled by the eigenvalues of M^-1 J_eff; the notebook derives why.
+    # Those set how damped the arm's loop really is, and how slow a sample rate
+    # it survives - at the tuning pose, and anywhere along the drawing.
+    M = model.inertia(q_ref)
+    J = 1.0 / np.diag(np.linalg.inv(M))
+    poles = np.linalg.eigvals(coupled_loop(M, J, TUNE_WN))
+    boundary = []
+    for q in Qp[::10]:
+        Mq = model.inertia(q)
+        boundary.append(sampled_boundary(Mq, 1.0 / np.diag(np.linalg.inv(Mq))))
+    summary |= {
+        "modal_gain": np.sort(np.linalg.eigvals(np.linalg.inv(M) * J).real)[::-1].tolist(),
+        "coupled_zeta_min": float(np.min(-poles.real / np.abs(poles))),
+        "sampled_boundary_wnT": sampled_boundary(M, J),
+        "sampled_boundary_band_wnT": [min(boundary), max(boundary)],
+    }
     import dynamics
     summary["gravity_check_Nm"] = [dynamics.gravity_check(model, q) for q in dynamics.CHECK_POSES]
     tracer = {}

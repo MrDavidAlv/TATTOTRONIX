@@ -21,6 +21,9 @@ seconds for the arm to settle before it starts.
 [![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros)](#)
 [![Ignition Fortress](https://img.shields.io/badge/Gazebo-Fortress-orange)](#)
 [![ros2_control](https://img.shields.io/badge/ros2__control-Humble-00599C)](#)
+[![Colab: Kinematics](https://img.shields.io/badge/Colab-Kinematics-F9AB00?logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1Lmc4HzBdJf-z6v3CmRNt6g5lY85Nq4Dd?usp=sharing)
+[![Colab: Dynamics](https://img.shields.io/badge/Colab-Dynamics-F9AB00?logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing)
+[![Colab: Control](https://img.shields.io/badge/Colab-Control-F9AB00?logo=googlecolab&logoColor=white)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/03_control.ipynb)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-MrDavidAlv-181717?logo=github)](https://github.com/MrDavidAlv/TATTOTRONIX)
 
@@ -174,8 +177,9 @@ browser, with no ROS installed:
 
 | Notebook | | |
 |---|---|---|
-| **[Kinematics](docs/notebooks/01_kinematics.ipynb)** | Rotations and Rodrigues' formula, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, manipulability ellipsoids, damped least-squares inverse kinematics, and the arm drawing in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/01_kinematics.ipynb) |
-| **[Dynamics](docs/notebooks/02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix from kinetic energy, Coriolis terms from Christoffel symbols, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/02_dynamics.ipynb) |
+| **[Kinematics](docs/notebooks/01_kinematics.ipynb)** | Rotations and Rodrigues' formula, homogeneous transforms, forward kinematics derived symbolically, the product of exponentials, the space, geometric and task Jacobians, manipulability ellipsoids, damped least-squares inverse kinematics, and the arm drawing in 2D and 3D | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Lmc4HzBdJf-z6v3CmRNt6g5lY85Nq4Dd?usp=sharing) |
+| **[Dynamics](docs/notebooks/02_dynamics.ipynb)** | Inertia tensors and the spatial inertia matrix, the equations of motion, the mass matrix from kinetic energy, Coriolis terms from Christoffel symbols, gravity from potential energy, energy conservation with the arm falling freely, and the torque each servo has to supply | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing) |
+| **[Control](docs/notebooks/03_control.ipynb)** | Pole placement derived symbolically, where the overshoot comes from and what feedforward does to it, the following error in closed form, the modes the coupling splits the arm's loop into, the sampled loop and its exact rate ceiling, and the non-linear arm past it | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/03_control.ipynb) |
 
 Each formula is implemented where it can be read and then checked against the
 model the repository runs, and every notebook is executed on each build, so their
@@ -197,6 +201,8 @@ model the repository runs, and every notebook is executed on each build, so thei
 | <img src="docs/figures/22_ik_convergence.png" width="420"/><br/>**Inverse kinematics.** Damped least squares written out by hand, matching the repository's solver to 10⁻¹². | <img src="docs/figures/17_moveit_planning.png" width="420"/><br/>**MoveIt.** The planning scene against the corrected collision geometry: no link in collision. |
 | <img src="docs/figures/23_mass_matrix.png" width="420"/><br/>**Mass matrix.** Coupling between joints for both mass models, and how much of it reaches the wrist. | <img src="docs/figures/24_free_fall.png" width="420"/><br/>**Energy.** The arm falling freely: kinetic and potential trade places and the total stays flat. |
 | <img src="docs/figures/25_servo_torque.png" width="420"/><br/>**Servo torque.** Gravity and velocity torque while drawing, against each joint's servos. | <img src="docs/figures/21_arm_3d.gif" width="420"/><br/>**In 3D.** The arm's real meshes replaying the drawing. |
+| <img src="docs/figures/26_loop_structures.png" width="420"/><br/>**Loop structures.** One PID, three places for the reference to enter: the overshoot and the lag each one leaves. | <img src="docs/figures/27_coupled_modes.png" width="420"/><br/>**Coupled modes.** The arm splits the per-joint loops into five modes; none of them is the loop that was designed. |
+| <img src="docs/figures/28_rate_ceiling.png" width="420"/><br/>**The rate ceiling.** Stable while ωnT < 2/(3λmax): the rule that sorts all nine runs of the rate study. | <img src="docs/figures/29_past_the_ceiling.png" width="420"/><br/>**Past the ceiling.** The non-linear arm grows at the rate the sampled loop predicts, until the torque limit. |
 | <img src="docs/figures/18_mass_model.png" width="420"/><br/>**Mass model.** The box approximation made the arm eight times too heavy; as built, the servos are most of it. | <img src="docs/figures/16_collision_after.png" width="420"/><br/>**Collision geometry.** The shape every collision query reads, after the double transform was removed. |
 | <img src="docs/images/gazebo_simulation.png" width="420"/><br/>**Gazebo.** The arm under `ros2_control` in Ignition Fortress. | <img src="docs/images/rviz_display.png" width="420"/><br/>**RViz.** Joint origins and the tool frames. |
 
@@ -295,7 +301,7 @@ python3 docs/scripts/figures.py                # writes docs/figures/*.png
 python3 docs/scripts/export_trajectory.py      # trajectory for the draw node
 python3 docs/scripts/render_drawing.py         # the animation at the top
 python3 docs/scripts/check_docs.py             # certifies the documents against the data
-python3 docs/notebooks/build.py --export 01_kinematics 02_dynamics   # the notebooks' figures
+python3 docs/notebooks/build.py --export 01_kinematics 02_dynamics 03_control   # the notebooks' figures
 ```
 
 The studies are independent of each other and can run in parallel; times are

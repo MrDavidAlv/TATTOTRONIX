@@ -6,11 +6,16 @@
 >
 > **Worked through step by step, in the browser:** the
 > [dynamics notebook](../notebooks/02_dynamics.ipynb)
-> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/02_dynamics.ipynb)
+> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16LlfGKtVIHmqNoxojnTrFz47NQBHQEkX?usp=sharing)
 > rebuilds the equations of motion — inertia tensors, the mass matrix from kinetic
 > energy, Coriolis terms from Christoffel symbols, gravity from potential energy —
 > and checks each against the Newton–Euler model below by a route that shares none
-> of its code.
+> of its code. The [control notebook](../notebooks/03_control.ipynb)
+> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MrDavidAlv/TATTOTRONIX/blob/humble/docs/notebooks/03_control.ipynb)
+> derives the controller: the gains from pole placement, the overshoot and the lag
+> in closed form, the modes the coupling splits the arm's loop into, and the rate
+> ceiling as an exact boundary. Figures marked *from the control notebook* are its
+> output.
 
 ## 1. The dynamic model
 
@@ -137,6 +142,33 @@ others relative to its own inertia, the further it goes. The drawing never asks
 for a step, and feedforward carries most of what it does ask for, but a step is
 how a loop is judged, and the claim was wrong.
 
+**Why the joints overshoot by different amounts** has an exact answer. Every gain
+is a multiple of the same diagonal matrix of effective inertias $\mathcal J$, so the
+arm's closed loop splits into five modes, one for each eigenvalue $\lambda$ of
+$M^{-1}\mathcal J$, and in each of them the gains are scaled by $\lambda$:
+
+$$s^3 + \lambda\,\bigl(3\omega_n s^2 + 3\omega_n^2 s + \omega_n^3\bigr) = 0 .$$
+
+A mode with $\lambda = 1$ is the loop that was designed, and the $\lambda$ average
+exactly one, because the trace of $M^{-1}\mathcal J$ is the number of joints. On
+the arm as built they run from 0.21 to 2.11 at the tuning pose, so no mode is the
+designed loop: the softest gets a fifth of its gain and rings, with a damping
+ratio of 0.17. Tuning against the effective inertia is right on average, and only
+on average. A mode whose $\lambda$ fell below $1/9$ would oscillate for ever,
+however well each joint was tuned on its own; on this drawing the softest comes
+within about 1.4 times that.
+
+<div align="center">
+<img src="../figures/27_coupled_modes.png" width="900"/>
+<br/>
+<sub>From the control notebook. Left: where each mode's poles land, on the root
+locus of one axis with its gains scaled by λ. The square is the designed triple
+pole, which no mode of the arm has. Right: the overshoot the linear model of those
+modes predicts for each joint, against the non-linear arm's. They agree to within
+a percentage point on the three big joints, and on all five once the step is
+small enough to keep the arm near its linearisation.</sub>
+</div>
+
 **Two details that are not cosmetic.**
 
 An earlier version used the second order PD rule, $K_p = J\omega_n^2$ and
@@ -192,6 +224,22 @@ velocity out of the error.** There are two ways out and they are not equivalent:
 raise $\omega_n$, which is bounded by the loop rate ([section 7](#7-the-rate-is-the-ceiling))
 and by torque, or feed the reference forward, so the loop no longer has to
 generate the velocity.
+
+Feeding the reference velocity forward is the same as moving the derivative onto
+the error, and in closed form it cuts the peak from $0.84$ to $0.23\,v/\omega_n$
+and brings it sooner; it also lowers a step's overshoot from 25% to 21%. The one
+arrangement with no overshoot at all, I-PD, where only the integral sees the
+reference, settles into a lag of $3\,v/\omega_n$ that it never recovers. On a
+drawing that is almost all moving line, that is the worst of the three.
+
+<div align="center">
+<img src="../figures/26_loop_structures.png" width="900"/>
+<br/>
+<sub>From the control notebook: one PID, three places for the reference to enter,
+the same three poles. Left, a step; right, the error behind a reference that starts
+moving at speed v. Time is in units of 1/ωn, so the curves hold for every joint and
+every bandwidth.</sub>
+</div>
 
 ### How the error is measured, and why that matters
 
@@ -433,9 +481,34 @@ Sweeping the two together, gravity and velocity feedforward, worst marking error
 Two things fall out of that table.
 
 **The ceiling scales with the rate.** Each row's usable bandwidth roughly doubles
-as the rate doubles. Every working point has $\omega_n$ at or below about a
-quarter of the sample rate, and every failing one is above a third; the boundary
-lies between, and this sweep does not resolve it more finely.
+as the rate doubles, because what counts is the product $\omega_n T$ of the
+bandwidth and the sample period. Every working point has $\omega_n T$ at or below
+0.2, and every failing one at or above 0.32.
+
+**And the boundary can be computed.** Sampled with the torque held between
+samples, one joint on its own is stable while $\omega_n T < 2/3$. Past that, a pole
+leaves the unit circle through $z = -1$, and the loop reverses its correction every
+sample and grows. The position terms play no part in it — a torque that flips sign
+every sample leaves the position unchanged at the samples, which is the sampled
+double integrator's zero at $z = -1$ — so the limit belongs to the derivative gain
+alone, $K_d T/J < 2$. On the
+arm, the coupling scales each mode's gains by its $\lambda$, and the stiffest mode
+— the wrist, `joint_5` with `joint_3` and `joint_4` moving against it — gets 2.11
+times its designed gain. The boundary falls to $2/(3\lambda_{\max})$: $\omega_n T$
+below 0.316 at the tuning pose, and between 0.302 and 0.345 as the arm moves along
+the drawing. That rule sorts all nine runs of the sweep: the six that worked are
+below the band, and the three that failed are inside it or past it. At 1 kHz and
+160 rad/s the loop sits at 0.16, a factor of 1.9 inside.
+
+<div align="center">
+<img src="../figures/28_rate_ceiling.png" width="900"/>
+<br/>
+<sub>From the control notebook. Left: the arm's fifteen poles as ωnT grows; the
+wrist mode's runs along the real axis and leaves the unit circle through −1. Right:
+the largest pole's magnitude against ωnT, for one joint alone and for the arm, with
+the nine runs of the sweep; the band is where the boundary moves as the arm moves
+along the drawing.</sub>
+</div>
 
 **Raising the rate alone buys nothing.** The $\omega_n$ = 40 column does not
 improve across a fivefold change in rate — 322 to 365 µm, if anything a
@@ -444,9 +517,21 @@ for more bandwidth, and the bandwidth is what delivers.
 
 **And the failure is torque, not arithmetic.** At 200 Hz and 80 rad/s the loop
 does not produce non-finite numbers: it commands the full 20 N·m and sits there
-at 58 mm of error. A discrete loop asked for a bandwidth close to its own rate
-overshoots between samples and then demands whatever torque it takes to correct,
-which is a much more recognisable failure on real hardware than a NaN.
+at 58 mm of error. Past the boundary the error grows by the same factor every
+sample — on the non-linear arm, started a billionth of a radian from rest, at the
+rate the linear loop predicts to the third decimal — until a command reaches the
+torque limit. From there the limit, not the loop, decides what happens, and the
+needle tip does not come back inside the line. That is a much more recognisable
+failure on real hardware than a NaN.
+
+<div align="center">
+<img src="../figures/29_past_the_ceiling.png" width="900"/>
+<br/>
+<sub>From the control notebook: the non-linear arm held at the tuning pose, started
+a billionth of a radian away, with the plant integrated at 4 kHz as in the sweep.
+Past the boundary the error grows at the rate the sampled loop predicts (dashed)
+until the torque limit; inside it, it dies away at the predicted rate.</sub>
+</div>
 
 ### What this costs outside simulation
 

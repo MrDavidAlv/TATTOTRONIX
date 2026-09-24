@@ -93,6 +93,7 @@ rows that bound what this model can honestly claim.
 | Control rate | 1 kHz | **Derived** — swept in `rate_study.py`; it is what sets the bandwidth ceiling |
 | Simulation integration | 1 kHz, explicit Euler | Chosen |
 | Recommended bandwidth $\omega_n$ | 160 rad/s | **Derived** — usable up to about a quarter of the loop rate |
+| Stability boundary, $\omega_n T$ | 0.316 at the tuning pose; 0.302 to 0.345 along the drawing | **Derived** — $2/(3\lambda_{\max})$, see [control](./control.md#7-the-rate-is-the-ceiling) |
 | Damping $\zeta$ | 1.0 | Chosen — critical |
 | $K_p$ | `4.322, 3.196, 0.7526, 0.0218, 0.0362` | **Derived** at $\omega_n$ = 20 |
 | $K_i$ | `28.82, 21.31, 5.017, 0.1456, 0.2414` | **Derived** at $\omega_n$ = 20 |
