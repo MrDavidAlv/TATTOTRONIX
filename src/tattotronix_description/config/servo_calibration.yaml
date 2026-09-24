@@ -22,8 +22,9 @@
 # two will fight each other at full stall current. Check it with only one of
 # them connected.
 #
-# Channel 6 is left free for the tool's continuous-rotation SG90, which this
-# driver does not command yet.
+# The tool's continuous-rotation SG90 is on channel 6. It is listed so that the
+# wiring diagram, docs/scripts/wiring_diagram.py, draws it; the driver does not
+# command it yet.
 
 servos:
   joint_1: {channel: 0, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
@@ -32,3 +33,5 @@ servos:
   joint_3: {channel: 3, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
   joint_4: {channel: 4, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
   joint_5: {channel: 5, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}
+
+tool: {channel: 6}
