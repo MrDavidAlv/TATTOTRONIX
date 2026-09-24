@@ -30,3 +30,35 @@ def test_documents_match_the_data(repo):
         [sys.executable, 'docs/scripts/check_docs.py'],
         cwd=repo, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_a_grouped_figure_is_read_as_one_number():
+    """'30 037 um' is thirty thousand, not thirty-seven.
+
+    Read digit by digit it becomes "037", which rounds from 37.4 um elsewhere in
+    the data and passes by coincidence - the gate agreeing with a number the
+    document never wrote.
+    """
+    import check_docs
+    for text in ('30 037 µm', '30 037 µm', '30 037 µm'):
+        m = check_docs._FIGURE.search(text)
+        assert m is not None and m.group(2) == 'µm', text
+        assert check_docs._traceable(m.group(1), [30036.68]), text
+        assert not check_docs._traceable(m.group(1), [37.4]), text
+
+
+def test_a_figure_has_to_round_from_the_data_not_merely_resemble_it():
+    """94.67 may be written 94.7 or 95. It may not be written 94."""
+    import check_docs
+    data = [94.67]
+    assert check_docs._traceable('94.7', data)
+    assert check_docs._traceable('95', data)
+    assert not check_docs._traceable('94', data)
+    assert not check_docs._traceable('94.6', data)
+
+
+def test_every_declared_figure_says_why():
+    """An exemption without a reason is just a number nobody checked."""
+    import check_docs
+    for (doc, figure), reason in check_docs.DECLARED.items():
+        assert len(reason.split()) >= 5, f'{doc}: {figure} has no real reason'
