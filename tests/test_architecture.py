@@ -39,6 +39,7 @@ LAYERS = {
     'tattotronix_moveit_config': 1,  # planning. Parallel to control, not above
     'tattotronix_gazebo': 2,        # the simulator, which assembles the rest
     'tattotronix_hardware': 2,      # the real servos, assembled the same way
+    'tattotronix_bringup': 3,       # one entry point over both backends
 }
 
 

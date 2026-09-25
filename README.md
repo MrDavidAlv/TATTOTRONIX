@@ -110,6 +110,13 @@ ros2 launch tattotronix_hardware arm.launch.py dry_run:=true   # everything but 
 ros2 launch tattotronix_hardware arm.launch.py draw:=true      # the arm draws
 ```
 
+One command draws on either, the backend being an argument:
+
+```bash
+ros2 launch tattotronix_bringup draw.launch.py                  # in Gazebo
+ros2 launch tattotronix_bringup draw.launch.py backend:=arm     # on the real arm
+```
+
 ---
 
 ## Table of Contents
@@ -366,7 +373,7 @@ only the 0.01 scale factor.
 
 ### The tool mount
 
-`tool_mount_link` is a printed bracket holding a continuous-rotation SG90. Its
+`tool_mount_link` is a printed bracket clamping a continuous-rotation SG90. Its
 two clamp arms face each other across a 12.0 mm gap, which is the body width of
 an SG90, and their mid plane at y = -12.06 mm is what every turned feature at
 the far end of the bracket is centred on.
@@ -383,10 +390,11 @@ ends, and is rotated so its +z runs along the bracket's +x. Behind that hole the
 face opens into a stepped boss of radius 2.50, 3.00 and 4.00 mm, concentric with
 it to within 5 um, which is a bearing seat and not a bolt hole.
 
-The servo drives the tool, not the arm: it is one of two SG90s on the built arm,
-the other turning `joint_5`. The description records the geometry and actuates
-nothing here — the tool hangs off a fixed joint — but the servo's 9 g is in the
-mass model, on the tool axis.
+That servo drives nothing. It is one of two SG90s on the built arm, the other
+turning `joint_5`, and it is left over from a gripper the arm was first designed
+to carry. The arm draws instead, with a pen that must not turn, so the servo is
+never commanded and the tool hangs off a fixed joint. It stays on the arm, so
+its 9 g stays in the mass model, on the tool axis.
 
 ---
 
@@ -399,6 +407,7 @@ src/
   tattotronix_moveit_config/   SRDF, kinematics and planner config, move_group launch
   tattotronix_gazebo/          Gazebo Sim world, the simulation and draw launches
   tattotronix_hardware/        the real arm: PCA9685 servo driver for ros2_control, its launch
+  tattotronix_bringup/         one draw launch over both, the backend an argument
 docs/scripts/                  the design toolchain: models, studies, figures, certification
 tools/
   align_collision_meshes.py    puts each collision DAE in its visual's frame
@@ -411,6 +420,7 @@ tools/
 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF and joint limits generated from the description, position-only IK, OMPL, the `move_group` launch |
 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers, and run the drawing |
 | `tattotronix_hardware` | `ament_cmake` | The real arm: a `ros2_control` driver for its hobby servos through a PCA9685 board on a Raspberry Pi, and the launch that runs the same controllers on it. See [running the real arm](docs/hardware.md) |
+| `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch and passes the arguments through |
 
 ---
 
@@ -429,7 +439,9 @@ under `src/` imports `docs/scripts/`, and a test fails the build if that changes
 Inside `src/`, packages depend strictly downwards:
 
 ```
-        tattotronix_gazebo            layer 2   assembles
+             tattotronix_bringup              layer 3   one entry point
+           /            \
+  tattotronix_gazebo   tattotronix_hardware   layer 2   assembles: simulated, real
            /            \
 tattotronix_control   tattotronix_moveit_config   layer 1   commands
            \            /

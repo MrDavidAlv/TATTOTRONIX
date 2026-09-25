@@ -226,12 +226,12 @@ def test_the_built_arm_conserves_mass(mp):
 
 
 def test_the_servo_inventory_is_the_arm_s(mp):
-    """Five large and two small: every joint driven, and the tool servo too.
+    """Five large and two small: every joint driven, and the idle tool servo too.
 
     The count comes from the builder, not from the meshes: the shoulder
     carries two large servos, one SG90 turns joint_5 and a second,
-    continuous-rotation SG90 sits in the tool mount's clamp and drives the
-    tool rather than any joint.
+    continuous-rotation SG90 sits in the tool mount's clamp and drives
+    nothing, but is still on the arm.
     """
     servos = [s for layout in mp.SERVO_LAYOUT.values() for s in layout]
     kinds = [k for k, _ in servos]

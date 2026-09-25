@@ -41,8 +41,9 @@ T-junctions — an untidy index, not a hole.
 The arm was printed, and it carried **five large servos and two SG90s**. The
 shoulder has two large ones, the joint with the most gravity load. One SG90
 turns `joint_5`; the other is continuous-rotation, sits in the tool mount's clamp
-— 12.0 mm between its arms, an SG90's body width — and drives the tool, not a
-joint.
+— 12.0 mm between its arms, an SG90's body width — and drives nothing. It is left
+over from a gripper the arm was first designed for, and the pen must not turn, so
+it is never commanded. It is still on the arm, so it is still weighed.
 
 So each link is its printed shell plus the servos mounted in it. A servo that
 turns a joint sits on the link before that joint, at the joint's origin, which

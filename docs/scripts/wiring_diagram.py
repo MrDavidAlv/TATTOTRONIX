@@ -272,7 +272,7 @@ def draw():
         detail = {"A": f"{part}, first of two",
                   "B": f"{part}, second, turning the other way"}.get(role, part)
         if tool:
-            detail = f"{part}, continuous rotation · not driven yet"
+            detail = f"{part}, continuous rotation · never driven"
         ax.text(rx + 57, y + 2.4, name, fontsize=9, weight="bold",
                 color=MUTED if tool else INK, va="center")
         ax.text(rx + 57, y - 3.2, detail, fontsize=7.8, color=MUTED if tool else INK2,

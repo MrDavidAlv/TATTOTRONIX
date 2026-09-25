@@ -124,7 +124,8 @@ SERVOS = {
 #: load. One SG90 turns joint_5. The other is continuous-rotation and does not
 #: turn a joint at all: it is the one clamped in the tool mount, between two
 #: arms 12.0 mm apart - an SG90's body width, measured off the bracket mesh -
-#: and it drives the tool. It still weighs 9 g, on the lightest link of the
+#: and it drives nothing: it is left over from a gripper, and the pen must not
+#: turn. It is still on the arm and weighs 9 g, on the lightest link of the
 #: arm, so it is modelled; "tool" places it on the tool axis (TOOL_SERVO below).
 SERVO_LAYOUT = {
     "base_link": [("large", "joint_1")],
@@ -364,7 +365,7 @@ def render_xacro(built):
         "  %.0f%% of solid PLA - plus the servos mounted in it, each a box of"
         % (100 * PRINTED_FRACTION),
         "  catalogue size at the origin of the joint it drives, or on the tool",
-        "  axis for the one that drives the tool. The volumes are",
+        "  axis for the one in the tool mount, which drives nothing. The volumes are",
         "  measured. The printed fraction and the servo figures are declarations",
         "  about an arm that cannot be weighed, and are named in the script.",
         "",

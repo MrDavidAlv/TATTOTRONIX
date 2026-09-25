@@ -23,8 +23,9 @@
 # them connected.
 #
 # The tool's continuous-rotation SG90 is on channel 6. It is listed so that the
-# wiring diagram, docs/scripts/wiring_diagram.py, draws it; the driver does not
-# command it yet.
+# wiring diagram, docs/scripts/wiring_diagram.py, draws it. It drives nothing -
+# it is left over from a gripper, and the pen must not turn - so the driver
+# never commands it.
 
 servos:
   joint_1: {channel: 0, zero_us: 1500.0, us_per_rad: 636.62, min_us: 500.0, max_us: 2500.0}

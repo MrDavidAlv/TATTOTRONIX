@@ -8,7 +8,7 @@
   Each link is its printed shell - the mesh volume at 434 kg/m^3, which is
   35% of solid PLA - plus the servos mounted in it, each a box of
   catalogue size at the origin of the joint it drives, or on the tool
-  axis for the one that drives the tool. The volumes are
+  axis for the one in the tool mount, which drives nothing. The volumes are
   measured. The printed fraction and the servo figures are declarations
   about an arm that cannot be weighed, and are named in the script.
 
