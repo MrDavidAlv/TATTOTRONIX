@@ -50,7 +50,7 @@ not reach it. It has its own suite, `pytest tests/`, and both run in CI.
 
 ## Layers inside `src/`
 
-Five packages, each allowed to depend only on a strictly lower layer. Same-level
+Six packages, each allowed to depend only on a strictly lower layer. Same-level
 dependencies are rejected as well: two packages at one level that need each
 other are one package that has been split for no reason.
 
@@ -61,8 +61,11 @@ other are one package that has been split for no reason.
 | 1 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF, kinematics and planner configuration, the `move_group` launch | Controller gains, which belong to layer 1's other half |
 | 2 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers | Anything that would also be true on hardware |
 | 2 | `tattotronix_hardware` | `ament_cmake` | The real arm: the `ros2_control` driver for its hobby servos through a PCA9685, and the launch file that assembles description, driver and controllers on a Raspberry Pi | Controller configuration, which it takes from layer 1 unchanged |
+| 3 | `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch file and hands it the arguments | Any decision a backend makes: what the real arm needs stays in layer 2 |
 
 ```
+             tattotronix_bringup              layer 3   one entry point
+           ╱            ╲
   tattotronix_gazebo   tattotronix_hardware   layer 2   assembles: simulated, real
            ╱            ╲
 tattotronix_control   tattotronix_moveit_config   layer 1   commands
@@ -136,14 +139,17 @@ containing one node and a launch file, and an extra manifest to keep in step.
 It stays merged, and this paragraph is the reason, so the next person does not
 have to guess whether it was considered.
 
-**2. `draw.launch.py` lives in `tattotronix_gazebo`.** It is the application
-entry point, and it starts a simulator, which is why it is there. Hardware now
-exists, and the same drawing launches against it from `tattotronix_hardware`:
-`arm.launch.py draw:=true`. Each backend's package carries its own entry point,
-and both are thin — the node, the controllers and the trajectories are shared.
-A `_bringup` package taking the backend as an argument would replace the two
-with one; it has not been made yet, because the real arm has not yet run, and
-what its launch really needs will be known once it has.
+**2. Each backend had its own entry point.** The drawing started from
+`tattotronix_gazebo/draw.launch.py` in simulation and from
+`tattotronix_hardware/arm.launch.py draw:=true` on the arm. Both are thin — the
+node, the controllers and the trajectories are shared — but two commands for one
+task is one too many. `tattotronix_bringup` now gives it one:
+`draw.launch.py backend:=gazebo|arm`. It is deliberately a dispatcher and
+nothing more. The real arm has not run yet, and what its launch really needs
+will be learnt when it does; that knowledge belongs in `tattotronix_hardware`,
+so the bringup only includes the backend's own file and passes the arguments
+through, and does not have to change when the hardware launch does. The two
+backend entry points stay, for anyone working on one backend alone.
 
 **3. The dependency graph is already acyclic and correctly layered.** It was
 checked rather than assumed. `tests/test_architecture.py` now fails the build

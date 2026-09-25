@@ -110,6 +110,13 @@ ros2 launch tattotronix_hardware arm.launch.py dry_run:=true   # everything but 
 ros2 launch tattotronix_hardware arm.launch.py draw:=true      # the arm draws
 ```
 
+One command draws on either, the backend being an argument:
+
+```bash
+ros2 launch tattotronix_bringup draw.launch.py                  # in Gazebo
+ros2 launch tattotronix_bringup draw.launch.py backend:=arm     # on the real arm
+```
+
 ---
 
 ## Table of Contents
@@ -400,6 +407,7 @@ src/
   tattotronix_moveit_config/   SRDF, kinematics and planner config, move_group launch
   tattotronix_gazebo/          Gazebo Sim world, the simulation and draw launches
   tattotronix_hardware/        the real arm: PCA9685 servo driver for ros2_control, its launch
+  tattotronix_bringup/         one draw launch over both, the backend an argument
 docs/scripts/                  the design toolchain: models, studies, figures, certification
 tools/
   align_collision_meshes.py    puts each collision DAE in its visual's frame
@@ -412,6 +420,7 @@ tools/
 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF and joint limits generated from the description, position-only IK, OMPL, the `move_group` launch |
 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers, and run the drawing |
 | `tattotronix_hardware` | `ament_cmake` | The real arm: a `ros2_control` driver for its hobby servos through a PCA9685 board on a Raspberry Pi, and the launch that runs the same controllers on it. See [running the real arm](docs/hardware.md) |
+| `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch and passes the arguments through |
 
 ---
 
@@ -430,7 +439,9 @@ under `src/` imports `docs/scripts/`, and a test fails the build if that changes
 Inside `src/`, packages depend strictly downwards:
 
 ```
-        tattotronix_gazebo            layer 2   assembles
+             tattotronix_bringup              layer 3   one entry point
+           /            \
+  tattotronix_gazebo   tattotronix_hardware   layer 2   assembles: simulated, real
            /            \
 tattotronix_control   tattotronix_moveit_config   layer 1   commands
            \            /
