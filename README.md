@@ -366,7 +366,7 @@ only the 0.01 scale factor.
 
 ### The tool mount
 
-`tool_mount_link` is a printed bracket holding a continuous-rotation SG90. Its
+`tool_mount_link` is a printed bracket clamping a continuous-rotation SG90. Its
 two clamp arms face each other across a 12.0 mm gap, which is the body width of
 an SG90, and their mid plane at y = -12.06 mm is what every turned feature at
 the far end of the bracket is centred on.
@@ -383,10 +383,11 @@ ends, and is rotated so its +z runs along the bracket's +x. Behind that hole the
 face opens into a stepped boss of radius 2.50, 3.00 and 4.00 mm, concentric with
 it to within 5 um, which is a bearing seat and not a bolt hole.
 
-The servo drives the tool, not the arm: it is one of two SG90s on the built arm,
-the other turning `joint_5`. The description records the geometry and actuates
-nothing here — the tool hangs off a fixed joint — but the servo's 9 g is in the
-mass model, on the tool axis.
+That servo drives nothing. It is one of two SG90s on the built arm, the other
+turning `joint_5`, and it is left over from a gripper the arm was first designed
+to carry. The arm draws instead, with a pen that must not turn, so the servo is
+never commanded and the tool hangs off a fixed joint. It stays on the arm, so
+its 9 g stays in the mass model, on the tool axis.
 
 ---
 

@@ -60,7 +60,7 @@ signals need.
 | 3 | `joint_3`, elbow | MG996R |
 | 4 | `joint_4`, wrist roll | MG996R |
 | 5 | `joint_5`, wrist pitch | SG90 |
-| 6 | the tool | SG90, continuous rotation — not driven yet |
+| 6 | the tool mount | SG90, continuous rotation — never driven |
 
 The channels are set in
 [`servo_calibration.yaml`](../src/tattotronix_description/config/servo_calibration.yaml),
@@ -221,8 +221,8 @@ to an analog-to-digital converter, which is a modification of the servo.
 
 ## 8. Not done yet
 
-- **The tool.** The continuous-rotation SG90 on channel 6 is not commanded;
-  the drawing runs with it stopped.
+- **The tool-mount servo.** The continuous-rotation SG90 on channel 6 is left
+  over from a gripper and is never commanded: the pen must not turn.
 - **The calibration.** Declared, not measured, until section 5 is done on the
   real servos.
 - **Feedback.** None, for the reason in section 7.
