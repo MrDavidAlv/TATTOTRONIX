@@ -117,8 +117,9 @@ ros2 launch tattotronix_bringup draw.launch.py                  # in Gazebo
 ros2 launch tattotronix_bringup draw.launch.py backend:=arm     # on the real arm
 ```
 
-The tablet app drives either through rosbridge, which this starts with the arm
-and without a drawing, so the app chooses what to draw:
+The tablet app drives either through rosbridge, which this starts with the arm,
+without a drawing, and with the draw server, which draws what the app sends; see
+[drawing from the tablet](#drawing-from-the-tablet):
 
 ```bash
 ros2 launch tattotronix_bringup app.launch.py                   # Gazebo, rosbridge on :9090
@@ -313,6 +314,39 @@ figure in the analysis was measured on.
 It refuses to export a trajectory whose inverse kinematics did not converge
 everywhere, rather than hand the arm a path it cannot follow.
 
+### Drawing from the tablet
+
+`app.launch.py` adds a draw server to either backend. Its `draw_strokes`
+action, `tattotronix_interfaces/action/DrawStrokes`, draws the strokes a client
+sends: polylines on the panel, in millimetres from its corner at x = 0.11 m,
+y = -0.07 m. The tablet app sends them over rosbridge, and the command line can
+too:
+
+```bash
+ros2 launch tattotronix_bringup app.launch.py
+ros2 action send_goal /draw_strokes tattotronix_interfaces/action/DrawStrokes \
+  "{strokes: [{x_mm: [90, 110, 100, 90], y_mm: [62, 62, 79, 62]}], speed: 2.0}" --feedback
+```
+
+That is a 20 mm triangle at twice the design's feeds, drawn in about 8 s.
+
+The server plans while the arm waits, by the rules `export_trajectory.py`
+applies offline: the same toolpath, feeds and inverse kinematics, in
+`tattotronix_control/plan.py` and `arm.py`, since nothing under `src/` may
+import `docs/scripts/`. `tests/test_draw_planning.py` holds the copy to the
+original: every constant, the resampling, the panel mapping and the timing
+equal, and the inverse kinematics to 1e-12 rad. Planning costs about 1.3 ms a
+point on the workstation, so a picture of 30 000 points takes some 40 s; the
+Raspberry Pi 3 has not been measured.
+
+It refuses, with the reason, a stroke off the panel, a point the arm cannot
+reach with the tool upright, and a speed one of the joints cannot follow,
+naming the fastest that would do. While it plans, it reports the share of the
+path solved; while it draws, the stroke and the share of the time, and
+`/ink_trace` shows the ink in RViz as `draw` does. A cancel stops the arm and
+lifts the needle straight out of the work: left where it stopped, the needle
+would be dragged through the work by the next move.
+
 ### Reproducing
 
 ```bash
@@ -412,7 +446,7 @@ its 9 g stays in the mass model, on the tool axis.
 src/
   tattotronix_description/     URDF/xacro, meshes, generated inertials, RViz config, display launch
   tattotronix_interfaces/      the Stroke message and the DrawStrokes action clients send
-  tattotronix_control/         controller YAML, spawners, the draw node and its trajectories
+  tattotronix_control/         controller YAML, spawners, the draw node and its trajectories, the draw server
   tattotronix_moveit_config/   SRDF, kinematics and planner config, move_group launch
   tattotronix_gazebo/          Gazebo Sim world, the simulation and draw launches
   tattotronix_hardware/        the real arm: PCA9685 servo driver for ros2_control, its launch
@@ -426,11 +460,11 @@ tools/
 |---------|-----------|--------------|
 | `tattotronix_description` | `ament_cmake` | The robot. Geometry, kinematics, ros2_control and Gazebo tags, all behind arguments so one file serves RViz, mock hardware and simulation |
 | `tattotronix_interfaces` | `ament_cmake` | The messages and actions clients speak: `Stroke`, a polyline on the panel in millimetres, and `DrawStrokes`, which draws a list of them |
-| `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart, and the drawing application with its trajectories |
+| `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart, the drawing application with its trajectories, and the draw server, which plans the strokes a client sends while the arm waits |
 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF and joint limits generated from the description, position-only IK, OMPL, the `move_group` launch |
 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers, and run the drawing |
 | `tattotronix_hardware` | `ament_cmake` | The real arm: a `ros2_control` driver for its hobby servos through a PCA9685 board on a Raspberry Pi, and the launch that runs the same controllers on it. See [running the real arm](docs/hardware.md) |
-| `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch and passes the arguments through; and `app.launch.py`, the same backend with rosbridge and no drawing, for the tablet app |
+| `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch and passes the arguments through; and `app.launch.py`, the same backend with no drawing, the draw server and rosbridge, for the tablet app |
 
 ---
 

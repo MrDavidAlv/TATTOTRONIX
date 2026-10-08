@@ -29,7 +29,9 @@ regenerate is a claim nobody can check.
 `docs/scripts/`. The design toolchain may read the URDF that `src/` owns; the
 runtime may not depend on a matplotlib-era script to move a joint. Today that
 holds: nothing under `src/` imports it, and the trajectories arrive as data
-files instead.
+files instead. The draw server, which plans the strokes it is sent while the
+arm waits, carries its own copy of the toolpath and the kinematics for that
+reason, and `tests/test_draw_planning.py` holds the copy to the original.
 
 This is why the analysis code is not a ROS package, and why `colcon test` does
 not reach it. It has its own suite, `pytest tests/`, and both run in CI.
@@ -44,6 +46,10 @@ not reach it. It has its own suite, `pytest tests/`, and both run in CI.
      ═══════════════════╪════════════ design time above, run time below ═══
                         ▼
               tattotronix_control/draw.py ──▶ FollowJointTrajectory ──▶ arm
+
+  strokes ──▶ draw_strokes ──▶ tattotronix_control/draw_server.py
+              (rosbridge)        plan.py, arm.py: the rules above, at run time
+                                       └──▶ FollowJointTrajectory ──▶ arm
 ```
 
 ---
@@ -58,11 +64,11 @@ other are one package that has been split for no reason.
 |:---:|---|---|---|---|
 | 0 | `tattotronix_description` | `ament_cmake` | The robot itself: xacro, meshes, joint limits, `ros2_control` and Gazebo tags, all behind arguments so one file serves RViz, mock hardware and simulation | Anything that assumes a simulator, a controller or a task |
 | 0 | `tattotronix_interfaces` | `ament_cmake` | The messages and actions clients speak: `Stroke`, a polyline on the work panel in millimetres, and `DrawStrokes`, the action that draws a list of them | Anything that runs: it is definitions only |
-| 1 | `tattotronix_control` | `ament_python` | The controller set and the drawing application: `tattotronix_controllers.yaml`, the exported trajectories, `draw.py` | Geometry. It reads the description's |
+| 1 | `tattotronix_control` | `ament_python` | The controller set and the drawing application: `tattotronix_controllers.yaml`, the exported trajectories, `draw.py`; and `draw_server.py`, with the run-time planner in `plan.py` and `arm.py` | Geometry. It reads the description's |
 | 1 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF, kinematics and planner configuration, the `move_group` launch | Controller gains, which belong to layer 1's other half |
 | 2 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers | Anything that would also be true on hardware |
 | 2 | `tattotronix_hardware` | `ament_cmake` | The real arm: the `ros2_control` driver for its hobby servos through a PCA9685, and the launch file that assembles description, driver and controllers on a Raspberry Pi | Controller configuration, which it takes from layer 1 unchanged |
-| 3 | `tattotronix_bringup` | `ament_python` | The entry points over both backends: `draw.launch.py backend:=gazebo\|arm` includes the backend's own launch file and hands it the arguments; `app.launch.py` starts the same backend without a drawing, plus rosbridge for the tablet app | Any decision a backend makes: what the real arm needs stays in layer 2 |
+| 3 | `tattotronix_bringup` | `ament_python` | The entry points over both backends: `draw.launch.py backend:=gazebo\|arm` includes the backend's own launch file and hands it the arguments; `app.launch.py` starts the same backend without a drawing, plus the draw server and rosbridge for the tablet app | Any decision a backend makes: what the real arm needs stays in layer 2 |
 
 ```
              tattotronix_bringup              layer 3   one entry point
