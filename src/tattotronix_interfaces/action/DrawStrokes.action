@@ -1,0 +1,23 @@
+# Draw strokes on the work panel, in the order given.
+#
+# The arm lifts between strokes, lands on each at the marking feed and draws it
+# at the marking feed; speed scales every feed. A goal is refused if a stroke
+# has fewer than two points, its arrays differ in length, or a point lies off
+# the panel.
+
+Stroke[] strokes
+# Time scale for the whole drawing. 1.0 is the planned 6 mm/s marking feed;
+# 0 is taken as 1.0.
+float64 speed
+---
+bool success
+string message
+# How long the drawing ran, seconds.
+float64 seconds
+---
+# planning, then drawing.
+string stage
+# Fraction of the drawing's planned time elapsed, 0 to 1.
+float64 progress
+# The stroke being drawn, counted from 0.
+uint32 stroke

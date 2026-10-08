@@ -50,13 +50,14 @@ not reach it. It has its own suite, `pytest tests/`, and both run in CI.
 
 ## Layers inside `src/`
 
-Six packages, each allowed to depend only on a strictly lower layer. Same-level
+Seven packages, each allowed to depend only on a strictly lower layer. Same-level
 dependencies are rejected as well: two packages at one level that need each
 other are one package that has been split for no reason.
 
 | Layer | Package | Build type | Owns | Must not own |
 |:---:|---|---|---|---|
 | 0 | `tattotronix_description` | `ament_cmake` | The robot itself: xacro, meshes, joint limits, `ros2_control` and Gazebo tags, all behind arguments so one file serves RViz, mock hardware and simulation | Anything that assumes a simulator, a controller or a task |
+| 0 | `tattotronix_interfaces` | `ament_cmake` | The messages and actions clients speak: `Stroke`, a polyline on the work panel in millimetres, and `DrawStrokes`, the action that draws a list of them | Anything that runs: it is definitions only |
 | 1 | `tattotronix_control` | `ament_python` | The controller set and the drawing application: `tattotronix_controllers.yaml`, the exported trajectories, `draw.py` | Geometry. It reads the description's |
 | 1 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF, kinematics and planner configuration, the `move_group` launch | Controller gains, which belong to layer 1's other half |
 | 2 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers | Anything that would also be true on hardware |
@@ -70,7 +71,7 @@ other are one package that has been split for no reason.
            ╱            ╲
 tattotronix_control   tattotronix_moveit_config   layer 1   commands
            ╲            ╱
-        tattotronix_description       layer 0   describes
+  tattotronix_description   tattotronix_interfaces   layer 0   describes, and is spoken to
 ```
 
 Layer 0 depends on nothing in this repository. That is the property worth

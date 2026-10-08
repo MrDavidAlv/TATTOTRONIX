@@ -411,6 +411,7 @@ its 9 g stays in the mass model, on the tool axis.
 ```
 src/
   tattotronix_description/     URDF/xacro, meshes, generated inertials, RViz config, display launch
+  tattotronix_interfaces/      the Stroke message and the DrawStrokes action clients send
   tattotronix_control/         controller YAML, spawners, the draw node and its trajectories
   tattotronix_moveit_config/   SRDF, kinematics and planner config, move_group launch
   tattotronix_gazebo/          Gazebo Sim world, the simulation and draw launches
@@ -424,6 +425,7 @@ tools/
 | Package | Build type | What it owns |
 |---------|-----------|--------------|
 | `tattotronix_description` | `ament_cmake` | The robot. Geometry, kinematics, ros2_control and Gazebo tags, all behind arguments so one file serves RViz, mock hardware and simulation |
+| `tattotronix_interfaces` | `ament_cmake` | The messages and actions clients speak: `Stroke`, a polyline on the panel in millimetres, and `DrawStrokes`, which draws a list of them |
 | `tattotronix_control` | `ament_python` | The controller set, backend agnostic on purpose so simulation and hardware cannot drift apart, and the drawing application with its trajectories |
 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF and joint limits generated from the description, position-only IK, OMPL, the `move_group` launch |
 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers, and run the drawing |
@@ -453,7 +455,7 @@ Inside `src/`, packages depend strictly downwards:
            /            \
 tattotronix_control   tattotronix_moveit_config   layer 1   commands
            \            /
-        tattotronix_description       layer 0   describes
+tattotronix_description   tattotronix_interfaces   layer 0   describes, and is spoken to
 ```
 
 Layer 0 depends on nothing here, which is what lets a tool that knows nothing

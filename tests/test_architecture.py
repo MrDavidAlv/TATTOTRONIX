@@ -35,6 +35,7 @@ SRC = REPO / 'src'
 #: too: two packages at one level that need each other are one package.
 LAYERS = {
     'tattotronix_description': 0,   # geometry. Depends on no other package here
+    'tattotronix_interfaces': 0,    # the messages and actions clients speak
     'tattotronix_control': 1,       # controllers and the drawing application
     'tattotronix_moveit_config': 1,  # planning. Parallel to control, not above
     'tattotronix_gazebo': 2,        # the simulator, which assembles the rest
