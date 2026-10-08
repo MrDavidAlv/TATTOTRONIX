@@ -22,8 +22,9 @@ design toolchain applies to the ROS logo - for the arm described on
 planned, the action reports the share of the path solved, and a cancel stops
 it; while it runs, the stroke being drawn and the fraction of the time
 gone, and /ink_trace shows in RViz the ink laid down so far, as the draw node
-does for a stored drawing. Each drawing is its own marker, so earlier ones
-stay on the panel. One drawing at a time. A cancel stops the arm, then lifts
+does for a stored drawing. A drawing wipes the last one's ink before it starts,
+unless keep_ink is true, when each stays as a marker of its own. One drawing
+at a time. A cancel stops the arm, then lifts
 the needle straight up out of the work, from where the arm is by
 /joint_states: left where it stopped, a needle in the work would be dragged
 through it by the next move. A drawing, finished or cancelled, ends with the
@@ -61,6 +62,7 @@ class DrawServer(Node):
         self.declare_parameter("trace_frame", "base_link")
         self.declare_parameter("settle_s", 3.0)
         self.declare_parameter("return_home", True)
+        self.declare_parameter("keep_ink", False)
         group = ReentrantCallbackGroup()
         self.chain = None
         self.busy = threading.Lock()
@@ -155,6 +157,8 @@ class DrawServer(Node):
         if handle is None or not handle.accepted:
             return fail("the controller rejected the trajectory")
 
+        if not self.get_parameter("keep_ink").value:
+            self._clear_trace()
         self.drawings += 1
         ink = float(np.linalg.norm(np.diff(p.tcp, axis=0), axis=1)[p.marked[1:]].sum()) * 1000
         self.get_logger().info(
@@ -251,6 +255,14 @@ class DrawServer(Node):
         done = _wait(handle.get_result_async(), 10.0 + t[-1])
         return (done is not None
                 and done.result.error_code == FollowJointTrajectory.Result.SUCCESSFUL)
+
+    def _clear_trace(self):
+        """Wipe the ink of earlier drawings from RViz."""
+        m = Marker()
+        m.header.frame_id = str(self.get_parameter("trace_frame").value)
+        m.header.stamp = self.get_clock().now().to_msg()
+        m.action = Marker.DELETEALL
+        self.trace.publish(m)
 
     def _trace(self, p, elapsed):
         """Ink laid down so far, as a line list in the arm frame."""

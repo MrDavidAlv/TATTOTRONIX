@@ -19,9 +19,10 @@ Drive draw_strokes end to end, the way the tablet app drives it.
 app.launch.py is started with the real arm's driver in a dry run.
 Everything but the I2C bus is the code that runs on the Raspberry Pi: the
 description, the PCA9685 driver as a plugin, the controllers, rosbridge and the
-draw server. A square is drawn, its ink shows on /ink_trace on the panel and
-the arm goes back home; a stroke off the panel is refused with the reason;
-and a cancel stops a drawing, lifts the needle and takes the arm home.
+draw server. A square is drawn, wiping earlier ink first, its ink shows on
+/ink_trace on the panel and the arm goes back home; a stroke off the panel is
+refused with the reason; and a cancel stops a drawing, lifts the needle and
+takes the arm home.
 """
 
 import os
@@ -144,6 +145,10 @@ class TestDrawServer(unittest.TestCase):
         self.assertAlmostEqual(min(ys), -0.010, delta=0.0005)
         self.assertAlmostEqual(max(ys), 0.000, delta=0.0005)
         self.assertTrue(all(abs(p.z - 0.0035) < 1e-4 for p in pts))
+        # The drawing began by wiping any ink before it; all after is its own.
+        actions = [m.action for m in self.marks]
+        self.assertEqual(Marker.DELETEALL, actions[0])
+        self.assertTrue(all(action == Marker.ADD for action in actions[1:]))
 
     def test_2_a_stroke_off_the_panel_is_refused_with_the_reason(self):
         self._ready()
@@ -171,6 +176,8 @@ class TestDrawServer(unittest.TestCase):
         self.assertEqual(['lifting', 'homing'], [s for s in dict.fromkeys(stages) if s != 'drawing'
                                                  and s != 'planning'])
         self._assert_home()
+        # Two drawings began, each wiping the ink before it; the refused one did not.
+        self.assertEqual(2, [m.action for m in self.marks].count(Marker.DELETEALL))
 
     def _assert_home(self):
         """Check the arm is back at the URDF's zero, to within what the servos' step leaves."""
