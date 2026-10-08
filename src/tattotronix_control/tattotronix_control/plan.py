@@ -54,6 +54,9 @@ FEED_TRAVEL = 0.060        # m/s clear of the work
 
 KIND_TRAVEL, KIND_MARK, KIND_APPROACH = 0, 1, 2
 
+# How often solve reports its progress, in points: a few times a second.
+REPORT_EVERY = 250
+
 # Where the solver starts, as the design toolchain's solve_path does.
 Q_START = np.array([0.0, 0.6, -0.9, 0.0, -1.2])
 DOWN = np.array([0.0, 0.0, -1.0])
@@ -164,25 +167,34 @@ def time_parameterise(P, kind, speed=1.0):
     return np.concatenate([[0.0], np.cumsum(d / v)])
 
 
-def solve(chain, P, q0=Q_START):
-    """IK along the path, each point warm started from the last, tool pointing down."""
+def solve(chain, P, q0=Q_START, report=None):
+    """
+    IK along the path, each point warm started from the last, tool pointing down.
+
+    report, if given, is called every REPORT_EVERY points with the share of the
+    path solved, and with 1.0 at the end.
+    """
     Q = np.zeros((len(P), chain.n))
     conv = np.zeros(len(P), bool)
     res = np.zeros(len(P))
     q = np.array(q0, float)
     for i, p in enumerate(P):
+        if report is not None and i % REPORT_EVERY == 0:
+            report(i / len(P))
         q, c, r = chain.ik(p, DOWN, q)
         Q[i], conv[i], res[i] = q, c, r
+    if report is not None:
+        report(1.0)
     return Q, conv, res
 
 
-def plan(chain, strokes, speed=1.0):
+def plan(chain, strokes, speed=1.0, report=None):
     """Plan a drawing as a joint trajectory, or raise PlanError saying why not."""
     check(strokes)
     P_mm, kind, which = toolpath(strokes)
     P = to_arm(P_mm)
     t = time_parameterise(P, kind, speed)
-    Q, conv, _ = solve(chain, P)
+    Q, conv, _ = solve(chain, P, report=report)
     if not conv.all():
         i = int(np.flatnonzero(~conv)[0])
         raise PlanError(f"the arm cannot reach stroke {which[i]} at "

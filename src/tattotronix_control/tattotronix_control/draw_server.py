@@ -18,8 +18,9 @@ Draw the strokes a client sends: the draw_strokes action.
 The tablet app, or any client, sends strokes on the work panel. They are
 planned into a joint trajectory by tattotronix_control.plan - the rules the
 design toolchain applies to the ROS logo - for the arm described on
-/robot_description, and run on the joint trajectory controller. While it
-runs, the action reports the stroke being drawn and the fraction of the time
+/robot_description, and run on the joint trajectory controller. While it is
+planned, the action reports the share of the path solved, and a cancel stops
+it; while it runs, the stroke being drawn and the fraction of the time
 gone, and /ink_trace shows in RViz the ink laid down so far, as the draw node
 does for a stored drawing. Each drawing is its own marker, so earlier ones
 stay on the panel. One drawing at a time. A cancel stops the arm, then lifts
@@ -115,11 +116,24 @@ class DrawServer(Node):
         speed = gh.request.speed if gh.request.speed > 0 else 1.0
 
         feedback = DrawStrokes.Feedback(stage="planning", progress=0.0, stroke=0)
-        gh.publish_feedback(feedback)
+
+        def planning(share):
+            if gh.is_cancel_requested:
+                raise _Cancelled()
+            feedback.progress = float(share)
+            gh.publish_feedback(feedback)
+
+        began = time.monotonic()
         try:
-            p = plan.plan(self.chain, strokes, speed)
+            p = plan.plan(self.chain, strokes, speed, report=planning)
         except plan.PlanError as e:
             return fail(str(e))
+        except _Cancelled:
+            gh.canceled()
+            result.message = "cancelled while planning"
+            self.get_logger().info("drawing cancelled while planning")
+            return result
+        self.get_logger().info(f"planned {len(p.t)} points in {time.monotonic() - began:.1f} s")
 
         settle = float(self.get_parameter("settle_s").value)
         traj = JointTrajectory()
@@ -223,6 +237,10 @@ class DrawServer(Node):
                 for q in (p.tcp[i - 1], p.tcp[i]):
                     m.points.append(Point(x=float(q[0]), y=float(q[1]), z=float(q[2])))
         self.trace.publish(m)
+
+
+class _Cancelled(Exception):
+    """A cancel that arrived while the drawing was being planned."""
 
 
 def _strokes(n):

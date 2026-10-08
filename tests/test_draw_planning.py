@@ -167,6 +167,14 @@ def test_a_lift_takes_the_needle_straight_up_to_the_travel_height(chains):
     assert plan.lift(run, Q[-1]) is None
 
 
+def test_planning_reports_its_progress(chains):
+    run, _ = chains
+    shares = []
+    plan.plan(run, [square(20, 20, 100)], report=shares.append)
+    assert shares[0] == 0.0 and shares[-1] == 1.0
+    assert shares == sorted(shares) and len(shares) > 3
+
+
 @pytest.mark.parametrize('strokes, says', [
     ([], 'no strokes'),
     ([[[10.0, 10.0]]], 'fewer than two points'),

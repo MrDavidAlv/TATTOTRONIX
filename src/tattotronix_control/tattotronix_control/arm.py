@@ -84,6 +84,12 @@ class Chain:
                 "limit": lim,
                 "child": j.find("child").get("link"),
             })
+            if axis is not None:
+                # What axis_rotation and the Jacobian work out on every call,
+                # worked out once: the same arithmetic, so the same answers.
+                k = axis / np.linalg.norm(axis)
+                K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+                self.segments[-1].update(k=k, K=K, KK=K @ K)
         self.actuated = [s for s in self.segments if s["type"] == "revolute"]
         self.names = [s["name"] for s in self.actuated]
         self.lower = np.array([s["limit"][0] for s in self.actuated])
@@ -95,14 +101,15 @@ class Chain:
         """Every link frame along the chain, world first."""
         q = np.asarray(q, float)
         T = np.eye(4)
-        out = [("world", T.copy())]
+        out = [("world", T)]
         i = 0
         for s in self.segments:
             T = T @ s["T"]
             if s["type"] == "revolute":
-                T = T @ homogeneous(axis_rotation(s["axis"], q[i]), np.zeros(3))
+                R = np.eye(3) + np.sin(q[i]) * s["K"] + (1 - np.cos(q[i])) * s["KK"]
+                T = T @ homogeneous(R, np.zeros(3))
                 i += 1
-            out.append((s["child"], T.copy()))
+            out.append((s["child"], T))
         return out
 
     def fk(self, q):
@@ -113,13 +120,15 @@ class Chain:
 
     def jacobian(self, q):
         """Geometric Jacobian at the TCP, 6 x n, world-aligned."""
-        frames = self.frames(q)
+        return self._jacobian(self.frames(q))
+
+    def _jacobian(self, frames):
         by_link = dict(frames)
         p_e = frames[-1][1][:3, 3]
         J = np.zeros((6, self.n))
         for i, s in enumerate(self.actuated):
             T = by_link[s["child"]]
-            z = T[:3, :3] @ (s["axis"] / np.linalg.norm(s["axis"]))
+            z = T[:3, :3] @ s["k"]
             J[:3, i] = np.cross(z, p_e - T[:3, 3])
             J[3:, i] = z
         return J
@@ -131,8 +140,11 @@ class Chain:
         Rotation about the tool axis is not a task constraint, so that row is
         projected out.
         """
-        J = self.jacobian(q)
-        z = self.fk(q)[:3, 2]
+        return self._task_jacobian(self.frames(q))
+
+    def _task_jacobian(self, frames):
+        J = self._jacobian(frames)
+        z = frames[-1][1][:3, 2]
         u, v = _normal_plane(z)
         Jw = J[3:, :]
         dz = np.column_stack([np.cross(Jw[:, i], z) for i in range(self.n)])
@@ -149,7 +161,9 @@ class Chain:
         z_des = np.asarray(z_des, float)
         z_des = z_des / np.linalg.norm(z_des)
         for _ in range(iters):
-            T = self.fk(q)
+            # One pass down the chain serves the error and the Jacobian both.
+            frames = self.frames(q)
+            T = frames[-1][1]
             e_p = p_des - T[:3, 3]
             z = T[:3, 2]
             u, v = _normal_plane(z)
@@ -157,7 +171,7 @@ class Chain:
             e = np.concatenate([e_p, [u @ e_z, v @ e_z]])
             if np.linalg.norm(e) < tol:
                 return q, True, float(np.linalg.norm(e))
-            J = self.task_jacobian(q)
+            J = self._task_jacobian(frames)
             dq = J.T @ np.linalg.solve(J @ J.T + damping * np.eye(5), e)
             q = np.clip(q + dq, self.lower, self.upper)
         T = self.fk(q)
