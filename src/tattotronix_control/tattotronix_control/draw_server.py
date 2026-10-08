@@ -26,7 +26,9 @@ does for a stored drawing. Each drawing is its own marker, so earlier ones
 stay on the panel. One drawing at a time. A cancel stops the arm, then lifts
 the needle straight up out of the work, from where the arm is by
 /joint_states: left where it stopped, a needle in the work would be dragged
-through it by the next move.
+through it by the next move. A drawing, finished or cancelled, ends with the
+arm back in the pose it started in, the URDF's zero, unless return_home is
+false.
 """
 
 import threading
@@ -58,6 +60,7 @@ class DrawServer(Node):
         self.declare_parameter("controller", "arm_controller")
         self.declare_parameter("trace_frame", "base_link")
         self.declare_parameter("settle_s", 3.0)
+        self.declare_parameter("return_home", True)
         group = ReentrantCallbackGroup()
         self.chain = None
         self.busy = threading.Lock()
@@ -167,10 +170,18 @@ class DrawServer(Node):
                 self._trace(p, elapsed)
                 feedback.stage = "lifting"
                 gh.publish_feedback(feedback)
-                lifted = self._lift(speed)
+                if not self._lift(speed):
+                    result.message = "cancelled; the needle was left where the arm stopped"
+                elif not self._homing():
+                    result.message = "cancelled; the needle lifted clear of the work"
+                else:
+                    feedback.stage = "homing"
+                    gh.publish_feedback(feedback)
+                    result.message = ("cancelled; the needle lifted and the arm back home"
+                                      if self._go_home() else
+                                      "cancelled; the needle lifted, but the arm did not get "
+                                      "back home")
                 gh.canceled()
-                result.message = ("cancelled; the needle lifted clear of the work" if lifted
-                                  else "cancelled; the needle was left where the arm stopped")
                 self.get_logger().info(f"drawing {result.message}")
                 return result
             feedback.progress = float(np.clip(elapsed / p.t[-1], 0.0, 1.0))
@@ -184,38 +195,60 @@ class DrawServer(Node):
         if outcome.error_code != FollowJointTrajectory.Result.SUCCESSFUL:
             return fail(f"the controller stopped the drawing: "
                         f"{outcome.error_string or outcome.error_code}")
-        gh.succeed()
-        result.success = True
         result.seconds = (self.get_clock().now() - started).nanoseconds * 1e-9
         result.message = f"drew {_strokes(len(strokes))}, {ink:.0f} mm of ink"
+        if self._homing():
+            feedback.stage = "homing"
+            gh.publish_feedback(feedback)
+            if not self._go_home():
+                result.message += "; the arm did not get back home"
+        gh.succeed()
+        result.success = True
         self.get_logger().info(f"finished: {result.message} in {result.seconds:.0f} s")
         return result
 
     def _lift(self, speed):
         """Take the needle straight up out of the work; True once it is clear."""
-        q = [self.joints.get(name) for name in self.chain.names]
-        if None in q:
-            self.get_logger().error("no /joint_states, so no lift")
+        q = self._where()
+        if q is None:
             return False
         try:
-            up = plan.lift(self.chain, np.array(q), speed)
+            up = plan.lift(self.chain, q, speed)
         except plan.PlanError as e:
             self.get_logger().error(f"no lift: {e}")
             return False
-        if up is None:
-            return True
+        return up is None or self._move(*up, "the lift")
+
+    def _homing(self):
+        return bool(self.get_parameter("return_home").value)
+
+    def _go_home(self):
+        """Take the arm back to the URDF's zero pose, from the travel height."""
+        q = self._where()
+        return q is not None and self._move(
+            *plan.to_pose(self.chain, q, np.zeros(self.chain.n)), "the way home")
+
+    def _where(self):
+        q = [self.joints.get(name) for name in self.chain.names]
+        if None in q:
+            self.get_logger().error("no /joint_states, so the arm stays where it is")
+            return None
+        return np.array(q)
+
+    def _move(self, Q, t, what):
+        """Run Q at times t on the controller; True once it has got there."""
         traj = JointTrajectory()
         traj.joint_names = self.chain.names
         # Started a moment ahead, so the controller begins from rest where the arm is.
-        for q, t in zip(*up):
+        for q, ti in zip(Q, t):
             traj.points.append(JointTrajectoryPoint(positions=q.tolist(),
-                                                    time_from_start=_duration(0.1 + t)))
+                                                    time_from_start=_duration(0.1 + ti)))
         handle = _wait(self.client.send_goal_async(FollowJointTrajectory.Goal(trajectory=traj)),
                        10.0)
         if handle is None or not handle.accepted:
-            self.get_logger().error("the controller rejected the lift")
+            self.get_logger().error(f"the controller rejected {what}")
             return False
-        done = _wait(handle.get_result_async(), 10.0)
+        done = _wait(handle.get_result_async(), 10.0 + t[-1])
         return (done is not None
                 and done.result.error_code == FollowJointTrajectory.Result.SUCCESSFUL)
 

@@ -57,6 +57,11 @@ KIND_TRAVEL, KIND_MARK, KIND_APPROACH = 0, 1, 2
 # How often solve reports its progress, in points: a few times a second.
 REPORT_EVERY = 250
 
+# A move to a pose keeps every joint to this share of its URDF velocity limit,
+# the share the tablet app jogs at by default, and takes at least MOVE_MIN_S.
+MOVE_SPEED = 0.25
+MOVE_MIN_S = 1.0
+
 # Where the solver starts, as the design toolchain's solve_path does.
 Q_START = np.array([0.0, 0.6, -0.9, 0.0, -1.2])
 DOWN = np.array([0.0, 0.0, -1.0])
@@ -238,3 +243,22 @@ def _within_velocity(chain, Q, t, speed):
         raise PlanError(f"at speed {speed:g}, {chain.names[j]} would need "
                         f"{rate[:, j].max():.2f} rad/s, over its {chain.velocity[j]:g} rad/s "
                         f"limit; the fastest this drawing can go is {fastest:g}")
+
+
+def to_pose(chain, q_from, q_to, points=50):
+    """
+    Plan a joint move from q_from to q_to, eased in and out.
+
+    Returns (Q, t). The ease is smoothstep, whose top rate is 1.5 times the
+    mean, so the move is timed for the joint with the furthest to go to peak at
+    MOVE_SPEED of its velocity limit; it takes at least MOVE_MIN_S. Nothing is
+    checked on the way: from the travel height, the way to the URDF's zero pose
+    only rises (tests/test_draw_planning.py).
+    """
+    q_from = np.asarray(q_from, float)
+    q_to = np.asarray(q_to, float)
+    span = np.abs(q_to - q_from) / (MOVE_SPEED * chain.velocity)
+    duration = max(1.5 * float(span.max()), MOVE_MIN_S)
+    s = np.linspace(0.0, 1.0, points)
+    ease = 3 * s ** 2 - 2 * s ** 3
+    return q_from + np.outer(ease, q_to - q_from), s * duration

@@ -175,6 +175,51 @@ def test_planning_reports_its_progress(chains):
     assert shares == sorted(shares) and len(shares) > 3
 
 
+def lowest_gap(chain, q):
+    """How far above what is under it the arm is: the pen, and each link from the upper arm."""
+    frames = chain.frames(q)
+    by_link = dict(frames)
+    tip, tool0 = frames[-1][1][:3, 3], by_link['tool0'][:3, 3]
+    points = [tool0 + (tip - tool0) * k for k in np.linspace(0, 1, 11)]
+    points += [T[:3, 3] for _, T in frames[3:]]
+    gaps = []
+    for x, y, z in points:
+        over = 0.11 <= x <= 0.31 and abs(y) <= 0.07
+        gaps.append(z - (plan.PANEL_Z if over else 0.0))
+    return min(gaps)
+
+
+def test_the_way_home_only_rises(chains):
+    """From the travel height anywhere on the panel, nothing goes lower on the way home."""
+    run, _ = chains
+    home = np.zeros(run.n)
+    reached = 0
+    for x in np.linspace(5, 195, 6):
+        for y in np.linspace(5, 135, 5):
+            p = plan.to_arm(np.array([[x, y, plan.CLEARANCE_MM]]))[0]
+            q, ok, _ = run.ik(p, plan.DOWN, plan.Q_START)
+            if not ok:
+                continue
+            reached += 1
+            Q, _ = plan.to_pose(run, q, home)
+            start = lowest_gap(run, Q[0])
+            assert start == pytest.approx(plan.CLEARANCE_MM / 1000, abs=1e-5)
+            assert min(lowest_gap(run, qi) for qi in Q) >= start - 1e-9
+    assert reached >= 25
+
+
+def test_a_move_to_a_pose_eases_and_keeps_to_its_share_of_the_limits(chains):
+    run, _ = chains
+    q = np.array([0.1, 0.6, -0.9, 0.0, -1.2])
+    Q, t = plan.to_pose(run, q, np.zeros(run.n))
+    np.testing.assert_allclose(Q[0], q)
+    np.testing.assert_allclose(Q[-1], 0.0, atol=1e-12)
+    rate = np.abs(np.diff(Q, axis=0)) / np.diff(t)[:, None]
+    assert np.all(rate <= plan.MOVE_SPEED * run.velocity * 1.001)
+    assert rate.max() == pytest.approx(plan.MOVE_SPEED * run.velocity.max(), rel=0.01)
+    assert plan.to_pose(run, q, q)[1][-1] == plan.MOVE_MIN_S
+
+
 @pytest.mark.parametrize('strokes, says', [
     ([], 'no strokes'),
     ([[[10.0, 10.0]]], 'fewer than two points'),

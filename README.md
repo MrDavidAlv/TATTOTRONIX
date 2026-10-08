@@ -345,7 +345,12 @@ naming the fastest that would do. While it plans, it reports the share of the
 path solved; while it draws, the stroke and the share of the time, and
 `/ink_trace` shows the ink in RViz as `draw` does. A cancel stops the arm and
 lifts the needle straight out of the work: left where it stopped, the needle
-would be dragged through the work by the next move.
+would be dragged through the work by the next move. Every drawing, finished or
+cancelled, ends with the arm back in the pose it started in, the URDF's zero,
+at a quarter of each joint's velocity limit; from the travel height that way
+only rises, which `tests/test_draw_planning.py` checks across the panel. Set
+the draw server's `return_home` parameter to false to leave the arm where the
+drawing ended.
 
 ### Reproducing
 

@@ -19,9 +19,9 @@ Drive draw_strokes end to end, the way the tablet app drives it.
 app.launch.py is started with the real arm's driver in a dry run.
 Everything but the I2C bus is the code that runs on the Raspberry Pi: the
 description, the PCA9685 driver as a plugin, the controllers, rosbridge and the
-draw server. A square is drawn, its ink shows on /ink_trace on the panel, a
-stroke off the panel is refused with the reason, and a cancel stops a drawing
-and lifts the needle clear of the work.
+draw server. A square is drawn, its ink shows on /ink_trace on the panel and
+the arm goes back home; a stroke off the panel is refused with the reason;
+and a cancel stops a drawing, lifts the needle and takes the arm home.
 """
 
 import os
@@ -40,7 +40,7 @@ from rclpy.action import ActionClient
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
-from tattotronix_control import arm, plan
+from tattotronix_control import arm
 from tattotronix_interfaces.action import DrawStrokes
 from tattotronix_interfaces.msg import Stroke
 from visualization_msgs.msg import Marker
@@ -54,6 +54,11 @@ def generate_test_description():
         launch_arguments={'backend': 'arm', 'dry_run': 'true'}.items(),
     )
     return launch.LaunchDescription([app, launch_testing.actions.ReadyToTest()])
+
+
+# The PCA9685's step at the servos' scale, as the dry run rounds to it
+# (tattotronix_hardware's test_arm_dry_run.py).
+HALF_COUNT = 0.5 * 4.88 / 636.62
 
 
 def square(x0, y0, side):
@@ -118,9 +123,11 @@ class TestDrawServer(unittest.TestCase):
         self.assertTrue(result.success, result.message)
         self.assertIn('drew 1 stroke,', result.message)
         self.assertGreater(result.seconds, 0.0)
-        stages = {f.stage for f in seen}
-        self.assertTrue({'planning', 'drawing'} <= stages, stages)
-        self.assertGreater(max(f.progress for f in seen), 0.5)
+        stages = [f.stage for f in seen]
+        self.assertEqual(['planning', 'drawing', 'homing'],
+                         [s for i, s in enumerate(stages) if i == 0 or s != stages[i - 1]])
+        self.assertGreater(max(f.progress for f in seen if f.stage == 'drawing'), 0.5)
+        self._assert_home()
 
         # The last trace holds the whole square: inside the panel, at the depth.
         end = time.monotonic() + 3.0
@@ -158,15 +165,18 @@ class TestDrawServer(unittest.TestCase):
         rclpy.spin_until_future_complete(self.node, cancel, timeout_sec=10.0)
         result = self._result(handle, timeout=20.0)
         self.assertFalse(result.success)
-        self.assertEqual(result.message, 'cancelled; the needle lifted clear of the work')
+        self.assertEqual(result.message, 'cancelled; the needle lifted and the arm back home')
         self.assertLess(max(f.progress for f in progress if f.stage == 'drawing'), 1.0)
-        self.assertIn('lifting', {f.stage for f in progress})
+        stages = [f.stage for f in progress]
+        self.assertEqual(['lifting', 'homing'], [s for s in dict.fromkeys(stages) if s != 'drawing'
+                                                 and s != 'planning'])
+        self._assert_home()
 
-        # Where the arm is now, by the URDF it publishes: the tip at the travel
-        # height, to within what the servos' step leaves of it.
+    def _assert_home(self):
+        """Check the arm is back at the URDF's zero, to within what the servos' step leaves."""
         end = time.monotonic() + 2.0
         while time.monotonic() < end or not self.description:
             rclpy.spin_once(self.node, timeout_sec=0.1)
         chain = arm.Chain(self.description[0])
-        tip = chain.tcp([self.joints[name] for name in chain.names])
-        self.assertAlmostEqual(tip[2], plan.PANEL_Z + plan.CLEARANCE_MM / 1000, delta=0.0015)
+        for name in chain.names:
+            self.assertAlmostEqual(self.joints[name], 0.0, delta=HALF_COUNT, msg=name)
