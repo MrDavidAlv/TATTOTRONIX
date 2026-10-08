@@ -187,6 +187,37 @@ def plan(chain, strokes, speed=1.0):
         i = int(np.flatnonzero(~conv)[0])
         raise PlanError(f"the arm cannot reach stroke {which[i]} at "
                         f"({P_mm[i, 0]:.1f}, {P_mm[i, 1]:.1f}) mm with the tool upright")
+    _within_velocity(chain, Q, t, speed)
+    tcp = np.array([chain.tcp(q) for q in Q])
+    marked = np.concatenate([[False], (kind[:-1] == KIND_MARK) & (kind[1:] == KIND_MARK)])
+    return Plan(q=Q, t=t, kind=kind, marked=marked, tcp=tcp, stroke=which)
+
+
+def lift(chain, q, speed=1.0):
+    """
+    Plan the needle straight up out of the work, from joint positions q.
+
+    Returns (Q, t), the joint positions on the way and their times from the
+    start, or None when the tip is at the travel height already. The lift is
+    the toolpath's own: to CLEARANCE_MM above the surface, at the travel feed.
+    """
+    p = chain.tcp(q)
+    top = PANEL_Z + CLEARANCE_MM / 1000.0
+    if p[2] >= top - 1e-6:
+        return None
+    rise_mm = (top - p[2]) * 1000.0
+    n = int(np.ceil(rise_mm / POINT_STEP_MM)) + 1
+    P = np.column_stack([np.full(n, p[0]), np.full(n, p[1]), np.linspace(p[2], top, n)])
+    Q, conv, _ = solve(chain, P, q0=q)
+    if not conv.all():
+        raise PlanError("the arm cannot lift the needle straight up from where it is")
+    t = np.linspace(0.0, rise_mm / 1000.0 / (FEED_TRAVEL * speed), n)
+    _within_velocity(chain, Q, t, speed)
+    return Q, t
+
+
+def _within_velocity(chain, Q, t, speed):
+    """Refuse joint motion faster than the URDF allows, naming the speed that would do."""
     rate = np.abs(np.diff(Q, axis=0)) / np.diff(t)[:, None]
     over = rate.max(axis=0) / chain.velocity
     if over.max() > 1.0:
@@ -195,6 +226,3 @@ def plan(chain, strokes, speed=1.0):
         raise PlanError(f"at speed {speed:g}, {chain.names[j]} would need "
                         f"{rate[:, j].max():.2f} rad/s, over its {chain.velocity[j]:g} rad/s "
                         f"limit; the fastest this drawing can go is {fastest:g}")
-    tcp = np.array([chain.tcp(q) for q in Q])
-    marked = np.concatenate([[False], (kind[:-1] == KIND_MARK) & (kind[1:] == KIND_MARK)])
-    return Plan(q=Q, t=t, kind=kind, marked=marked, tcp=tcp, stroke=which)

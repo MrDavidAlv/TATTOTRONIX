@@ -151,6 +151,22 @@ def test_a_drawing_too_fast_for_the_joints_is_refused_with_the_speed_that_will_d
     assert np.all(rate <= run.velocity)
 
 
+def test_a_lift_takes_the_needle_straight_up_to_the_travel_height(chains):
+    run, _ = chains
+    p = plan.plan(run, [square(80, 50, 20)])
+    q = p.q[np.flatnonzero(p.kind == plan.KIND_MARK)[40]]
+    Q, t = plan.lift(run, q, speed=2.0)
+    tcp = np.array([run.tcp(qi) for qi in Q])
+    assert np.abs(tcp[:, :2] - tcp[0, :2]).max() < 2e-6
+    assert tcp[0, 2] == pytest.approx(plan.PANEL_Z - plan.PLUNGE_DEPTH_MM / 1000, abs=2e-6)
+    assert tcp[-1, 2] == pytest.approx(plan.PANEL_Z + plan.CLEARANCE_MM / 1000, abs=2e-6)
+    assert np.all(np.diff(tcp[:, 2]) > 0)
+    rise = (plan.CLEARANCE_MM + plan.PLUNGE_DEPTH_MM) / 1000
+    # The rise starts at the depth the IK reached, so to its tolerance of a micrometre.
+    assert t[-1] == pytest.approx(rise / (plan.FEED_TRAVEL * 2.0), abs=1e-5)
+    assert plan.lift(run, Q[-1]) is None
+
+
 @pytest.mark.parametrize('strokes, says', [
     ([], 'no strokes'),
     ([[[10.0, 10.0]]], 'fewer than two points'),

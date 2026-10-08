@@ -20,7 +20,8 @@ app.launch.py is started with the real arm's driver in a dry run.
 Everything but the I2C bus is the code that runs on the Raspberry Pi: the
 description, the PCA9685 driver as a plugin, the controllers, rosbridge and the
 draw server. A square is drawn, its ink shows on /ink_trace on the panel, a
-stroke off the panel is refused with the reason, and a cancel stops a drawing.
+stroke off the panel is refused with the reason, and a cancel stops a drawing
+and lifts the needle clear of the work.
 """
 
 import os
@@ -36,6 +37,10 @@ import launch_testing.actions
 import pytest
 import rclpy
 from rclpy.action import ActionClient
+from rclpy.qos import DurabilityPolicy, QoSProfile
+from sensor_msgs.msg import JointState
+from std_msgs.msg import String
+from tattotronix_control import arm, plan
 from tattotronix_interfaces.action import DrawStrokes
 from tattotronix_interfaces.msg import Stroke
 from visualization_msgs.msg import Marker
@@ -63,6 +68,13 @@ class TestDrawServer(unittest.TestCase):
         cls.node = rclpy.create_node('test_draw_server')
         cls.marks = []
         cls.node.create_subscription(Marker, '/ink_trace', cls.marks.append, 10)
+        cls.joints = {}
+        cls.node.create_subscription(
+            JointState, '/joint_states', lambda m: cls.joints.update(zip(m.name, m.position)), 10)
+        cls.description = []
+        cls.node.create_subscription(
+            String, '/robot_description', lambda m: cls.description.append(m.data),
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
         cls.client = ActionClient(cls.node, DrawStrokes, '/draw_strokes')
 
     @classmethod
@@ -134,7 +146,7 @@ class TestDrawServer(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertIn('off the 200 x 140 mm panel', result.message)
 
-    def test_3_a_cancel_stops_the_drawing(self):
+    def test_3_a_cancel_stops_the_drawing_and_lifts_the_needle(self):
         self._ready()
         progress = []
         handle = self._send([square(20.0, 20.0, 60.0)], 1.0, lambda f: progress.append(f.feedback))
@@ -146,5 +158,15 @@ class TestDrawServer(unittest.TestCase):
         rclpy.spin_until_future_complete(self.node, cancel, timeout_sec=10.0)
         result = self._result(handle, timeout=20.0)
         self.assertFalse(result.success)
-        self.assertEqual(result.message, 'cancelled')
-        self.assertLess(max(f.progress for f in progress), 1.0)
+        self.assertEqual(result.message, 'cancelled; the needle lifted clear of the work')
+        self.assertLess(max(f.progress for f in progress if f.stage == 'drawing'), 1.0)
+        self.assertIn('lifting', {f.stage for f in progress})
+
+        # Where the arm is now, by the URDF it publishes: the tip at the travel
+        # height, to within what the servos' step leaves of it.
+        end = time.monotonic() + 2.0
+        while time.monotonic() < end or not self.description:
+            rclpy.spin_once(self.node, timeout_sec=0.1)
+        chain = arm.Chain(self.description[0])
+        tip = chain.tcp([self.joints[name] for name in chain.names])
+        self.assertAlmostEqual(tip[2], plan.PANEL_Z + plan.CLEARANCE_MM / 1000, delta=0.0015)

@@ -22,7 +22,10 @@ design toolchain applies to the ROS logo - for the arm described on
 runs, the action reports the stroke being drawn and the fraction of the time
 gone, and /ink_trace shows in RViz the ink laid down so far, as the draw node
 does for a stored drawing. Each drawing is its own marker, so earlier ones
-stay on the panel. One drawing at a time; a cancel stops the arm where it is.
+stay on the panel. One drawing at a time. A cancel stops the arm, then lifts
+the needle straight up out of the work, from where the arm is by
+/joint_states: left where it stopped, a needle in the work would be dragged
+through it by the next move.
 """
 
 import threading
@@ -38,6 +41,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 from tattotronix_interfaces.action import DrawStrokes
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -57,10 +61,14 @@ class DrawServer(Node):
         self.chain = None
         self.busy = threading.Lock()
         self.drawings = 0
+        self.joints = {}
 
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
                              reliability=ReliabilityPolicy.RELIABLE)
         self.create_subscription(String, "robot_description", self._description, latched,
+                                 callback_group=group)
+        self.create_subscription(JointState, "joint_states",
+                                 lambda m: self.joints.update(zip(m.name, m.position)), 10,
                                  callback_group=group)
         self.trace = self.create_publisher(Marker, "ink_trace", 1)
         controller = self.get_parameter("controller").value
@@ -141,11 +149,15 @@ class DrawServer(Node):
         while not done.done():
             elapsed = (self.get_clock().now() - started).nanoseconds * 1e-9 - settle
             if gh.is_cancel_requested:
-                handle.cancel_goal_async()
+                _wait(handle.cancel_goal_async(), 5.0)
                 self._trace(p, elapsed)
+                feedback.stage = "lifting"
+                gh.publish_feedback(feedback)
+                lifted = self._lift(speed)
                 gh.canceled()
-                result.message = "cancelled"
-                self.get_logger().info("drawing cancelled")
+                result.message = ("cancelled; the needle lifted clear of the work" if lifted
+                                  else "cancelled; the needle was left where the arm stopped")
+                self.get_logger().info(f"drawing {result.message}")
                 return result
             feedback.progress = float(np.clip(elapsed / p.t[-1], 0.0, 1.0))
             feedback.stroke = int(max(p.stroke[min(np.searchsorted(p.t, max(elapsed, 0.0)),
@@ -164,6 +176,34 @@ class DrawServer(Node):
         result.message = f"drew {_strokes(len(strokes))}, {ink:.0f} mm of ink"
         self.get_logger().info(f"finished: {result.message} in {result.seconds:.0f} s")
         return result
+
+    def _lift(self, speed):
+        """Take the needle straight up out of the work; True once it is clear."""
+        q = [self.joints.get(name) for name in self.chain.names]
+        if None in q:
+            self.get_logger().error("no /joint_states, so no lift")
+            return False
+        try:
+            up = plan.lift(self.chain, np.array(q), speed)
+        except plan.PlanError as e:
+            self.get_logger().error(f"no lift: {e}")
+            return False
+        if up is None:
+            return True
+        traj = JointTrajectory()
+        traj.joint_names = self.chain.names
+        # Started a moment ahead, so the controller begins from rest where the arm is.
+        for q, t in zip(*up):
+            traj.points.append(JointTrajectoryPoint(positions=q.tolist(),
+                                                    time_from_start=_duration(0.1 + t)))
+        handle = _wait(self.client.send_goal_async(FollowJointTrajectory.Goal(trajectory=traj)),
+                       10.0)
+        if handle is None or not handle.accepted:
+            self.get_logger().error("the controller rejected the lift")
+            return False
+        done = _wait(handle.get_result_async(), 10.0)
+        return (done is not None
+                and done.result.error_code == FollowJointTrajectory.Result.SUCCESSFUL)
 
     def _trace(self, p, elapsed):
         """Ink laid down so far, as a line list in the arm frame."""
