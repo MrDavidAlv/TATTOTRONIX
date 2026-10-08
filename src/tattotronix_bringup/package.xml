@@ -10,11 +10,17 @@
   <exec_depend>tattotronix_gazebo</exec_depend>
   <exec_depend>tattotronix_hardware</exec_depend>
   <exec_depend>rosbridge_server</exec_depend>
+  <exec_depend>tattotronix_control</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+  <test_depend>tattotronix_interfaces</test_depend>
+  <test_depend>controller_manager_msgs</test_depend>
 
   <export>
     <build_type>ament_python</build_type>

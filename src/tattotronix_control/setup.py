@@ -40,5 +40,6 @@ setup(
     extras_require={'test': ['pytest']},
     entry_points={'console_scripts': [
         'draw = tattotronix_control.draw:main',
+        'draw_server = tattotronix_control.draw_server:main',
     ]},
 )

@@ -18,7 +18,8 @@ The arm, simulated or real, waiting for the tablet app.
     ros2 launch tattotronix_bringup app.launch.py                  # Gazebo
     ros2 launch tattotronix_bringup app.launch.py backend:=arm     # the real arm
 
-Starts the backend without the drawing - the app decides what to draw - and
+Starts the backend without the drawing - the app decides what to draw - the
+draw server, whose draw_strokes action draws the strokes the app sends, and
 rosbridge, which serves the arm's topics, services and actions to the app as
 JSON over a WebSocket. Over Wi-Fi the app connects to ws://<robot-ip>:<port>;
 over USB, `adb reverse tcp:9090 tcp:9090` on the workstation lets it use
@@ -33,6 +34,7 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Opaq
 from launch.launch_description_sources import (AnyLaunchDescriptionSource,
                                                PythonLaunchDescriptionSource)
 from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 
 BACKENDS = ('gazebo', 'arm')
 
@@ -54,11 +56,28 @@ def _include(context):
         args = {'draw': 'false', 'dry_run': LaunchConfiguration('dry_run')}
     rosbridge = os.path.join(get_package_share_directory('rosbridge_server'),
                              'launch', 'rosbridge_websocket_launch.xml')
+    # A drawing is an action that runs for minutes. Without its own thread,
+    # rosbridge 2.0 waits on it and answers nothing else meanwhile: the app's
+    # joint states, its cancel. Service calls likewise, and they time out.
+    bridge_args = {
+        'port': LaunchConfiguration('port'),
+        'send_action_goals_in_new_thread': 'true',
+        'call_services_in_new_thread': 'true',
+        'default_call_service_timeout': '5.0',
+    }
+    draw_server = Node(
+        package='tattotronix_control',
+        executable='draw_server',
+        name='draw_server',
+        output='screen',
+        parameters=[{'use_sim_time': backend == 'gazebo'}],
+    )
     return [
         IncludeLaunchDescription(PythonLaunchDescriptionSource(path),
                                  launch_arguments=args.items()),
         IncludeLaunchDescription(AnyLaunchDescriptionSource(rosbridge),
-                                 launch_arguments={'port': LaunchConfiguration('port')}.items()),
+                                 launch_arguments=bridge_args.items()),
+        draw_server,
     ]
 
 

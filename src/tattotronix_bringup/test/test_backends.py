@@ -57,7 +57,8 @@ def _includes(path, **args):
     defaults.update(args)
     for key, value in defaults.items():
         context.launch_configurations[key] = value
-    return [_resolve(context, i) for i in _module(path)._include(context)]
+    return [_resolve(context, i) for i in _module(path)._include(context)
+            if isinstance(i, IncludeLaunchDescription)]
 
 
 def _decide(**args):
@@ -88,7 +89,25 @@ def test_the_app_gets_the_idle_simulator_and_rosbridge():
     assert sim.endswith('tattotronix_gazebo/launch/simulation.launch.py'), sim
     assert sim_args == {'use_rviz': 'false', 'headless': 'true'}
     assert bridge.endswith('rosbridge_server/launch/rosbridge_websocket_launch.xml'), bridge
-    assert bridge_args == {'port': '9191'}
+    assert bridge_args == {'port': '9191', 'send_action_goals_in_new_thread': 'true',
+                           'call_services_in_new_thread': 'true',
+                           'default_call_service_timeout': '5.0'}
+
+
+def test_the_app_gets_the_draw_server_on_the_backends_clock():
+    from launch_ros.actions import Node
+    for backend, sim in (('gazebo', True), ('arm', False)):
+        context = LaunchContext()
+        for key, value in {'backend': backend, 'port': '9090', 'use_rviz': 'false',
+                           'headless': 'true', 'dry_run': 'true'}.items():
+            context.launch_configurations[key] = value
+        nodes = [a for a in _module(APP)._include(context) if isinstance(a, Node)]
+        assert [n.node_executable for n in nodes] == ['draw_server']
+        # launch_ros keeps each name as a tuple of substitutions; perform them.
+        (given,) = nodes[0]._Node__parameters
+        params = {''.join(part.perform(context) for part in name): value
+                  for name, value in given.items()}
+        assert params == {'use_sim_time': sim}
 
 
 def test_the_app_gets_the_real_arm_without_its_drawing():
