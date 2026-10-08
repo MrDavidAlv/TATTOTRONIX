@@ -133,7 +133,7 @@ class DrawServer(Node):
         self.drawings += 1
         ink = float(np.linalg.norm(np.diff(p.tcp, axis=0), axis=1)[p.marked[1:]].sum()) * 1000
         self.get_logger().info(
-            f"drawing {len(strokes)} strokes, {ink:.0f} mm of ink, {len(p.t)} points, "
+            f"drawing {_strokes(len(strokes))}, {ink:.0f} mm of ink, {len(p.t)} points, "
             f"{settle + p.t[-1]:.0f} s at speed {speed:g}")
         started = self.get_clock().now()
         done = handle.get_result_async()
@@ -161,7 +161,7 @@ class DrawServer(Node):
         gh.succeed()
         result.success = True
         result.seconds = (self.get_clock().now() - started).nanoseconds * 1e-9
-        result.message = f"drew {len(strokes)} strokes, {ink:.0f} mm of ink"
+        result.message = f"drew {_strokes(len(strokes))}, {ink:.0f} mm of ink"
         self.get_logger().info(f"finished: {result.message} in {result.seconds:.0f} s")
         return result
 
@@ -183,6 +183,10 @@ class DrawServer(Node):
                 for q in (p.tcp[i - 1], p.tcp[i]):
                     m.points.append(Point(x=float(q[0]), y=float(q[1]), z=float(q[2])))
         self.trace.publish(m)
+
+
+def _strokes(n):
+    return f"{n} stroke" if n == 1 else f"{n} strokes"
 
 
 def _duration(seconds):

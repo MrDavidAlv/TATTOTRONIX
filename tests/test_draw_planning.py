@@ -138,6 +138,19 @@ def test_speed_scales_the_time(chains):
     assert two.t[-1] == pytest.approx(one.t[-1] / 2)
 
 
+def test_a_drawing_too_fast_for_the_joints_is_refused_with_the_speed_that_will_do(chains):
+    run, _ = chains
+    big = [square(20, 20, 100), square(150, 20, 30)]
+    with pytest.raises(plan.PlanError, match='rad/s limit; the fastest this drawing can go is') \
+            as refused:
+        plan.plan(run, big, speed=20.0)
+    fastest = float(str(refused.value).rsplit(' ', 1)[1])
+    assert 1.0 < fastest < 20.0
+    p = plan.plan(run, big, speed=fastest)
+    rate = np.abs(np.diff(p.q, axis=0)) / np.diff(p.t)[:, None]
+    assert np.all(rate <= run.velocity)
+
+
 @pytest.mark.parametrize('strokes, says', [
     ([], 'no strokes'),
     ([[[10.0, 10.0]]], 'fewer than two points'),

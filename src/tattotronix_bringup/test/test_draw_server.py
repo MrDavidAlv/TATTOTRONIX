@@ -100,11 +100,11 @@ class TestDrawServer(unittest.TestCase):
     def test_1_a_square_is_drawn_and_its_ink_is_on_the_panel(self):
         self._ready()
         seen = []
-        handle = self._send([square(90.0, 60.0, 10.0)], 4.0, lambda f: seen.append(f.feedback))
+        handle = self._send([square(90.0, 60.0, 10.0)], 3.0, lambda f: seen.append(f.feedback))
         self.assertTrue(handle.accepted)
         result = self._result(handle)
         self.assertTrue(result.success, result.message)
-        self.assertIn('drew 1 strokes', result.message)
+        self.assertIn('drew 1 stroke,', result.message)
         self.assertGreater(result.seconds, 0.0)
         stages = {f.stage for f in seen}
         self.assertTrue({'planning', 'drawing'} <= stages, stages)

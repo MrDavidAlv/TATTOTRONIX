@@ -23,11 +23,17 @@ POINT_STEP_MM, and left by lifting to CLEARANCE_MM. Marking and the approach run
 at FEED_MARK, travel at FEED_TRAVEL. tests/test_draw_planning.py holds every
 constant and every step to the design toolchain's.
 
+A client chooses the speed, so a drawing that would need a joint faster than
+its URDF velocity limit is refused, with the fastest speed that would do:
+the controller does not enforce the limit, and a joint that cannot keep up
+aborts the drawing part way.
+
 A stroke's points are millimetres on the panel from its corner nearest the
 arm's origin (tattotronix_interfaces/msg/Stroke).
 """
 
 from dataclasses import dataclass
+import math
 
 import numpy as np
 
@@ -181,6 +187,14 @@ def plan(chain, strokes, speed=1.0):
         i = int(np.flatnonzero(~conv)[0])
         raise PlanError(f"the arm cannot reach stroke {which[i]} at "
                         f"({P_mm[i, 0]:.1f}, {P_mm[i, 1]:.1f}) mm with the tool upright")
+    rate = np.abs(np.diff(Q, axis=0)) / np.diff(t)[:, None]
+    over = rate.max(axis=0) / chain.velocity
+    if over.max() > 1.0:
+        j = int(np.argmax(over))
+        fastest = math.floor(100 * speed / over[j]) / 100
+        raise PlanError(f"at speed {speed:g}, {chain.names[j]} would need "
+                        f"{rate[:, j].max():.2f} rad/s, over its {chain.velocity[j]:g} rad/s "
+                        f"limit; the fastest this drawing can go is {fastest:g}")
     tcp = np.array([chain.tcp(q) for q in Q])
     marked = np.concatenate([[False], (kind[:-1] == KIND_MARK) & (kind[1:] == KIND_MARK)])
     return Plan(q=Q, t=t, kind=kind, marked=marked, tcp=tcp, stroke=which)

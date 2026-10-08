@@ -73,7 +73,8 @@ class Chain:
             axis_el = j.find("axis")
             axis = np.array(axis_el.get("xyz").split(), float) if axis_el is not None else None
             limit = j.find("limit")
-            lim = ((float(limit.get("lower")), float(limit.get("upper")))
+            lim = ((float(limit.get("lower")), float(limit.get("upper")),
+                    float(limit.get("velocity", "inf")))
                    if limit is not None else None)
             self.segments.append({
                 "name": name,
@@ -87,6 +88,7 @@ class Chain:
         self.names = [s["name"] for s in self.actuated]
         self.lower = np.array([s["limit"][0] for s in self.actuated])
         self.upper = np.array([s["limit"][1] for s in self.actuated])
+        self.velocity = np.array([s["limit"][2] for s in self.actuated])
         self.n = len(self.actuated)
 
     def frames(self, q):
