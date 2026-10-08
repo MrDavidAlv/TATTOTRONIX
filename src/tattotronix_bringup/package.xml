@@ -9,6 +9,7 @@
 
   <exec_depend>tattotronix_gazebo</exec_depend>
   <exec_depend>tattotronix_hardware</exec_depend>
+  <exec_depend>rosbridge_server</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

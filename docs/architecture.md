@@ -61,7 +61,7 @@ other are one package that has been split for no reason.
 | 1 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF, kinematics and planner configuration, the `move_group` launch | Controller gains, which belong to layer 1's other half |
 | 2 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers | Anything that would also be true on hardware |
 | 2 | `tattotronix_hardware` | `ament_cmake` | The real arm: the `ros2_control` driver for its hobby servos through a PCA9685, and the launch file that assembles description, driver and controllers on a Raspberry Pi | Controller configuration, which it takes from layer 1 unchanged |
-| 3 | `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch file and hands it the arguments | Any decision a backend makes: what the real arm needs stays in layer 2 |
+| 3 | `tattotronix_bringup` | `ament_python` | The entry points over both backends: `draw.launch.py backend:=gazebo\|arm` includes the backend's own launch file and hands it the arguments; `app.launch.py` starts the same backend without a drawing, plus rosbridge for the tablet app | Any decision a backend makes: what the real arm needs stays in layer 2 |
 
 ```
              tattotronix_bringup              layer 3   one entry point

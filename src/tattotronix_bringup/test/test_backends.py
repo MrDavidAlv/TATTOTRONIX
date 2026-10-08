@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Check that each backend includes its own package's launch file, with its arguments.
+Check that each backend includes its own package's launch files, with their arguments.
 
 The include is decided at launch time, so generating the description proves
 nothing about it; this runs the decision itself against a launch context.
@@ -26,24 +26,19 @@ from launch import LaunchContext
 from launch.actions import IncludeLaunchDescription
 import pytest
 
-DRAW = Path(__file__).resolve().parents[1] / 'launch' / 'draw.launch.py'
+LAUNCH = Path(__file__).resolve().parents[1] / 'launch'
+DRAW = LAUNCH / 'draw.launch.py'
+APP = LAUNCH / 'app.launch.py'
 
 
-def _module():
-    spec = importlib.util.spec_from_file_location('draw_launch', DRAW)
+def _module(path=DRAW):
+    spec = importlib.util.spec_from_file_location(path.stem.replace('.', '_'), path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-def _decide(**args):
-    context = LaunchContext()
-    defaults = {'backend': 'gazebo', 'art': 'ros_logo', 'speed': '1.0',
-                'use_rviz': 'true', 'dry_run': 'false'}
-    defaults.update(args)
-    for key, value in defaults.items():
-        context.launch_configurations[key] = value
-    (include,) = _module()._include(context)
+def _resolve(context, include):
     assert isinstance(include, IncludeLaunchDescription)
     # Loading it resolves the path, and proves the included file is there and loads.
     include.launch_description_source.get_launch_description(context)
@@ -53,6 +48,21 @@ def _decide(**args):
         key = name if isinstance(name, str) else ''.join(n.perform(context) for n in name)
         passed[key] = value if isinstance(value, str) else value.perform(context)
     return source, passed
+
+
+def _includes(path, **args):
+    context = LaunchContext()
+    defaults = {'backend': 'gazebo', 'art': 'ros_logo', 'speed': '1.0', 'use_rviz': 'true',
+                'dry_run': 'false', 'port': '9090', 'headless': 'false'}
+    defaults.update(args)
+    for key, value in defaults.items():
+        context.launch_configurations[key] = value
+    return [_resolve(context, i) for i in _module(path)._include(context)]
+
+
+def _decide(**args):
+    (only,) = _includes(DRAW, **args)
+    return only
 
 
 def test_gazebo_includes_the_simulator_s_draw():
@@ -70,3 +80,24 @@ def test_arm_includes_the_real_arm_and_asks_it_to_draw():
 def test_an_unknown_backend_says_which_ones_exist():
     with pytest.raises(RuntimeError, match='gazebo, arm'):
         _decide(backend='webots')
+
+
+def test_the_app_gets_the_idle_simulator_and_rosbridge():
+    (sim, sim_args), (bridge, bridge_args) = _includes(APP, backend='gazebo', port='9191',
+                                                       use_rviz='false', headless='true')
+    assert sim.endswith('tattotronix_gazebo/launch/simulation.launch.py'), sim
+    assert sim_args == {'use_rviz': 'false', 'headless': 'true'}
+    assert bridge.endswith('rosbridge_server/launch/rosbridge_websocket_launch.xml'), bridge
+    assert bridge_args == {'port': '9191'}
+
+
+def test_the_app_gets_the_real_arm_without_its_drawing():
+    (arm, arm_args), (bridge, _) = _includes(APP, backend='arm', dry_run='true')
+    assert arm.endswith('tattotronix_hardware/launch/arm.launch.py'), arm
+    assert arm_args == {'draw': 'false', 'dry_run': 'true'}
+    assert bridge.endswith('rosbridge_websocket_launch.xml'), bridge
+
+
+def test_the_app_launch_refuses_an_unknown_backend():
+    with pytest.raises(RuntimeError, match='gazebo, arm'):
+        _includes(APP, backend='webots')

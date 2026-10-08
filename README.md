@@ -117,6 +117,14 @@ ros2 launch tattotronix_bringup draw.launch.py                  # in Gazebo
 ros2 launch tattotronix_bringup draw.launch.py backend:=arm     # on the real arm
 ```
 
+The tablet app drives either through rosbridge, which this starts with the arm
+and without a drawing, so the app chooses what to draw:
+
+```bash
+ros2 launch tattotronix_bringup app.launch.py                   # Gazebo, rosbridge on :9090
+ros2 launch tattotronix_bringup app.launch.py backend:=arm      # the real arm
+```
+
 ---
 
 ## Table of Contents
@@ -420,7 +428,7 @@ tools/
 | `tattotronix_moveit_config` | `ament_python` | Planning: SRDF and joint limits generated from the description, position-only IK, OMPL, the `move_group` launch |
 | `tattotronix_gazebo` | `ament_python` | The studio world, and the launch files that assemble simulator, description, spawn, clock bridge and controllers, and run the drawing |
 | `tattotronix_hardware` | `ament_cmake` | The real arm: a `ros2_control` driver for its hobby servos through a PCA9685 board on a Raspberry Pi, and the launch that runs the same controllers on it. See [running the real arm](docs/hardware.md) |
-| `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch and passes the arguments through |
+| `tattotronix_bringup` | `ament_python` | One entry point, `draw.launch.py backend:=gazebo\|arm`, that includes the backend's own launch and passes the arguments through; and `app.launch.py`, the same backend with rosbridge and no drawing, for the tablet app |
 
 ---
 
