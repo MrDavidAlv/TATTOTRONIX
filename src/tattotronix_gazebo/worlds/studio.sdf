@@ -4,12 +4,17 @@
 
   Deliberately bare: a ground plane, a light, a bench at the height the arm is
   bolted to, and a flat panel standing in for the work surface the needle
-  touches. Everything the arm has to reason about is geometry it can collide
-  with; scenery would only cost frames.
+  goes into. Scenery would only cost frames.
 
-  The panel is a placeholder for skin. It is rigid, so contact is stiff and
-  honest about it. Modelling compliant tissue is a separate piece of work and
-  pretending otherwise here would hide it.
+  The panel is a placeholder for skin, and it has no collision. Nothing here
+  models tissue, and a rigid panel is not a neutral stand-in for it: the
+  toolpath drives the needle 1.5 mm into the work, a rigid surface keeps it
+  out, and the friction of that contact holds the arm back. With a rigid
+  panel, a 50 mm heart drawn at twice the marking feed left joint_1 0.1 rad
+  behind and the controller aborted it, and the stored ROS logo left joint_1
+  0.058 rad behind within 40 s. With the panel drawn only, the same heart
+  tracks joint_1 to 0.0007 rad and the logo to 0.0043 rad. The bench under
+  the panel is solid. Modelling compliant tissue is a separate piece of work.
 -->
 <sdf version="1.8">
   <world name="studio">
@@ -107,21 +112,13 @@
          Centred at x = 0.21 m, which is under the flange. The tip lands 49 mm
          further out, at x = 259 mm, because the tool axis runs along the
          bracket's +x; that is still well inside the 200 mm panel. Centring on
-         the tip would mean moving this to x = 0.259. -->
+         the tip would mean moving this to x = 0.259.
+
+         Drawn only, with no collision: see the note at the top. -->
     <model name="work_surface">
       <static>true</static>
       <pose>0.21 0.0 0.7525 0 0 0</pose>
       <link name="link">
-        <collision name="collision">
-          <geometry>
-            <box><size>0.20 0.14 0.005</size></box>
-          </geometry>
-          <surface>
-            <friction>
-              <ode><mu>1.0</mu><mu2>1.0</mu2></ode>
-            </friction>
-          </surface>
-        </collision>
         <visual name="visual">
           <geometry>
             <box><size>0.20 0.14 0.005</size></box>

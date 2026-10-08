@@ -597,8 +597,12 @@ which is 49 mm forward of the panel centre and 9 mm off its centre line, still
 well inside the 200 x 140 mm panel. Centring the panel on the tip would mean
 moving it to x = 0.259 m.
 
-The panel is rigid. Modelling compliant tissue is a separate piece of work and
-pretending otherwise here would hide it.
+The panel has no collision. It stands in for skin, which the needle enters, and
+nothing here models tissue: a rigid panel kept the needle out of its 1.5 mm
+depth, and the friction of that contact held the arm back until joint_1 was
+0.1 rad behind and the controller aborted the drawing. Drawn only, it lets the
+arm track the plan, joint_1 to 0.0007 rad. The bench under it is solid.
+Modelling compliant tissue is a separate piece of work.
 
 Arguments: `world`, `world_name`, `tool`, `use_rviz`, `rviz_config`, `headless`, `spawn_z`.
 

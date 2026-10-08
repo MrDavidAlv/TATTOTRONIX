@@ -142,7 +142,7 @@ what stop this from being a credible accuracy figure rather than a credible
 | Missing | Why it matters | What it needs |
 |---|---|---|
 | Backlash and flexure | A printed bracket and an SG90 have both; each 0.1° of play costs up to 0.81 mm | Measuring the hardware |
-| Tissue deformation | The panel is rigid; skin is not | A separate project |
+| Tissue deformation | Skin resists the needle and gives under it; nothing here does, and in Gazebo the needle enters the panel freely | A separate project |
 
 The model says what the control does. It does not say what an SG90 with backlash
 does in a printed bracket.
